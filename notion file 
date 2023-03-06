@@ -1,0 +1,44 @@
+--> port numbers :
+	besides an IP address there is another address that is used by (TCP) and, coincidentally by UDP (datagram sockets). it is the port number. it's a 16-bit number that's like the local address for the connection. you can think of the IP address as the street address of a hotel and the port as the room number. and their main job is to differentiate between services knowing that services on the internet have different well-known port numbers 
+
+--> explaining OSI model layers :
+	- application layer : this is where the human-computer interaction happens, where application can access the network services 
+	- presentation layer : this layer ensures that data is in a usable format and is where data encryption occurs
+	- session layer   <--- the sockets take action in this layer ---> : this layer creates communication channels called session between devices and open them and ensures they remain open and functional while data is being transferred and close them when the communication ends
+	- transport layer : it breaks data transferred in the session layer and breaks it into segments and reassemble the segments on the receiving end. it mainly carries out the flow control. (if data was not received correctly it requests again)
+	network layer : it breaks up segments into network packets and reassemble them on the receiving end. and is responsible for routing them by discovering the best path across a network
+	- data link layer : it breaks up packets into frames and establishes a connection between two physically-connected node on a network. it's composed of two parts (LLC - MAC)
+	- physical layer : physical cable or wireless connection between network nodes. it identifies the connector and transmits the data which is simply a series of 0's and 1's`  
+
+<----------------------------------------------------->
+structures to handle the addresses of network traffic
+<----------------------------------------------------->
+
+struct sockaddr {
+    unsigned short    sa_family;    // 2 bytes address family, AF_xxx
+    char              sa_data[14];     // 14 bytes of protocol address
+};
+
+// IPv4 AF_INET sockets:
+
+struct sockaddr_in {
+    short            sin_family;       // 2 bytes e.g. AF_INET, AF_INET6
+    unsigned short   sin_port;    // 2 bytes e.g. htons(3490) (in case of client process it will be set to 0 so the operating system will pick any available port, in case of server process a port should be specified since the client needs to know which port number to connect to)
+    struct in_addr   sin_addr;     // 4 bytes see struct in_addr, below
+    char             sin_zero[8];     // 8 bytes zero this if you want to (this is included to pad the structure length to the length of a struct sockaddr)
+};
+
+struct in_addr {
+    unsigned long s_addr;          // 4 bytes load with inet_pton() (the address for this socket, which is genrally the machine's IP depending on which interface the operating system will choose)
+};
+
+<----------------------------------------------------->
+
+--> struct sockaddr vs struct sockaddr_in :
+	- SOCKADDR uses 14 bytes to represent Sa_data, while sockaddr_in splits 14 bytes into Sin_port and sin_addr and sin_zero
+	- Programmers should not operate SOCKADDR, it's for the OS. programmers should use sockaddr_in to represent addresses, because it distinguish between addresses and port.
+
+--> some system calls wants struct sockaddr*, in that case a pointer to struct sockaddr_in can be cast to a pointer to a struct sockaddr 
+
+--> since a few computers (namely anything with Intel or Intel-compatible processor) store the bytes in reverse order "little endian" , however the network byte order is "big endian". so the packets should be always in the network order. as a solution for this issue, you always assume that the order isn't right and you call a function to set it to network byte order if it has to, and this way your code is portable to machines of differig endianness. (htons - htonl - ntohs - ntohl)
+
