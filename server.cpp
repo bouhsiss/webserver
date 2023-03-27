@@ -24,7 +24,7 @@ int main() {
 	hints.ai_flags = AI_PASSIVE; // indicates that the server can bind to all available network interfaces and the operating system will choose the appropriate network interface to use based on the incoming connection
 
 	struct addrinfo *bindAddress;
-	if(getaddrinfo(NULL, PORT, &hints, &bindAddress) < 0) // we use the getaddrinfo to fill in the addrinfo struct with the needed information.  <----- this function had many uses but for our purpose it generate an address that is suitable for bind() and to make it generate this we must pass in the first prameter as NULL and have the AI_PASSIVE flag set in the hints.ai_flags ------->
+	if(getaddrinfo(NULL, PORT, &hints, &bindAddress) < 0) // we use the getaddrinfo to fill in the addrinfo struct with the needed information.  <----- this function has many uses but for our purpose it generate an address that is suitable for bind() and to make it generate this we must pass in the first prameter as NULL and have the AI_PASSIVE flag set in the hints.ai_flags ------->
 	{
 		std::cout << "getaddrinfo failed" << std::endl;
 		return(EXIT_FAILURE);
@@ -52,10 +52,10 @@ int main() {
 
 	struct sockaddr_in clientAddress; // store the address info for the connecting client
 	int socketClient;
-	int clientLen = sizeof(clientAddress );
+	int clientLen = sizeof(clientAddress);
 	while(1) {
 		std::cout << "<--------------Waiting for new connections -------------->" << std::endl;
-		/* accept had a few functions, first - it will block your program until a new connection is made. in other words, your program will sleep until a connection is made to the listening socket. when the connection is made accept() will create a new socket for it. it also fills in address info of the client connected */
+		/* accept has a few functions, first - it will block your program until a new connection is made. in other words, your program will sleep until a connection is made to the listening socket. when the connection is made accept() will create a new socket for it. it also fills in address info of the client connected */
 		if((socketClient = accept(socketListen, (struct sockaddr*)&clientAddress , (socklen_t*)&clientLen)) < 0) {
 			std::cout << "accept Failed" << std::endl;
 			exit(EXIT_FAILURE);

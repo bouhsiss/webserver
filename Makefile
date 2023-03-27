@@ -1,8 +1,8 @@
 NAME = webserv
 CC = clang++
-CFLAGS = -Wall -Wextra -Werror
+CFLAGS = -fsanitize=address -Wall -Wextra -Werror
 INCLUDES = 
-SRCS = 
+SRCS = tcp_client.cpp 
 
 all : $(NAME)
 
