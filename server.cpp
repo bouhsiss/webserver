@@ -1,68 +1,73 @@
-#include"socket.hpp"
+#include "Server.hpp"
 
-void exchangeData(int socketClient) {
-	// send and receive messages
-	char buffer[1024] = {0};
-	int bytesReceived = recv(socketClient, buffer, 1024, 0);
-	write(1, buffer, bytesReceived);
-	if(bytesReceived <= 0)
-		std::cout << "No bytes to read" << std::endl;
-	
-	std::string hello = "hello from the server";
-	int bytesSent = send(socketClient, hello.c_str(), hello.size(), 0);
-	std::cout << "Sent " << bytesSent << "of " << hello.size() << std::endl;
-	std::cout << "<--------------Hello message sent from server--------------->" << std::endl;
+Server::Server() {};
+
+Server::Server(const Server& other) {};
+
+Server& Server::operator=(const Server& other) {};
+
+Server::~Server() {};
+
+bool ErrorMessage(std::string message) {
+	std::cout << message << std::endl;
+	return(EXIT_FAILURE);
 }
 
-int main() {
-	std::cout << "configuring local address..." << std::endl;
-
+bool Server::startServer() {
 	struct addrinfo hints;
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE; // indicates that the server can bind to all available network interfaces and the operating system will choose the appropriate network interface to use based on the incoming connection
+	hints.ai_flags = AI_PASSIVE;
 
-	struct addrinfo *bindAddress;
-	if(getaddrinfo(NULL, PORT, &hints, &bindAddress) < 0) // we use the getaddrinfo to fill in the addrinfo struct with the needed information.  <----- this function has many uses but for our purpose it generate an address that is suitable for bind() and to make it generate this we must pass in the first prameter as NULL and have the AI_PASSIVE flag set in the hints.ai_flags ------->
-	{
-		std::cout << "getaddrinfo failed" << std::endl;
-		return(EXIT_FAILURE);
-	}
-	std::cout << "Creating socket...." << std::endl;
-	int socketListen;
-	socketListen = socket(bindAddress->ai_family, bindAddress->ai_socktype, bindAddress->ai_protocol);
-	if(socketListen < 0) {
-		std::cout << "socket() failed" << std::endl;
-		return(EXIT_FAILURE);
-	}
+	struct addrinfo *bind_address;
+	if(getaddrinfo(0, PORT, &hints, &bind_address) < 0)
+		return(ErrorMessage("getaddrinfo() failed."));
 
-	std::cout << "binding socket to local address.." << std::endl;
-	if(bind(socketListen, bindAddress->ai_addr, bindAddress->ai_addrlen)) {
-		std::cout << "bind() failed" << std::endl;
-		return(EXIT_FAILURE);
-	}
-	freeaddrinfo(bindAddress); //after we have bound to bindAddress we can release the address memory
+	int socket_listen;
+	socket_listen = socket(bind_address->ai_family, bind_address->ai_socktype, bind_address->ai_protocol);
+	if(socket_listen < 0)
+		return(ErrorMessage("socket() failed"));
+	if(bind(socket_listen, bind_address->ai_addr, bind_address->ai_addrlen)) 
+		return(ErrorMessage("bind() failed"));
+	freeaddrinfo(bind_address);
 
-	std::cout << "Listening for connections" << std::endl;
-	if(listen(socketListen, 10) < 0 ) { // the second parameter tells listen() how many connections it's allowed to queue up - if 10 connection become queued up the the OS will reject new connections until we remove one from the existing queue 
-		std::cout << "listen failed" << std::endl;
-		return(EXIT_FAILURE);
-	}
-
-	struct sockaddr_in clientAddress; // store the address info for the connecting client
-	int socketClient;
-	int clientLen = sizeof(clientAddress);
+	if(listen(socket_listen, 10) < 0)
+		return(ErrorMessage("listen() failed"));
+	fd_set master;
+	FD_ZERO(&master);
+	FD_SET(socket_listen, &master);
+	int max_socket = socket_listen;
 	while(1) {
-		std::cout << "<--------------Waiting for new connections -------------->" << std::endl;
-		/* accept has a few functions, first - it will block your program until a new connection is made. in other words, your program will sleep until a connection is made to the listening socket. when the connection is made accept() will create a new socket for it. it also fills in address info of the client connected */
-		if((socketClient = accept(socketListen, (struct sockaddr*)&clientAddress , (socklen_t*)&clientLen)) < 0) {
-			std::cout << "accept Failed" << std::endl;
-			exit(EXIT_FAILURE);
+		fd_set reads;
+		reads = master;
+		if(select(max_socket+1, &reads, 0, 0, 0) < 0)
+			return(ErrorMessage("Select() failed"));
+		int i;
+		for(i = 1; i <= max_socket; ++i) {
+			if(FD_ISSET(i, &reads)) {
+				if(i == socket_listen) {
+					struct sockaddr_in clienAddress;
+					socklen_t clientLen = sizeof(clienAddress);
+					int socketClient = accept(socket_listen, (struct sockaddr*) &clienAddress,  &clientLen);
+					if(socketClient < 0)
+						return(ErrorMessage("socket() failed"));
+					FD_SET(socketClient, &master);
+					if(socketClient > max_socket)
+						max_socket = socketClient;
+				}
+				else {
+					char read[1024];
+					int bytes_received = recv(i, read, 1024, 0);
+					if(bytes_received < 1) { 
+						FD_CLR(i, &master);
+						close(i);
+						continue;
+					}
+				}
+			}
 		}
-		std::cout << "<----------- Client is connected ---------->" << std::endl;
-		exchangeData(socketClient);
-		std::cout << "Closing connection.. " << std::endl; // if we don't close the connection the client will wait for more data until it times out.
-		close(socketClient);
 	}
+	close(socket_listen);
 }
+

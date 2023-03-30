@@ -64,22 +64,22 @@ int main() {
                             clientLen,
                             address_buffer, sizeof(address_buffer), 0, 0,
                             NI_NUMERICHOST);
-					std::cout << "new connection\n" << std::endl;
+					std::cout << "new connection\n from " << address_buffer << std::endl;
 				}
-			else {
-				char read[1024];
-				int bytes_received = recv(i, read, 1024, 0);
-				if(bytes_received < 1) // if client has disconnected then recv() returns a non positive number in this case we remove the socket from the master socket set
-				{ 
-					FD_CLR(i, &master);
-					close(i);
-					continue;
+				else {
+					char read[1024];
+					int bytes_received = recv(i, read, 1024, 0);
+					if(bytes_received < 1) // if client has disconnected then recv() returns a non positive number in this case we remove the socket from the master socket set
+					{ 
+						FD_CLR(i, &master);
+						close(i);
+						continue;
+					}
+					int j;
+					for (j = 0; j < bytes_received; ++j)
+							read[j] = toupper(read[j]);
+					send(i, read, bytes_received, 0);
 				}
-				int j;
-				for (j = 0; j < bytes_received; ++j)
-                        read[j] = toupper(read[j]);
-                send(i, read, bytes_received, 0);
-			}
 			}
 		}
 	}
