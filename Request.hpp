@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <string>
 
 class Request {
 	public :
@@ -9,4 +10,7 @@ class Request {
 		~Request();
 
 		void parseRequest(std::string RequestData);
+	private :
+		std::string method;
+		std::string RequestURI;
 };
