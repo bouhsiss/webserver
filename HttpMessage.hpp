@@ -25,7 +25,7 @@ class HttpMessage {
 	protected :
 		std::string _StartLine;
 		std::map<std::string, std::string> _Headers;
-		std::string _Body
+		std::string _Body;
 };
 
 

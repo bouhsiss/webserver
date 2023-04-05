@@ -1,8 +1,9 @@
 #pragma once
+#include "HttpMessage.hpp"
 #include <iostream>
 #include <string>
 
-class Request {
+class Request : public HttpMessage {
 	public :
 		Request();
 		Request(const Request& other);
