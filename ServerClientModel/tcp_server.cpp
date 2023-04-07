@@ -1,6 +1,6 @@
 #include "socket.hpp"
 
-int main() {
+int main(int ac, char **av) {
 	std::cout << "configuring local address... " << std::endl;
 	struct addrinfo hints;
 	memset(&hints, 0, sizeof(hints));
@@ -9,7 +9,7 @@ int main() {
 	hints.ai_flags = AI_PASSIVE;
 
 	struct addrinfo *bind_address;
-	getaddrinfo(0, "8282", &hints, &bind_address);
+	getaddrinfo(av[1], av[2], &hints, &bind_address);
 
 	std::cout << "Creating socket.." << std::endl;
 	int socket_listen;
@@ -25,7 +25,7 @@ int main() {
 	}
 	freeaddrinfo(bind_address);
 
-	std::cout << "Listening.." << std::endl;
+	std::cout << "Listening on " << av[1] << "::" << av[2] << std::endl;
 	if(listen(socket_listen, 10) < 0) {
 		std::cout << "listen() failed.." << std::endl;
 		return(EXIT_FAILURE);
@@ -75,9 +75,10 @@ int main() {
 						close(i);
 						continue;
 					}
-					int j;
-					for (j = 0; j < bytes_received; ++j)
-							read[j] = toupper(read[j]);
+					std::cout << "Request :" << std::endl << std::endl;
+					std::string str(read , bytes_received);
+					std::cout << str << std::endl;
+					std::cout << "=================" << std::endl;
 					send(i, read, bytes_received, 0);
 				}
 			}
