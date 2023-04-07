@@ -6,9 +6,9 @@ void trimSpaces(std::string &line) {
 		i++;
 	line.erase(0, i);
 	i = line.size();
-	while(i > 0 && str::isspace(str[i-1]))
+	while(i > 0 && std::isspace(line[i-1]))
 		i--;
-	str.erase(i);
+	line.erase(i);
 }
 
 void Configuration::parser(char *configFilePath) {
@@ -22,7 +22,7 @@ void Configuration::parser(char *configFilePath) {
 	while(std::getline(file, line)) {
 		//strip comments if found
 		int pos = line.find("#");
-		if(pos != string::npos)
+		if(pos != std::string::npos)
 			line = line.substr(0, pos);
 
 		trimSpaces(line);
