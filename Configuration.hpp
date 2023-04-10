@@ -9,7 +9,7 @@
 
 class Configuration {
 	public :
-		void parser(char *configFilePath);
+		int parser(char *configFilePath);
 	private :
 		std::vector<Server> _Servers;	
 };
