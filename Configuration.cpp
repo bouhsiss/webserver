@@ -1,61 +1,55 @@
 #include "Configuration.hpp"
+#include "Http.hpp"
 
-void trimSpaces(std::string &line) {
-	line.erase(0, line.find_first_not_of(" \t\n\r\f\v"));
-	line.erase(line.find_last_not_of(" \t\n\r\f\v") + 1);
-}
-
-bool parseServerConfigLine(std::string line, Server& current_server) {
+bool Configuration::_extractServerConfigLine(std::string line, Server& current_server) {
 	int EqualSignPos = line.find('=');
 	if(EqualSignPos == std::string::npos)
 		return(false);
 	std::string key = line.substr(0, EqualSignPos);
 	std::string value = line.substr(EqualSignPos + 1);
-	trimSpaces(key);
-	trimSpaces(value);
-	if(key == "listen")
-		current_server.setListen(value);
+	Http::trimSpaces(key);
+	Http::trimSpaces(value);
+	if(key == "port")
+		current_server._port = value;
 	else if(key == "server_name")
-		current_server.setServerName(value);
+		Http::tokenize(value, " ", current_server._server_name);
 	else if(key == "host")
-		current_server.setHost(value);
-	else if(key == "erro_page")
-		current_server.setErrorPage(value);
+		current_server._host = value;
+	else if(key == "error_page")
+		Http::tokenize(value, " ", current_server._error_page);
 	else if(key == "client_body_size_limit")
-		current_server.setClienBodySizeLimit(value);
+		current_server._client_body_size_limit = std::stoi(value);
 	else
 		return(false);
 	return(true);
 }
 
-bool parseLocationConfigLine(std::string line, Location current_location) {
+bool Configuration::_extractLocationConfigLine(std::string line, Location& current_location) {
 	int EqualSignPos = line.find('=');
 	if(EqualSignPos == std::string::npos)
 		return(false);
 	std::string key = line.substr(0, EqualSignPos);
 	std::string value = line.substr(EqualSignPos + 1);
-	trimSpaces(key);
-	trimSpaces(value);
+	Http::trimSpaces(key);
+	Http::trimSpaces(value);
 	if(key == "path")
-		current_location.setPath(value);
+		current_location._path = value;
 	else if (key == "allowed_methods")
-		current_location.setAllowedMethods(value);
+		Http::tokenize(value, " ", current_location._allowed_methods);
 	else if(key == "root")
-		current_location.setRoot(value);
+		current_location._root = value;
 	else if(key == "index")
-		current_location.setIndex(value);
+		Http::tokenize(value, " ", current_location._index);
 	else if(key == "redirect")
-		current_location.setRedirect(value);
+		current_location._redirect = value;
 	else if(key == "autoindex")
-		current_location.setIndex(value);
-	else if(key == "default_file")
-		current_location.setDefaultFile(value);
+		current_location._autoindex = value;
 	else if(key == "upload_path")
-		current_location.setUploadPath(value);
+		current_location._upload_path = value;
 	else if(key == "cgi_extension")
-		current_location.setCgiExtension(value);
+		current_location._cgi_extension = value;
 	else if(key == "cgi_path")
-		current_location.setCgiPath(value);
+		current_location._cgi_path = value;
 	else
 		return(false);
 	return(true);
@@ -72,6 +66,10 @@ int Configuration::parser(char *configFilePath) {
 	Server currentServer;
 	Location currentLocation;
 
+	int openedBraces = 0;
+	int closedBraces = 0;
+	int braceCount = 0;
+
 	if(!file.is_open()) {
 		std::cout << "couldn't open file" << std::endl;
 		return(EXIT_FAILURE);
@@ -82,14 +80,15 @@ int Configuration::parser(char *configFilePath) {
 		if(pos != std::string::npos)
 			line = line.substr(0, pos);
 
-		trimSpaces(line);
+		Http::trimSpaces(line);
+
+		openedBraces = std::count(line.begin(), line.end(), '{');
+		closedBraces = std::count(line.begin(), line.end(), '}');
+		braceCount +=  (openedBraces - closedBraces);
 
 		if(line.empty())
 			continue ;
-		int openedBraces = std::count(line.begin(), line.end(), '{');
-		int closedBraces = std::count(line.begin(), line.end(), '}');
-		int braceCount = openedBraces - closedBraces;
-
+		
 		if(line.find("server") != std::string::npos) {
 			inServer = true;
 			currentServer = Server();
@@ -99,28 +98,48 @@ int Configuration::parser(char *configFilePath) {
 			currentLocation = Location();
 			int pathStart = line.find_first_of("/");
 			int pathEnd = line.find_last_of("{");
-			currentLocation.setPath(line.substr(pathStart, pathEnd - pathStart));
-			currentServer.addLocation(currentLocation);
+			currentLocation._path = line.substr(pathStart, pathEnd - pathStart);
 		}
-		else if(inLocation && braceCount == 0) {
+		else if(inLocation && braceCount == 1) {
 			inLocation = false;
-			currentServer.addLocation(currentLocation);
+			currentServer._Locations.push_back(currentLocation);
 		}
 		else if(inServer && braceCount == 0) {
 			inServer = false;
 			_Servers.push_back(currentServer);
 		}
 		else if(inServer && !inLocation) {
-			if(!parseServerConfigLine(line, currentServer)) {
+			if(!_extractServerConfigLine(line, currentServer)) {
 				std::cout << "invalid server block config line" << std::endl;
 				return(EXIT_FAILURE);
 			}
 		}
 		else if(inServer && inLocation) {
-			if(!parseLocationConfigLine(line, currentLocation)) {
+			if(!_extractLocationConfigLine(line, currentLocation)) {
 				std::cout << "invalid location block config line" << std::endl;
 				return(EXIT_FAILURE);
 			}
 		}
+		else {
+			std::cout << "a missing curly brace or invalid inheritance" << std::endl;
+			return(EXIT_FAILURE);
+		}
 	}
+	if(!hasServerDups()) {
+		std::cout << "configuration has some duplicated servers" << std::endl;
+		return(EXIT_FAILURE);
+	}
+	else
+		return(EXIT_SUCCESS);
+}
+
+bool Configuration::hasServerDups() {
+	std::set<std::pair<std::string, std::string> > noDups;
+	std::vector<Server>::const_iterator It;
+	for(It = _Servers.begin(); It != _Servers.end(); It++) {
+		std::pair<std::set<std::pair<std::string, std::string> >::iterator, bool> ret = noDups.insert(std::make_pair(It->_host, It->_port));
+		if(!ret.second)
+			return(false);
+	}
+	return(true);
 }
