@@ -89,10 +89,30 @@ int Configuration::parser(char *configFilePath) {
 			continue ;
 		
 		if(line.find("server {") != std::string::npos) {
+			/*---------- check if the server block is valid*/
+			if(braceCount != 1) {
+				std::cout << "missing curly brace in server block" << std::endl;
+				return(EXIT_FAILURE);
+			}
+			if(inServer || inLocation) {
+				std::cout << "server block Invalid inheritance" << std::endl;
+				return(EXIT_FAILURE);
+			}
 			inServer = true;
 			currentServer = Server();
 		}
-		else if(inServer && line.find("location /") != std::string::npos) {
+		else if(line.find("location /") != std::string::npos) {
+			/*---------- check if the location block is valid*/
+			if(braceCount != 2) {
+				std::cout << "missing curly brace in location block" << std::endl;
+				return(EXIT_FAILURE);
+			}
+			if(inLocation == true || inServer == false) {
+				std::cout << "location block Invalid inheritance " << std::endl;
+				std::cout << line << std::endl;
+				std::cout << currentServer << std::endl;
+				return(EXIT_FAILURE);
+			}
 			inLocation = true;
 			currentLocation = Location();
 			int pathStart = line.find_first_of("/");
@@ -110,17 +130,18 @@ int Configuration::parser(char *configFilePath) {
 		else if(inServer && !inLocation) {
 			if(!_extractServerConfigLine(line, currentServer)) {
 				std::cout << "invalid server block config line" << std::endl;
+				std::cout << line << std::endl;
 				return(EXIT_FAILURE);
 			}
 		}
-		else if(inServer && inLocation) {
+		else if(inLocation) {
 			if(!_extractLocationConfigLine(line, currentLocation)) {
 				std::cout << "invalid location block config line" << std::endl;
 				return(EXIT_FAILURE);
 			}
 		}
 		else {
-			std::cout << "a missing curly brace or invalid inheritance" << std::endl;
+			std::cout << "invalid syntax" << std::endl;
 			return(EXIT_FAILURE);
 		}
 	}
