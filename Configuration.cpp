@@ -1,5 +1,4 @@
 #include "Configuration.hpp"
-#include "Http.hpp"
 
 bool Configuration::_extractServerConfigLine(std::string line, Server& current_server) {
 	int EqualSignPos = line.find('=');
@@ -89,11 +88,11 @@ int Configuration::parser(char *configFilePath) {
 		if(line.empty())
 			continue ;
 		
-		if(line.find("server") != std::string::npos) {
+		if(line.find("server {") != std::string::npos) {
 			inServer = true;
 			currentServer = Server();
 		}
-		else if(inServer && line.find("location") != std::string::npos) {
+		else if(inServer && line.find("location /") != std::string::npos) {
 			inLocation = true;
 			currentLocation = Location();
 			int pathStart = line.find_first_of("/");
@@ -106,7 +105,7 @@ int Configuration::parser(char *configFilePath) {
 		}
 		else if(inServer && braceCount == 0) {
 			inServer = false;
-			_Servers.push_back(currentServer);
+			this->_Servers.push_back(currentServer);
 		}
 		else if(inServer && !inLocation) {
 			if(!_extractServerConfigLine(line, currentServer)) {
@@ -125,15 +124,10 @@ int Configuration::parser(char *configFilePath) {
 			return(EXIT_FAILURE);
 		}
 	}
-	if(!hasServerDups()) {
-		std::cout << "configuration has some duplicated servers" << std::endl;
-		return(EXIT_FAILURE);
-	}
-	else
-		return(EXIT_SUCCESS);
+	return(EXIT_SUCCESS);
 }
 
-bool Configuration::hasServerDups() {
+bool Configuration::serverHasDups() {
 	std::set<std::pair<std::string, std::string> > noDups;
 	std::vector<Server>::const_iterator It;
 	for(It = _Servers.begin(); It != _Servers.end(); It++) {
@@ -142,4 +136,20 @@ bool Configuration::hasServerDups() {
 			return(false);
 	}
 	return(true);
+}
+
+const std::vector<Server>& Configuration::getServers() {return(_Servers);}
+
+std::ostream& operator<<(std::ostream &out, Configuration& c) {
+	std::vector<Server>::iterator It;
+	std::vector<Server> servers = c.getServers();
+	out << "======================== CONFIGURATION ========================" << std::endl;
+	for(It = servers.begin(); It != servers.end(); It++) {
+		int serverCount = 0;
+		out << "------------- SERVER : " << serverCount << " -------------" << std::endl;
+		out << *It;
+		serverCount++;
+	}
+	out << "===============================================================" << std::endl;
+	return(out);
 }

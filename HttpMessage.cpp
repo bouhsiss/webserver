@@ -55,18 +55,3 @@ void HttpMessage::parse(const std::string& Message) {
 
 	}
 }
-
-/*
-// pseudo code
-
-  split messages  into lines with "\r\n"
-  check if there's something left in the message after the last "\r\n" and save it tpp
-
-  parse the start line
-
-  parse the rest
-  iterate through the lines and check if theres a line is empty which marks the end of the headers and start parsing the body
-  else
-  parse the header and add it to the headers map 
-  
-*/

@@ -4,8 +4,15 @@
 #include <map>
 #include "Location.hpp"
 
+
 class Server {
     public :
+		const std::vector<Location>& getLocations();
+		const std::vector<std::string>& getServerName();
+		const std::string& getHost() const;
+		const std::string& getPort() const;
+		const std::vector<std::string>& getErrorPage();
+		const size_t& getClientBodySizeLimit() const;
 
     private :
         std::vector<Location> _Locations;    
@@ -17,4 +24,4 @@ class Server {
 		friend  class Configuration;
 };
 
-//gotta implement an overload for << operator
+std::ostream& operator<<(std::ostream &out, Server& c);

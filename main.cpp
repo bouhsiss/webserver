@@ -7,5 +7,6 @@ int main(int ac, char **av) {
 	else {
 		Configuration globalConfig;
 		globalConfig.parser(av[1]);
+		std::cout << globalConfig << std::endl;
 	}
 }
