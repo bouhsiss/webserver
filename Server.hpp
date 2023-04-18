@@ -24,4 +24,8 @@ class Server {
 		friend  class Configuration;
 };
 
+//notes to keep in mind
+// if the port is not given the port 80 is assumed 
+// an empty abs_path is equivalent to "/"
+
 std::ostream& operator<<(std::ostream &out, Server& c);
