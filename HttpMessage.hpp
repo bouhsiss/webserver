@@ -1,9 +1,5 @@
 #pragma once
-
-#include <iostream>
-#include <string>
-#include <map>
-#include <vector>
+#include "Http.hpp"
 
 class HttpMessage {
 	public :

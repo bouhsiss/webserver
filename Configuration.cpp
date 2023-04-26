@@ -1,5 +1,6 @@
 #include "Configuration.hpp"
 
+
 bool Configuration::_extractServerConfigLine(std::string line, Server& current_server) {
 	int EqualSignPos = line.find('=');
 	if(EqualSignPos == std::string::npos)
@@ -54,7 +55,7 @@ bool Configuration::_extractLocationConfigLine(std::string line, Location& curre
 	return(true);
 }
 
-int Configuration::parser(char *configFilePath) {
+int Configuration::parse(std::string configFilePath, std::vector<Server> &servers) {
 	std::string conf(configFilePath);
 	std::ifstream file(conf);
 	std::string line;
@@ -125,7 +126,7 @@ int Configuration::parser(char *configFilePath) {
 		}
 		else if(inServer && braceCount == 0) {
 			inServer = false;
-			this->_Servers.push_back(currentServer);
+			servers.push_back(currentServer);
 		}
 		else if(inServer && !inLocation) {
 			if(!_extractServerConfigLine(line, currentServer)) {
@@ -148,29 +149,14 @@ int Configuration::parser(char *configFilePath) {
 	return(EXIT_SUCCESS);
 }
 
-bool Configuration::serverHasDups() {
-	std::set<std::pair<std::string, std::string> > noDups;
-	std::vector<Server>::const_iterator It;
-	for(It = _Servers.begin(); It != _Servers.end(); It++) {
-		std::pair<std::set<std::pair<std::string, std::string> >::iterator, bool> ret = noDups.insert(std::make_pair(It->_host, It->_port));
-		if(!ret.second)
-			return(false);
-	}
-	return(true);
-}
+// bool Configuration::serverHasDups() {
+// 	std::set<std::pair<std::string, std::string> > noDups;
+// 	std::vector<Server>::const_iterator It;
+// 	for(It = _Servers.begin(); It != _Servers.end(); It++) {
+// 		std::pair<std::set<std::pair<std::string, std::string> >::iterator, bool> ret = noDups.insert(std::make_pair(It->_host, It->_port));
+// 		if(!ret.second)
+// 			return(false);
+// 	}
+// 	return(true);
+// }
 
-const std::vector<Server>& Configuration::getServers() {return(_Servers);}
-
-std::ostream& operator<<(std::ostream &out, Configuration& c) {
-	std::vector<Server>::iterator It;
-	std::vector<Server> servers = c.getServers();
-	out << "======================== CONFIGURATION ========================" << std::endl;
-	for(It = servers.begin(); It != servers.end(); It++) {
-		int serverCount = 0;
-		out << "------------- SERVER : " << serverCount << " -------------" << std::endl;
-		out << *It;
-		serverCount++;
-	}
-	out << "===============================================================" << std::endl;
-	return(out);
-}

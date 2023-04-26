@@ -1,12 +1,14 @@
 #include"Http.hpp"
+#include "ServerFarm.hpp"
 
 
 int main(int ac, char **av) {
-	if(ac != 2)
+	if(ac > 2)
 		std::cout << "Usage : ./webserv <config file>" << std::endl;
 	else {
-		Configuration globalConfig;
-		globalConfig.parser(av[1]);
-		// std::cout << globalConfig << std::endl;
+		const char *configFilePath = (ac == 2) ? av[1] : DEFAULT_CONFIG_FILE;
+		ServerFarm *webserv = ServerFarm::getInstance();
+		
+		webserv->configure(std::string(configFilePath));
 	}
 }

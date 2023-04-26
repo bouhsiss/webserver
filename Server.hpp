@@ -2,8 +2,20 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <unistd.h>
 #include "Location.hpp"
+//addrinfo
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+//select()
+#include <sys/select.h>
 
+
+#define RED "\033[1;31m"
+#define BLUE "\033[1;34m"
+#define GREEN "\033[1;32m"
+#define RESET "\033[0m"
 
 class Server {
     public :
@@ -13,8 +25,14 @@ class Server {
 		const std::string& getPort() const;
 		const std::vector<std::string>& getErrorPage();
 		const size_t& getClientBodySizeLimit() const;
+		
+		Server();
+
+		void run();
 
     private :
+		int listenSocket;
+
         std::vector<Location> _Locations;    
         std::vector<std::string> _server_name;
         std::string _host;

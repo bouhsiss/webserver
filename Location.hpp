@@ -1,6 +1,5 @@
 #pragma once 
-#include <iostream>
-#include <vector>
+#include"Http.hpp"
 class Location {
     public :
 		const std::vector<std::string> getAllowedMethods();

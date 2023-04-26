@@ -1,7 +1,6 @@
- #pragma once
+#pragma once
+#include "Http.hpp"
 #include "HttpMessage.hpp"
-#include <iostream>
-#include <string>
 
 class Request : public HttpMessage {
 	public :
