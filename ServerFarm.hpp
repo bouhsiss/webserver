@@ -15,8 +15,8 @@ class ServerFarm {
 
 		static ServerFarm *instancePtr;
 
-		Configuration _Config;
-		std::vector<Server> _Servers;
+		Configuration _config;
+		std::vector<Server> _servers;
 };
 
 std::ostream& operator<<(std::ostream &out, ServerFarm& c);

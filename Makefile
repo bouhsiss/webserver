@@ -1,8 +1,8 @@
 NAME = webserv
-CC = clang++
+CC = c++
 CFLAGS = -fsanitize=address #-Wall -Wextra -Werror
 INCLUDES = 
-SRCS = Configuration.cpp HttpMessage.cpp Location.cpp Request.cpp Server.cpp Http.cpp  main.cpp ServerFarm.cpp
+SRCS = Configuration.cpp HttpMessage.cpp Location.cpp Request.cpp Server.cpp Http.cpp  main.cpp ServerFarm.cpp Exception.cpp
 
 all : $(NAME)
 

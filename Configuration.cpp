@@ -1,5 +1,5 @@
 #include "Configuration.hpp"
-
+#include "Exception.hpp"
 
 bool Configuration::_extractServerConfigLine(std::string line, Server& current_server) {
 	int EqualSignPos = line.find('=');
@@ -55,7 +55,7 @@ bool Configuration::_extractLocationConfigLine(std::string line, Location& curre
 	return(true);
 }
 
-int Configuration::parse(std::string configFilePath, std::vector<Server> &servers) {
+std::vector<Server> Configuration::parse(std::string configFilePath) {
 	std::string conf(configFilePath);
 	std::ifstream file(conf);
 	std::string line;
@@ -66,13 +66,14 @@ int Configuration::parse(std::string configFilePath, std::vector<Server> &server
 	Server currentServer;
 	Location currentLocation;
 
+	std::vector<Server> servers;
+
 	int openedBraces = 0;
 	int closedBraces = 0;
 	int braceCount = 0;
 
 	if(!file.is_open()) {
-		std::cout << "couldn't open file" << std::endl;
-		return(EXIT_FAILURE);
+		throw(Http::ConfigFileErrorException("Couldn't open file."));
 	}
 	while(std::getline(file, line)) {
 		//strip comments if found
@@ -92,12 +93,10 @@ int Configuration::parse(std::string configFilePath, std::vector<Server> &server
 		if(line.find("server {") != std::string::npos) {
 			/*---------- check if the server block is valid*/
 			if(braceCount != 1) {
-				std::cout << "missing curly brace in server block" << std::endl;
-				return(EXIT_FAILURE);
+				throw(Http::ConfigFileErrorException("missing curly brace in server block"));
 			}
 			if(inServer || inLocation) {
-				std::cout << "server block Invalid inheritance" << std::endl;
-				return(EXIT_FAILURE);
+				throw(Http::ConfigFileErrorException("server block Invalid inheritance"));
 			}
 			inServer = true;
 			currentServer = Server();
@@ -105,14 +104,10 @@ int Configuration::parse(std::string configFilePath, std::vector<Server> &server
 		else if(line.find("location /") != std::string::npos) {
 			/*---------- check if the location block is valid*/
 			if(braceCount != 2) {
-				std::cout << "missing curly brace in location block" << std::endl;
-				return(EXIT_FAILURE);
+				throw(Http::ConfigFileErrorException("missing curly brace in location block"));
 			}
 			if(inLocation == true || inServer == false) {
-				std::cout << "location block Invalid inheritance " << std::endl;
-				std::cout << line << std::endl;
-				std::cout << currentServer << std::endl;
-				return(EXIT_FAILURE);
+				throw(Http::ConfigFileErrorException("location block Invalid inheritance"));
 			}
 			inLocation = true;
 			currentLocation = Location();
@@ -130,33 +125,17 @@ int Configuration::parse(std::string configFilePath, std::vector<Server> &server
 		}
 		else if(inServer && !inLocation) {
 			if(!_extractServerConfigLine(line, currentServer)) {
-				std::cout << "invalid server block config line" << std::endl;
-				std::cout << line << std::endl;
-				return(EXIT_FAILURE);
+				throw(Http::ConfigFileErrorException("invalid server block config line"));
 			}
 		}
 		else if(inLocation) {
 			if(!_extractLocationConfigLine(line, currentLocation)) {
-				std::cout << "invalid location block config line" << std::endl;
-				return(EXIT_FAILURE);
+				throw(Http::ConfigFileErrorException("invalid location block config line"));
 			}
 		}
 		else {
-			std::cout << "invalid syntax" << std::endl;
-			return(EXIT_FAILURE);
+			throw(Http::ConfigFileErrorException("invalid syntax"));
 		}
 	}
-	return(EXIT_SUCCESS);
+	return servers;
 }
-
-// bool Configuration::serverHasDups() {
-// 	std::set<std::pair<std::string, std::string> > noDups;
-// 	std::vector<Server>::const_iterator It;
-// 	for(It = _Servers.begin(); It != _Servers.end(); It++) {
-// 		std::pair<std::set<std::pair<std::string, std::string> >::iterator, bool> ret = noDups.insert(std::make_pair(It->_host, It->_port));
-// 		if(!ret.second)
-// 			return(false);
-// 	}
-// 	return(true);
-// }
-

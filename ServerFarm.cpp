@@ -1,6 +1,6 @@
 #include "ServerFarm.hpp"
 
-const std::vector<Server>& ServerFarm::getServers() const {return(_Servers);}
+const std::vector<Server>& ServerFarm::getServers() const {return(_servers);}
 
 
 ServerFarm* ServerFarm::instancePtr = NULL;
@@ -18,7 +18,7 @@ ServerFarm *ServerFarm::getInstance() {
 }
 
 void ServerFarm::configure(std::string configFilepath) {
-	_Config.parse(configFilepath, this->_Servers);
+	this->_servers = _config.parse(configFilepath);
 }
 
 std::ostream& operator<<(std::ostream &out, ServerFarm& c) {
