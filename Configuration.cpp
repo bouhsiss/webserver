@@ -9,8 +9,10 @@ bool Configuration::_extractServerConfigLine(std::string line, Server& current_s
 	std::string value = line.substr(EqualSignPos + 1);
 	Http::trimSpaces(key);
 	Http::trimSpaces(value);
-	if(key == "port")
-		current_server._port = value;
+	std::vector<std::string> tokens;
+	
+	// if(key == "port")
+	// 	current_server._port = value;
 	else if(key == "server_name")
 		Http::tokenize(value, " ", current_server._server_name);
 	else if(key == "host")

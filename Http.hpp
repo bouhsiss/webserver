@@ -6,6 +6,8 @@
 #include<fstream>
 #include<map>
 #include <exception>
+#include <sys/socket.h>
+#include <netdb.h>
 
 #define DEFAULT_CONFIG_FILE "default.conf"
 
@@ -21,10 +23,12 @@
 namespace Http {
 	// custom exception for config file parsing errors. 
 	class ConfigFileErrorException : public std::runtime_error {
-	public :
-		ConfigFileErrorException(std::string msg) : std::runtime_error(msg) {}
+		public :
+			ConfigFileErrorException(std::string msg) : std::runtime_error(msg) {}
 	};
 
 	void tokenize(std::string const &str, const char* delim, std::vector<std::string>& out);
 	void trimSpaces(std::string &line);
-}
+	bool strIsNumber(const std::string &s);
+	void printAddr(struct addrinfo *peerAddress);
+};

@@ -1,11 +1,42 @@
 #include"Server.hpp"
 
 const std::vector<Location>& Server::getLocations() {return(_Locations);}
-const std::vector<std::string>& Server::getServerName() {return(_server_name);}
+const std::string& Server::getServerName() {return(_server_name);}
 const std::string& Server::getHost() const {return(_host);}
-const std::string& Server::getPort() const {return(_port);}
+const int& Server::getPort() const {return(_port);}
 const std::vector<std::string>& Server::getErrorPage() {return(_error_page);}
 const size_t& Server::getClientBodySizeLimit() const {return(_client_body_size_limit);}
+
+void Server::setPort(std::vector<std::string> &tokens) {
+	if(tokens.size() != 1 || !Http::strIsNumber(tokens[0]) || std::stoi(tokens[0]) < 0 || std::stoi(tokens[0]) > 1023 || this->_port != -1)
+		throw(Http::ConfigFileErrorException("Invalid port directive"));
+	this->_port = std::stoi(tokens[0]);
+}
+
+void Server::setServerName(std::vector<std::string> &tokens) {
+	if(tokens.size() != 1  || !_server_name.empty())
+		throw(Http::ConfigFileErrorException("empty server_name directive"));
+	this->_server_name = tokens[0];
+}
+
+void Server::setHost(std::vector<std::string> &tokens) {
+	if(tokens.size() != 1 || !this->_host.empty())
+		throw(Http::ConfigFileErrorException("invalid host directive"));
+	this->_host = tokens[0];
+}
+
+void Server::setErrorPage(std::vector<std::string> &tokens) {
+	if(tokens.empty())
+		throw(Http::ConfigFileErrorException("invalid error_page directive"));
+	this->_error_page = tokens;
+}
+
+void Server::setClientBodySizeLimit(std::vector<std::string> &tokens) {
+	if(tokens.size() != 1 || !Http::strIsNumber(tokens[0]) || std::stoi(tokens[0]) < 0 || this->_client_body_size_limit != -1)
+		throw(Http::ConfigFileErrorException("Invalid client body size limit directive"));
+	this->_client_body_size_limit = std::stoi(tokens[0]);
+}
+
 
 Server::Server() {
 	// struct addrinfo hints;
@@ -33,6 +64,10 @@ Server::Server() {
 	// 	std::cout << RED << "listen() failed.." << RESET << std::endl;
 	// 	return;
 	// }
+	this->_port = -1;
+	this->_host = "";
+	this->_client_body_size_limit = -1;
+	this->_server_name = "";
 }
 
 void Server::run() {
