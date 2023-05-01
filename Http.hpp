@@ -27,7 +27,7 @@ namespace Http {
 			ConfigFileErrorException(std::string msg) : std::runtime_error(msg) {}
 	};
 
-	void tokenize(std::string const &str, const char* delim, std::vector<std::string>& out);
+	std::vector<std::string> tokenize(std::string const &str, const char* delim);
 	void trimSpaces(std::string &line);
 	bool strIsNumber(const std::string &s);
 	void printAddr(struct addrinfo *peerAddress);

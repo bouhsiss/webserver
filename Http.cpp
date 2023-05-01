@@ -1,11 +1,13 @@
 #include "Http.hpp"
 
-void Http::tokenize(std::string const &str, const char* delim, std::vector<std::string>& out){
+std::vector<std::string> Http::tokenize(std::string const &str, const char* delim){
+	std::vector<std::string> out;
 	char *token = strtok(const_cast<char*>(str.c_str()), delim);
 	while(token != NULL) {
 		out.push_back(std::string(token));
 		token = strtok(NULL, delim);
 	}
+	return(out);
 }
 
 
@@ -16,10 +18,11 @@ void Http::trimSpaces(std::string &line) {
 
 bool Http::strIsNumber(const std::string &s) {
 	try {
-		std::stoi(s);
-		return (true);
+		size_t pos = 0;
+		std::stoi(s, &pos);
+		return pos == s.size();
 	}
-	catch (...) {
+	catch (const std::exception& e) {
 		return(false);
 	}
 }

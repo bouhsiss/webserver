@@ -2,22 +2,34 @@
 #include"Http.hpp"
 class Location {
     public :
-		const std::vector<std::string> getAllowedMethods();
-		const std::vector<std::string> getIndex();
+		Location();
+
 		const std::string getPath() const;
-		const std::string getRoot() const;
+		const std::vector<std::string> getAllowedMethods();
 		const std::string getRedirect() const;
+		const std::string getRoot() const;
 		const std::string getAutoIndex() const;
+		const std::string getIndex();
 		const std::string getUploadPath() const;
 		const std::string getCgiExtension() const;
 		const std::string getCgiPath() const;
+
+		void setPath(std::vector<std::string> const &tokens);
+		void setAllowedMethods(std::vector<std::string> const &tokens);
+		void setRedirect(std::vector<std::string> const &tokens);
+		void setRoot(std::vector<std::string> const &tokens);
+		void setAutoIndex(std::vector<std::string> const &tokens);
+		void setIndex(std::vector<std::string> const &tokens);
+		void setUploadPath(std::vector<std::string> const &tokens);
+		void setCgiExtension(std::vector<std::string> const &tokens);
+		void setCgiPath(std::vector<std::string> const &tokens);
     private :
         std::string _path;
         std::vector<std::string> _allowed_methods;
-        std::string _root;
-        std::vector<std::string> _index;
         std::string _redirect;
+        std::string _root;
         std::string _autoindex;
+        std::string _index;
         std::string _upload_path;
         std::string _cgi_extension;
         std::string _cgi_path;

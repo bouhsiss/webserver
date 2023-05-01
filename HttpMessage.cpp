@@ -2,9 +2,16 @@
 
 HttpMessage::HttpMessage() {}
 
-HttpMessage::HttpMessage(HttpMessage const& other) {}
+HttpMessage::HttpMessage(HttpMessage const& other) {
+	*this = other;
+}
 
-HttpMessage& HttpMessage::operator=(HttpMessage const& other) {return(*this);}
+HttpMessage& HttpMessage::operator=(HttpMessage const& other) {
+	this->_StartLine = other._StartLine;
+	this->_Headers = other._Headers;
+	this->_Body = other._Body;
+	return(*this);
+}
 
 HttpMessage::~HttpMessage() {}
 
@@ -24,7 +31,7 @@ void HttpMessage::parse(const std::string& Message) {
 	std::vector<std::string> lines;
 
 	int len;
-	int pos = 0;
+	size_t pos = 0;
 	while(Message.find("\r\n", pos) != std::string::npos) {
 		len = Message.find("\r\n", pos);
 		lines.push_back(Message.substr(pos , len - pos));
@@ -45,7 +52,7 @@ void HttpMessage::parse(const std::string& Message) {
 			break ;
 		}
 		else {
-			int colonPos;
+			size_t colonPos;
 			if((colonPos = It->find(":")) != std::string::npos) {
 				std::string name = It->substr(0, colonPos);
 				std::string value = It->substr(colonPos+1);

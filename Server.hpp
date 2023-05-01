@@ -15,18 +15,18 @@
 
 class Server {
     public :
-		const std::vector<Location>& getLocations();
+		const std::map<std::string, Location *>& getLocations();
 		const std::string& getServerName();
-		const std::string& Server::getHost() const;
-		const int& Server::getPort() const;
+		const std::string& getHost() const;
+		const int& getPort() const;
 		const std::vector<std::string>& getErrorPage();
-		const size_t& getClientBodySizeLimit() const;
+		const int& getClientBodySizeLimit() const;
 		
-		void setPort(std::vector<std::string> &tokens);
-		void setServerName(std::vector<std::string> &tokens);
-		void setHost(std::vector<std::string> &tokens);
-		void setErrorPage(std::vector<std::string> &tokens);
-		void setClientBodySizeLimit(std::vector<std::string> &tokens);
+		void setPort(std::vector<std::string> const &tokens);
+		void setServerName(std::vector<std::string> const &tokens);
+		void setHost(std::vector<std::string> const &tokens);
+		void setErrorPage(std::vector<std::string> const &tokens);
+		void setClientBodySizeLimit(std::vector<std::string> const &tokens);
 		
 
 		Server();
@@ -36,12 +36,12 @@ class Server {
     private :
 		int listenSocket;
 
-        std::vector<Location> _Locations;    
+		std::map<std::string, Location *> _Locations;
         std::string _server_name;
 		std::string _host;
 		int _port;
         std::vector<std::string> _error_page;
-        size_t _client_body_size_limit;
+        int _client_body_size_limit;
 		friend  class Configuration;
 };
 

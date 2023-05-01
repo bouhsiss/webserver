@@ -2,56 +2,55 @@
 #include "Exception.hpp"
 
 bool Configuration::_extractServerConfigLine(std::string line, Server& current_server) {
-	int EqualSignPos = line.find('=');
+	size_t EqualSignPos = line.find('=');
 	if(EqualSignPos == std::string::npos)
 		return(false);
 	std::string key = line.substr(0, EqualSignPos);
 	std::string value = line.substr(EqualSignPos + 1);
 	Http::trimSpaces(key);
 	Http::trimSpaces(value);
-	std::vector<std::string> tokens;
 	
-	// if(key == "port")
-	// 	current_server._port = value;
+
+	if(key == "port")
+		current_server.setPort(Http::tokenize(value, " "));
 	else if(key == "server_name")
-		Http::tokenize(value, " ", current_server._server_name);
+		current_server.setServerName(Http::tokenize(value, " "));
 	else if(key == "host")
-		current_server._host = value;
+		current_server.setHost(Http::tokenize(value, " "));
 	else if(key == "error_page")
-		Http::tokenize(value, " ", current_server._error_page);
+		current_server.setErrorPage(Http::tokenize(value, " "));
 	else if(key == "client_body_size_limit")
-		current_server._client_body_size_limit = std::stoi(value);
+		current_server.setClientBodySizeLimit(Http::tokenize(value, " "));
 	else
 		return(false);
 	return(true);
 }
 
 bool Configuration::_extractLocationConfigLine(std::string line, Location& current_location) {
-	int EqualSignPos = line.find('=');
+	size_t EqualSignPos = line.find('=');
 	if(EqualSignPos == std::string::npos)
 		return(false);
 	std::string key = line.substr(0, EqualSignPos);
 	std::string value = line.substr(EqualSignPos + 1);
 	Http::trimSpaces(key);
 	Http::trimSpaces(value);
-	if(key == "path")
-		current_location._path = value;
-	else if (key == "allowed_methods")
-		Http::tokenize(value, " ", current_location._allowed_methods);
-	else if(key == "root")
-		current_location._root = value;
-	else if(key == "index")
-		Http::tokenize(value, " ", current_location._index);
+
+	if(key == "allowed_methods")
+		current_location.setAllowedMethods(Http::tokenize(value, " "));
 	else if(key == "redirect")
-		current_location._redirect = value;
+		current_location.setRedirect(Http::tokenize(value, " "));
+	else if(key == "root")
+		current_location.setRoot(Http::tokenize(value, " "));
 	else if(key == "autoindex")
-		current_location._autoindex = value;
+		current_location.setAutoIndex(Http::tokenize(value, " "));
+	else if(key == "index")
+		current_location.setIndex(Http::tokenize(value, " "));
 	else if(key == "upload_path")
-		current_location._upload_path = value;
+		current_location.setUploadPath(Http::tokenize(value, " "));
 	else if(key == "cgi_extension")
-		current_location._cgi_extension = value;
+		current_location.setCgiExtension(Http::tokenize(value, " "));
 	else if(key == "cgi_path")
-		current_location._cgi_path = value;
+		current_location.setCgiPath(Http::tokenize(value, " "));
 	else
 		return(false);
 	return(true);
@@ -79,7 +78,7 @@ std::vector<Server> Configuration::parse(std::string configFilePath) {
 	}
 	while(std::getline(file, line)) {
 		//strip comments if found
-		int pos = line.find("#");
+		size_t pos = line.find("#");
 		if(pos != std::string::npos)
 			line = line.substr(0, pos);
 
@@ -103,7 +102,8 @@ std::vector<Server> Configuration::parse(std::string configFilePath) {
 			inServer = true;
 			currentServer = Server();
 		}
-		else if(line.find("location /") != std::string::npos) {
+		else if(line.find("location ") != std::string::npos) {
+
 			/*---------- check if the location block is valid*/
 			if(braceCount != 2) {
 				throw(Http::ConfigFileErrorException("missing curly brace in location block"));
@@ -115,11 +115,13 @@ std::vector<Server> Configuration::parse(std::string configFilePath) {
 			currentLocation = Location();
 			int pathStart = line.find_first_of("/");
 			int pathEnd = line.find_last_of("{");
-			currentLocation._path = line.substr(pathStart, pathEnd - pathStart);
+			currentLocation.setPath(Http::tokenize(line.substr(pathStart, pathEnd - pathStart), " "));
+			if(currentServer._Locations.find(currentLocation.getPath()) != currentServer._Locations.end())
+				throw(Http::ConfigFileErrorException("Location path duplicated"));
 		}
 		else if(inLocation && braceCount == 1) {
 			inLocation = false;
-			currentServer._Locations.push_back(currentLocation);
+			currentServer._Locations.insert(std::make_pair(currentLocation.getPath(), &currentLocation));
 		}
 		else if(inServer && braceCount == 0) {
 			inServer = false;
