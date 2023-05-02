@@ -23,6 +23,8 @@ class Location {
 		void setUploadPath(std::vector<std::string> const &tokens);
 		void setCgiExtension(std::vector<std::string> const &tokens);
 		void setCgiPath(std::vector<std::string> const &tokens);
+
+		void isLocationValid();
     private :
         std::string _path;
         std::vector<std::string> _allowed_methods;

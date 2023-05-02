@@ -27,7 +27,8 @@ class Server {
 		void setHost(std::vector<std::string> const &tokens);
 		void setErrorPage(std::vector<std::string> const &tokens);
 		void setClientBodySizeLimit(std::vector<std::string> const &tokens);
-		
+
+		void isServerValid();
 
 		Server();
 

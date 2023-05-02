@@ -128,6 +128,18 @@ void Server::run() {
 	}
 }
 
+void Server::isServerValid() {
+	if(_host.empty())
+		_host = "127.0.0.1";
+	if(_port == -1)
+		_port = 80;
+	if(_client_body_size_limit == -1)
+		throw(Http::ConfigFileErrorException("incomplete Server Configuration : client_body_size_limit directive missing"));
+	std::map<std::string, Location *>::iterator It;
+	for(It = _Locations.begin(); It != _Locations.end(); It++)
+		It->second->isLocationValid();
+}
+
 std::ostream& operator<<(std::ostream &out, Server &c) {
 	out << "======================== SERVER BLOCK ========================" << std::endl;
 	out << "      - server host : " << c.getHost() << std::endl;

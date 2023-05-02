@@ -113,7 +113,7 @@ std::vector<Server> Configuration::parse(std::string configFilePath) {
 			}
 			inLocation = true;
 			currentLocation = Location();
-			int pathStart = line.find_first_of("/");
+			int pathStart = 9;
 			int pathEnd = line.find_last_of("{");
 			currentLocation.setPath(Http::tokenize(line.substr(pathStart, pathEnd - pathStart), " "));
 			if(currentServer._Locations.find(currentLocation.getPath()) != currentServer._Locations.end())
@@ -125,6 +125,7 @@ std::vector<Server> Configuration::parse(std::string configFilePath) {
 		}
 		else if(inServer && braceCount == 0) {
 			inServer = false;
+			currentServer.isServerValid();
 			servers.push_back(currentServer);
 		}
 		else if(inServer && !inLocation) {
@@ -141,5 +142,12 @@ std::vector<Server> Configuration::parse(std::string configFilePath) {
 			throw(Http::ConfigFileErrorException("invalid syntax"));
 		}
 	}
+	areServersDuplicated();
 	return servers;
+}
+
+void Configuration::areServersDuplicated() {
+	/* 
+		-- add some code to check whether the config file has some servers duplicated (same host, port, server_name)  -- 
+	*/
 }

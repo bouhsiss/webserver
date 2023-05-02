@@ -83,6 +83,17 @@ void Location::setCgiPath(std::vector<std::string> const &tokens) {
 	this->_cgi_path = tokens[0];
 }
 
+void Location::isLocationValid() {
+	if(_path.empty())
+		throw(Http::ConfigFileErrorException("Incomplete location configuration : path value missing."));
+	if(std::find(_allowed_methods.begin(), _allowed_methods.end(), "GET") == _allowed_methods.end())
+		_allowed_methods.push_back("GET");
+	if(std::find(_allowed_methods.begin(), _allowed_methods.end(), "POST") == _allowed_methods.end())
+		_allowed_methods.push_back("POST");
+	if(_autoindex.empty())
+		throw(Http::ConfigFileErrorException("Incomplete location configuration : autoindex directive missing."));
+	// might need some checks
+}
 
 std::ostream& operator<<(std::ostream &out, Location &c) {
 	out << "======================== LOCATION BLOCK ========================" << std::endl;
