@@ -11,7 +11,7 @@ int main(int ac, char **av) {
 		try {
 			webserv->configure(configFilePath);
 		}
-		catch(Http::ConfigFileErrorException& e){
+		catch(Http::ConfigFileErrorException& e) {
 			std::cout << YELLOW << e.what() << RESET << std::endl;
 		}
 	}
