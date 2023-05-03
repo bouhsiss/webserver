@@ -32,7 +32,6 @@ class Server {
 
 		Server();
 
-		void run();
 
     private :
 		int listenSocket;
