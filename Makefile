@@ -14,6 +14,7 @@ clean :
 fclean: clean
 	@(rm -rf $(NAME))
 	@rm -rf *.dSYM
+	@rm -rf .DS_Store
 
 re:	fclean all
 
