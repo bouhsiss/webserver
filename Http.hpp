@@ -4,11 +4,12 @@
 #include<vector>
 #include<set>
 #include<fstream>
+#include<algorithm>
 #include<map>
-#include <exception>
-#include <sys/socket.h>
-#include <netdb.h>
-
+#include<exception>
+#include<sys/socket.h>
+#include<netdb.h>
+#include<cstring>
 #define DEFAULT_CONFIG_FILE "default.conf"
 
 

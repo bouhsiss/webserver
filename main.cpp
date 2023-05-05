@@ -10,6 +10,7 @@ int main(int ac, char **av) {
 		ServerFarm *webserv = ServerFarm::getInstance();
 		try {
 			webserv->configure(configFilePath);
+			webserv->initServers();
 		}
 		catch(Http::ConfigFileErrorException& e){
 			std::cout << YELLOW << e.what() << RESET << std::endl;

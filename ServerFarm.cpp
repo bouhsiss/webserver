@@ -21,6 +21,15 @@ void ServerFarm::configure(std::string configFilepath) {
 	this->_servers = _config.parse(configFilepath);
 }
 
+void ServerFarm::initServers() {
+	std::vector<Server>::iterator It;
+	for(It = _servers.begin(); It != _servers.end(); It++)
+	{
+		It->startListening();
+
+	}	
+}
+
 std::ostream& operator<<(std::ostream &out, ServerFarm& c) {
 	std::vector<Server>::iterator It;
 	std::vector<Server> servers = c.getServers();
