@@ -52,6 +52,50 @@ void ServerFarm::areServersDuplicated() {
 	}
 }
 
+
+// the main select() event loop
+void ServerFarm::runEventLoop() {
+	fd_set readFds;
+	fd_set writeFds;
+	int fdmax = 0;
+
+	FD_ZERO(&readFds);
+	FD_ZERO(&writeFds);
+	// add servers listening sockets to the readFds
+	std::map<int ,Server *>::iterator It;
+	for(It = _activeServers.begin(); It != _activeServers.end(); It++) {
+		FD_SET(It->first, &readFds);
+		fdmax = std::max(It->first, fdmax);
+	}
+	// reason we have tmp sets is because select() changes the set you pass into it
+	fd_set tmpReadFds;
+	fd_set tmpWriteFds;
+	while(true) {
+		tmpReadFds = readFds;
+		if(select(fdmax + 1, &tmpReadFds, &tmpWriteFds, NULL, NULL) == -1)
+			throw(Http::NetworkingErrorException(strerror(errno)));
+		for(It = _activeServers.begin(); It != _activeServers.end(); It++) {
+			int sockFd = It->first;
+			if(FD_ISSET(sockFd, &tmpReadFds)) {
+				// code to handle new connection and add the fd to the read fd set and  to the client Sockets vector
+			}
+		}
+		std::vector<int>::iterator vectIt;
+		for(vectIt = clientSockets.begin(); vectIt != clientSockets.end(); vectIt++) {
+			if(FD_ISSET(*vectIt, &readFds)) {
+				// code to handle the request and add the fd to the write fd set and to the write sockets
+			}
+		}
+
+		for(vectIt = writeSockets.begin(); vectIt != writeSockets.end(); vectIt++) {
+			if(FD_ISSET(*vectIt, &tmpWriteFds)) {
+				// code to send response to client and remove the fd from the vector and the write fds
+			}
+		}
+
+	}
+}
+
 std::ostream& operator<<(std::ostream &out, ServerFarm& c) {
 	std::vector<Server>::iterator It;
 	std::vector<Server> servers = c.getServers();
