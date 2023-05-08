@@ -91,7 +91,7 @@ void Location::isLocationValid() {
 	if(std::find(_allowed_methods.begin(), _allowed_methods.end(), "POST") == _allowed_methods.end())
 		_allowed_methods.push_back("POST");
 	if(_autoindex.empty())
-		throw(Http::ConfigFileErrorException("Incomplete location configuration : autoindex directive missing."));
+		_autoindex = "off";
 	// might need some checks
 }
 

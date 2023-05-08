@@ -13,10 +13,14 @@ class ServerFarm {
 		void operator=(const ServerFarm &other);
 		ServerFarm();
 
+		bool isServerActive(Server &server);
+		void areServersDuplicated();
+
 		static ServerFarm *instancePtr;
 
 		Configuration _config;
 		std::vector<Server> _servers;
+		std::map<int, Server *> _activeServers;
 
 };
 

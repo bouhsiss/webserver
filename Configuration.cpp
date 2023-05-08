@@ -1,5 +1,4 @@
 #include "Configuration.hpp"
-#include "Exception.hpp"
 
 bool Configuration::_extractServerConfigLine(std::string line, Server& current_server) {
 	size_t EqualSignPos = line.find('=');
@@ -130,24 +129,17 @@ std::vector<Server> Configuration::parse(std::string configFilePath) {
 		}
 		else if(inServer && !inLocation) {
 			if(!_extractServerConfigLine(line, currentServer)) {
-				throw(Http::ConfigFileErrorException("invalid server block config line"));
+				throw(Http::ConfigFileErrorException("invalid server block config line : " + line));
 			}
 		}
 		else if(inLocation) {
 			if(!_extractLocationConfigLine(line, currentLocation)) {
-				throw(Http::ConfigFileErrorException("invalid location block config line"));
+				throw(Http::ConfigFileErrorException("invalid location block config line : " + line));
 			}
 		}
 		else {
 			throw(Http::ConfigFileErrorException("invalid syntax"));
 		}
 	}
-	areServersDuplicated();
 	return servers;
-}
-
-void Configuration::areServersDuplicated() {
-	/* 
-		-- add some code to check whether the config file has some servers duplicated (same host, port, server_name)  -- 
-	*/
 }

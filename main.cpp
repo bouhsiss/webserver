@@ -12,8 +12,11 @@ int main(int ac, char **av) {
 			webserv->configure(configFilePath);
 			webserv->initServers();
 		}
-		catch(Http::ConfigFileErrorException& e){
-			std::cout << YELLOW << e.what() << RESET << std::endl;
+		catch(Http::ConfigFileErrorException& e) {
+			std::cout << YELLOW << "Config : " << e.what() << RESET << std::endl;
+		}
+		catch(Http::NetworkingErrorException& e) {
+			std::cout << YELLOW << "Networking : " << e.what() << RESET << std::endl;
 		}
 	}
 }

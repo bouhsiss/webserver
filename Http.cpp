@@ -30,6 +30,7 @@ bool Http::strIsNumber(const std::string &s) {
 void Http::printAddr(struct addrinfo *peerAddress) {
 	struct addrinfo *address = peerAddress;
 	char addressBuffer[100];
+
 	getnameinfo(address->ai_addr, address->ai_addrlen, addressBuffer,sizeof(addressBuffer), 0, 0, NI_NUMERICHOST);
 	std::cout << YELLOW << "Remote addresss is : " << addressBuffer << RESET << std::endl;
 }

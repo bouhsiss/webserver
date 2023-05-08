@@ -6,9 +6,10 @@ const std::string& Server::getHost() const {return(_host);}
 const std::string& Server::getPort() const {return(_port);}
 const std::vector<std::string>& Server::getErrorPage() {return(_error_page);}
 const int& Server::getClientBodySizeLimit() const {return(_client_body_size_limit);}
+const int& Server::getListenSocket() const {return(_listenSocket);}
 
 void Server::setPort(std::vector<std::string> const &tokens) {
-	if(tokens.size() != 1 || !Http::strIsNumber(tokens[0]) || ( std::stoi(tokens[0]) < 1023 && std::stoi(tokens[0]) != 80 && std::stoi(tokens[0]) != 443) || !this->_port.empty())
+	if(tokens.size() != 1 || !Http::strIsNumber(tokens[0]) || ( std::stoi(tokens[0]) < 1024 && std::stoi(tokens[0]) != 80 && std::stoi(tokens[0]) != 443 && std::stoi(tokens[0]) > 65535) || !this->_port.empty())
 		throw(Http::ConfigFileErrorException("Invalid port directive"));
 	this->_port = tokens[0];
 }
@@ -61,7 +62,7 @@ void Server::isServerValid() {
 		It->second->isLocationValid();
 }
 
-void Server::startListening() {
+void Server::setupListenSocket() {
 	struct addrinfo hints, *res;
 	std::cout << GREEN << "Configuring local address..." << RESET << std::endl;
 	memset(&hints, 0, sizeof(hints));
@@ -69,19 +70,23 @@ void Server::startListening() {
 	hints.ai_socktype = SOCK_STREAM;
 	int status = getaddrinfo(_host.c_str(), _port.c_str(), &hints, &res);
 	if(status)
-		throw(Http::ConfigFileErrorException("getaddrinfo error :" + std::string(gai_strerror(status))));
+		throw(Http::NetworkingErrorException("getaddrinfo error :" + std::string(gai_strerror(status))));
 	std::cout << GREEN << "Creating listening socket.." << RESET << std::endl;
-	listenSocket = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-	if(listenSocket < 0)
-		throw(Http::ConfigFileErrorException("socket() failed"));
+	_listenSocket = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+	if(_listenSocket < 0)
+		throw(Http::NetworkingErrorException("socket() failed"));
+	// avoid the bind failure (address already in use)
+	int yes = 1;
+	if(setsockopt(_listenSocket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1)
+		throw(Http::NetworkingErrorException("setsockopt() failed.."));
 	std::cout << GREEN << "Binding socket to local address.. " << RESET << std::endl;
-	if(bind(listenSocket, res->ai_addr, res->ai_addrlen))
-		throw(Http::ConfigFileErrorException("bind() failed.."));
-	freeaddrinfo(res);
+	if(bind(_listenSocket, res->ai_addr, res->ai_addrlen) < 0)
+		throw(Http::NetworkingErrorException("bind() to : " + _host + "  failed"));
 	std::cout << GREEN << "Listening on " << RESET << std::endl;
 	Http::printAddr(res);
-	if(listen(listenSocket, 10) < 0)
-		throw(Http::ConfigFileErrorException("listen() failed") );
+	freeaddrinfo(res);
+	if(listen(_listenSocket, BACKLOG) < 0)
+		throw(Http::NetworkingErrorException("listen() failed") );
 }
 
 std::ostream& operator<<(std::ostream &out, Server &c) {

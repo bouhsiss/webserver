@@ -21,6 +21,7 @@ class Server {
 		const std::string& getPort() const;
 		const std::vector<std::string>& getErrorPage();
 		const int& getClientBodySizeLimit() const;
+		const int& getListenSocket() const;
 		
 		void setPort(std::vector<std::string> const &tokens);
 		void setServerName(std::vector<std::string> const &tokens);
@@ -29,13 +30,13 @@ class Server {
 		void setClientBodySizeLimit(std::vector<std::string> const &tokens);
 
 		void isServerValid();
-		void startListening();
+		void setupListenSocket();
 
 		Server();
 
 
     private :
-		int listenSocket;
+		int _listenSocket;
 
 		std::map<std::string, Location *> _Locations;
         std::string _server_name;

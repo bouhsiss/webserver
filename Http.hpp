@@ -10,8 +10,9 @@
 #include<sys/socket.h>
 #include<netdb.h>
 #include<cstring>
-#define DEFAULT_CONFIG_FILE "default.conf"
 
+#define DEFAULT_CONFIG_FILE "default.conf"
+#define BACKLOG 10
 
 #define RED "\033[1;31m"
 #define BLUE "\033[1;34m"
@@ -22,10 +23,24 @@
 #define CYAN "\033[36m"
 
 namespace Http {
-	// custom exception for config file parsing errors. 
-	class ConfigFileErrorException : public std::runtime_error {
+	// custom exception for config file parsing errors.
+	class HttpException : public std::exception {
+		private : 
+			std::string _message;
 		public :
-			ConfigFileErrorException(std::string msg) : std::runtime_error(msg) {}
+			HttpException(std::string message) : _message(message) {}
+			const char *what() const throw() {return(_message.c_str());}
+			~HttpException() throw() {}
+	};
+
+	class ConfigFileErrorException : public Http::HttpException {
+		public :
+			ConfigFileErrorException(std::string msg) : Http::HttpException(msg) {}
+	};
+
+	class NetworkingErrorException : public Http::HttpException {
+		public :
+			NetworkingErrorException(std::string msg) : Http::HttpException(msg) {}
 	};
 
 	std::vector<std::string> tokenize(std::string const &str, const char* delim);

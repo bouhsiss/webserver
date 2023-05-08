@@ -9,7 +9,6 @@ class Configuration {
 	private :
 		bool _extractServerConfigLine(std::string line, Server& current_server);
 		bool _extractLocationConfigLine(std::string line, Location& current_location);
-		void areServersDuplicated();
 };
 
 // add a function to check for duplicates when host and ports are similar
