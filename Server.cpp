@@ -84,6 +84,7 @@ void Server::setupListenSocket() {
 		throw(Http::NetworkingErrorException("bind() to : " + _host + "  failed"));
 	std::cout << GREEN << "Listening on " << RESET << std::endl;
 	Http::printAddr(res);
+	std::cout << YELLOW << "Remote port is : " << _port << RESET << std::endl;
 	freeaddrinfo(res);
 	if(listen(_listenSocket, BACKLOG) < 0)
 		throw(Http::NetworkingErrorException("listen() failed") );

@@ -10,6 +10,7 @@
 #include<sys/socket.h>
 #include<netdb.h>
 #include<cstring>
+#include<sstream>
 
 #define DEFAULT_CONFIG_FILE "default.conf"
 #define BACKLOG 10

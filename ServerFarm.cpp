@@ -26,7 +26,7 @@ void ServerFarm::initServers() {
 	std::vector<Server>::iterator It;
 	for(It = _servers.begin(); It != _servers.end(); It++)
 	{
-		if(isServerActive(*It))
+		if(!isServerActive(*It))
 			It->setupListenSocket(); // check whether there's an already open listening socket listening to this host:port
 		_activeServers.insert(std::make_pair(It->getListenSocket(), &(*It)));
 	}
@@ -52,7 +52,21 @@ void ServerFarm::areServersDuplicated() {
 	}
 }
 
+std::string defaultResponse() {
+	std::ifstream html_file("default.html");
+	std::stringstream buffer;
+	buffer << html_file.rdbuf();
+	html_file.close();
+	std::string html_contents = buffer.str();
 
+	std::string response_headers = "HTTP/1.1 200 OK\r\n"
+                               "Content-Type: text/html\r\n"
+                               "Content-Length: " + std::to_string(html_contents.length()) + "\r\n"
+                               "\r\n";
+
+	std::string response = response_headers + html_contents;
+	return (response);
+}
 // the main select() event loop
 void ServerFarm::runEventLoop() {
 	fd_set readFds;
@@ -67,31 +81,69 @@ void ServerFarm::runEventLoop() {
 		FD_SET(It->first, &readFds);
 		fdmax = std::max(It->first, fdmax);
 	}
-	// reason we have tmp sets is because select() changes the set you pass into it
+	//tmp sets because select() changes the set you pass into 
 	fd_set tmpReadFds;
 	fd_set tmpWriteFds;
 	while(true) {
 		tmpReadFds = readFds;
+		tmpWriteFds = writeFds;
 		if(select(fdmax + 1, &tmpReadFds, &tmpWriteFds, NULL, NULL) == -1)
 			throw(Http::NetworkingErrorException(strerror(errno)));
+		
+		// priority to this loop, since the writeFds from previous iteration won't  notify until the next one
+		for(It = _writeSockets.begin(); It != _writeSockets.end(); It++) {
+			int writeSock = It->first;
+			if(FD_ISSET(writeSock, &tmpWriteFds)) {
+				// code to handle response to client and remove the fd from the or and the write fds
+				if(send( writeSock, defaultResponse().c_str(), defaultResponse().length(), 0 ) < 0)
+				{	FD_CLR(writeSock, &writeFds);
+					close(writeSock);
+					throw(Http::NetworkingErrorException("send failed"));
+				}
+				FD_CLR(writeSock, &writeFds);
+			}
+		}
+
 		for(It = _activeServers.begin(); It != _activeServers.end(); It++) {
 			int sockFd = It->first;
 			if(FD_ISSET(sockFd, &tmpReadFds)) {
 				// code to handle new connection and add the fd to the read fd set and  to the client Sockets vector
+				int clientSocket = accept(sockFd, NULL, NULL);
+				if(clientSocket < 0)
+					throw(Http::NetworkingErrorException(strerror(errno)));
+				FD_SET(clientSocket, &readFds);
+				_clientSockets.insert(std::make_pair(clientSocket, It->second));
+				// clientSockets.push_back(clientSocket);
+				if(clientSocket > fdmax)
+					fdmax = clientSocket;
+				std::cout << CYAN << "new connection from server : " << It->second->getHost() << ":" << It->second->getPort() << RESET << std::endl;
 			}
 		}
-		std::vector<int>::iterator vectIt;
-		for(vectIt = clientSockets.begin(); vectIt != clientSockets.end(); vectIt++) {
-			if(FD_ISSET(*vectIt, &readFds)) {
+		for(It = _clientSockets.begin(); It != _clientSockets.end(); It++) {
+			int clientSock = It->first;
+			if(FD_ISSET(clientSock, &tmpReadFds)) {
 				// code to handle the request and add the fd to the write fd set and to the write sockets
-			}
-		}
+				int clientBodySizeLimit = It->second->getClientBodySizeLimit();
+				char read[clientBodySizeLimit];
+				int bytesReceived = recv(clientSock, read, clientBodySizeLimit, 0);
+				if(bytesReceived < 0)
+					throw(Http::NetworkingErrorException("recv() failed"));
+				else if(!bytesReceived) {
+					FD_CLR(clientSock, &readFds);
+					close(clientSock);
+				}
+				else {
+					std::cout << "==================== REQUEST ========================= " << std::endl << std::endl;
+					std::string str(read, bytesReceived);
+					std::cout << MAGENTA << str << RESET << std::endl;
+					std::cout << "=======================================================" << std::endl;
+					FD_SET(clientSock, &writeFds); 
+					_writeSockets.insert(std::make_pair(clientSock, It->second));
+				}
 
-		for(vectIt = writeSockets.begin(); vectIt != writeSockets.end(); vectIt++) {
-			if(FD_ISSET(*vectIt, &tmpWriteFds)) {
-				// code to send response to client and remove the fd from the vector and the write fds
 			}
 		}
+		
 
 	}
 }
