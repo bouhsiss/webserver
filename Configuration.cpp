@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Configuration.cpp                                  :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: hbouhsis <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2023/05/10 09:40:27 by hbouhsis          #+#    #+#             */
+/*   Updated: 2023/05/10 09:40:30 by hbouhsis         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "Configuration.hpp"
 
 bool Configuration::_extractServerConfigLine(std::string line, Server& current_server) {

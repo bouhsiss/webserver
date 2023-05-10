@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   ServerFarm.cpp                                     :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: hbouhsis <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2023/05/10 09:42:24 by hbouhsis          #+#    #+#             */
+/*   Updated: 2023/05/10 09:42:26 by hbouhsis         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "ServerFarm.hpp"
 
 const std::vector<Server>& ServerFarm::getServers() const {return(_servers);}
@@ -5,7 +17,10 @@ const std::vector<Server>& ServerFarm::getServers() const {return(_servers);}
 
 ServerFarm* ServerFarm::instancePtr = NULL;
 
-ServerFarm::ServerFarm() {}
+ServerFarm::ServerFarm() {
+	FD_ZERO(&_readFds);
+	FD_ZERO(&_writeFds);
+}
 
 ServerFarm *ServerFarm::getInstance() {
 	if (instancePtr == NULL) {
@@ -67,84 +82,96 @@ std::string defaultResponse() {
 	std::string response = response_headers + html_contents;
 	return (response);
 }
+
+
+void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
+	std::map<int, Server*>::iterator It;
+	for(It = _writeSockets.begin(); It != _writeSockets.end(); It++) {
+		int writeSock = It->first;
+		if(FD_ISSET(writeSock, tmpWriteFds)) {
+			if(FD_ISSET(writeSock, tmpWriteFds)) {
+				// code to handle response to client and remove the fd from the or and the write fds
+				if(send( writeSock, defaultResponse().c_str(), defaultResponse().length(), 0 ) < 0)
+				{	FD_CLR(writeSock, &_writeFds);
+					close(writeSock);
+					throw(Http::NetworkingErrorException("send failed"));
+				}
+				FD_CLR(writeSock, &_writeFds);
+			}
+		}
+	}
+}
+
+void ServerFarm::handleNewClient(fd_set *tmpReadFds, int *fdmax) {
+	std::map<int, Server *>::iterator It;
+	for(It = _activeServers.begin(); It != _activeServers.end(); It++) {
+		int sockFd = It->first;
+		if(FD_ISSET(sockFd, tmpReadFds)) {
+			// code to handle new connection and add the fd to the read fd set and  to the client Sockets vector
+			int clientSocket = accept(sockFd, NULL, NULL);
+			if(clientSocket < 0)
+				throw(Http::NetworkingErrorException(strerror(errno)));
+			FD_SET(clientSocket, &_readFds);
+			_clientSockets.insert(std::make_pair(clientSocket, It->second));
+			// clientSockets.push_back(clientSocket);
+			if(clientSocket > *fdmax)
+				*fdmax = clientSocket;
+			std::cout << CYAN << "new connection from server : " << It->second->getHost() << ":" << It->second->getPort() << RESET << std::endl;
+		}
+	}
+}
+
+void ServerFarm::handleRequest(fd_set *tmpReadFds) {
+	std::map<int, Server*>::iterator It;
+	for(It = _clientSockets.begin(); It != _clientSockets.end(); It++) {
+		int clientSock = It->first;
+		if(FD_ISSET(clientSock, tmpReadFds)) {
+			// code to handle the request and add the fd to the write fd set and to the write sockets
+			int clientBodySizeLimit = It->second->getClientBodySizeLimit();
+			char read[clientBodySizeLimit];
+			int bytesReceived = recv(clientSock, read, clientBodySizeLimit, 0);
+			if(bytesReceived < 0)
+				throw(Http::NetworkingErrorException("recv() failed"));
+			else if(!bytesReceived) {
+				FD_CLR(clientSock, &_readFds);
+				close(clientSock);
+			}
+			else {
+				std::cout << "==================== REQUEST ========================= " << std::endl << std::endl;
+				std::string str(read, bytesReceived);
+				std::cout << MAGENTA << str << RESET << std::endl;
+				std::cout << "=======================================================" << std::endl;
+				FD_SET(clientSock, &_writeFds); 
+				_writeSockets.insert(std::make_pair(clientSock, It->second));
+			}
+
+		}
+	}
+}
+
 // the main select() event loop
 void ServerFarm::runEventLoop() {
-	fd_set readFds;
-	fd_set writeFds;
 	int fdmax = 0;
 
-	FD_ZERO(&readFds);
-	FD_ZERO(&writeFds);
 	// add servers listening sockets to the readFds
 	std::map<int ,Server *>::iterator It;
 	for(It = _activeServers.begin(); It != _activeServers.end(); It++) {
-		FD_SET(It->first, &readFds);
+		FD_SET(It->first, &_readFds);
 		fdmax = std::max(It->first, fdmax);
 	}
 	//tmp sets because select() changes the set you pass into 
 	fd_set tmpReadFds;
 	fd_set tmpWriteFds;
 	while(true) {
-		tmpReadFds = readFds;
-		tmpWriteFds = writeFds;
+		tmpReadFds = _readFds;
+		tmpWriteFds = _writeFds;
 		if(select(fdmax + 1, &tmpReadFds, &tmpWriteFds, NULL, NULL) == -1)
 			throw(Http::NetworkingErrorException(strerror(errno)));
 		
 		// priority to this loop, since the writeFds from previous iteration won't  notify until the next one
-		for(It = _writeSockets.begin(); It != _writeSockets.end(); It++) {
-			int writeSock = It->first;
-			if(FD_ISSET(writeSock, &tmpWriteFds)) {
-				// code to handle response to client and remove the fd from the or and the write fds
-				if(send( writeSock, defaultResponse().c_str(), defaultResponse().length(), 0 ) < 0)
-				{	FD_CLR(writeSock, &writeFds);
-					close(writeSock);
-					throw(Http::NetworkingErrorException("send failed"));
-				}
-				FD_CLR(writeSock, &writeFds);
-			}
-		}
-
-		for(It = _activeServers.begin(); It != _activeServers.end(); It++) {
-			int sockFd = It->first;
-			if(FD_ISSET(sockFd, &tmpReadFds)) {
-				// code to handle new connection and add the fd to the read fd set and  to the client Sockets vector
-				int clientSocket = accept(sockFd, NULL, NULL);
-				if(clientSocket < 0)
-					throw(Http::NetworkingErrorException(strerror(errno)));
-				FD_SET(clientSocket, &readFds);
-				_clientSockets.insert(std::make_pair(clientSocket, It->second));
-				// clientSockets.push_back(clientSocket);
-				if(clientSocket > fdmax)
-					fdmax = clientSocket;
-				std::cout << CYAN << "new connection from server : " << It->second->getHost() << ":" << It->second->getPort() << RESET << std::endl;
-			}
-		}
-		for(It = _clientSockets.begin(); It != _clientSockets.end(); It++) {
-			int clientSock = It->first;
-			if(FD_ISSET(clientSock, &tmpReadFds)) {
-				// code to handle the request and add the fd to the write fd set and to the write sockets
-				int clientBodySizeLimit = It->second->getClientBodySizeLimit();
-				char read[clientBodySizeLimit];
-				int bytesReceived = recv(clientSock, read, clientBodySizeLimit, 0);
-				if(bytesReceived < 0)
-					throw(Http::NetworkingErrorException("recv() failed"));
-				else if(!bytesReceived) {
-					FD_CLR(clientSock, &readFds);
-					close(clientSock);
-				}
-				else {
-					std::cout << "==================== REQUEST ========================= " << std::endl << std::endl;
-					std::string str(read, bytesReceived);
-					std::cout << MAGENTA << str << RESET << std::endl;
-					std::cout << "=======================================================" << std::endl;
-					FD_SET(clientSock, &writeFds); 
-					_writeSockets.insert(std::make_pair(clientSock, It->second));
-				}
-
-			}
-		}
-		
-
+		handleResponse(&tmpWriteFds);
+		handleNewClient(&tmpReadFds, &fdmax);
+		handleRequest(&tmpReadFds);
 	}
 }
 
