@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Http.cpp                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: hbouhsis <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2023/05/10 09:40:52 by hbouhsis          #+#    #+#             */
+/*   Updated: 2023/05/10 09:40:55 by hbouhsis         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "Http.hpp"
 
 std::vector<std::string> Http::tokenize(std::string const &str, const char* delim){
@@ -30,6 +42,7 @@ bool Http::strIsNumber(const std::string &s) {
 void Http::printAddr(struct addrinfo *peerAddress) {
 	struct addrinfo *address = peerAddress;
 	char addressBuffer[100];
+
 	getnameinfo(address->ai_addr, address->ai_addrlen, addressBuffer,sizeof(addressBuffer), 0, 0, NI_NUMERICHOST);
 	std::cout << YELLOW << "Remote addresss is : " << addressBuffer << RESET << std::endl;
 }

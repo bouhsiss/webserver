@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Configuration.cpp                                  :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: hbouhsis <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2023/05/10 09:40:27 by hbouhsis          #+#    #+#             */
+/*   Updated: 2023/05/10 09:40:30 by hbouhsis         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "Configuration.hpp"
 
 bool Configuration::_extractServerConfigLine(std::string line, Server& current_server) {
@@ -129,24 +141,17 @@ std::vector<Server> Configuration::parse(std::string configFilePath) {
 		}
 		else if(inServer && !inLocation) {
 			if(!_extractServerConfigLine(line, currentServer)) {
-				throw(Http::ConfigFileErrorException("invalid server block config line"));
+				throw(Http::ConfigFileErrorException("invalid server block config line : " + line));
 			}
 		}
 		else if(inLocation) {
 			if(!_extractLocationConfigLine(line, currentLocation)) {
-				throw(Http::ConfigFileErrorException("invalid location block config line"));
+				throw(Http::ConfigFileErrorException("invalid location block config line : " + line));
 			}
 		}
 		else {
 			throw(Http::ConfigFileErrorException("invalid syntax"));
 		}
 	}
-	areServersDuplicated();
 	return servers;
-}
-
-void Configuration::areServersDuplicated() {
-	/* 
-		-- add some code to check whether the config file has some servers duplicated (same host, port, server_name)  -- 
-	*/
 }

@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Location.cpp                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: hbouhsis <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2023/05/10 09:41:43 by hbouhsis          #+#    #+#             */
+/*   Updated: 2023/05/10 09:41:46 by hbouhsis         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "Location.hpp"
 
 Location::Location() {
@@ -91,7 +103,7 @@ void Location::isLocationValid() {
 	if(std::find(_allowed_methods.begin(), _allowed_methods.end(), "POST") == _allowed_methods.end())
 		_allowed_methods.push_back("POST");
 	if(_autoindex.empty())
-		throw(Http::ConfigFileErrorException("Incomplete location configuration : autoindex directive missing."));
+		_autoindex = "off";
 	// might need some checks
 }
 

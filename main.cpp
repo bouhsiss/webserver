@@ -10,9 +10,14 @@ int main(int ac, char **av) {
 		ServerFarm *webserv = ServerFarm::getInstance();
 		try {
 			webserv->configure(configFilePath);
+			webserv->initServers();
+			webserv->runEventLoop();
 		}
 		catch(Http::ConfigFileErrorException& e) {
-			std::cout << YELLOW << e.what() << RESET << std::endl;
+			std::cout << YELLOW << "Config : " << e.what() << RESET << std::endl;
+		}
+		catch(Http::NetworkingErrorException& e) {
+			std::cout << YELLOW << "Networking : " << e.what() << RESET << std::endl;
 		}
 	}
 }
