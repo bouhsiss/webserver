@@ -23,6 +23,7 @@
 #include<netdb.h>
 #include<cstring>
 #include<sstream>
+#include<fcntl.h>
 
 #define DEFAULT_CONFIG_FILE "default.conf"
 #define BACKLOG 10

@@ -86,19 +86,30 @@ std::string defaultResponse() {
 
 void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
 	std::map<int, Server*>::iterator It;
-	for(It = _writeSockets.begin(); It != _writeSockets.end(); It++) {
+	std::vector<int> keysToErase;
+	for(It = _writeSockets.begin(); It != _writeSockets.end(); ++It) {
 		int writeSock = It->first;
 		if(FD_ISSET(writeSock, tmpWriteFds)) {
 			if(FD_ISSET(writeSock, tmpWriteFds)) {
-				// code to handle response to client and remove the fd from the or and the write fds
 				if(send( writeSock, defaultResponse().c_str(), defaultResponse().length(), 0 ) < 0)
 				{	FD_CLR(writeSock, &_writeFds);
+					FD_CLR(writeSock, &_readFds);
 					close(writeSock);
+					_writeSockets.erase(writeSock);
+					_clientSockets.erase(writeSock);
 					throw(Http::NetworkingErrorException("send failed"));
 				}
 				FD_CLR(writeSock, &_writeFds);
+				keysToErase.push_back(writeSock);
+				// FD_CLR(writeSock, &_readFds);
+				// close(writeSock);
 			}
 		}
+	}
+	for(size_t i = 0; i < keysToErase.size(); i++)
+	{
+		_writeSockets.erase(keysToErase[i]);
+		// _clientSockets.erase(keysToErase[i]);
 	}
 }
 
@@ -107,13 +118,12 @@ void ServerFarm::handleNewClient(fd_set *tmpReadFds, int *fdmax) {
 	for(It = _activeServers.begin(); It != _activeServers.end(); It++) {
 		int sockFd = It->first;
 		if(FD_ISSET(sockFd, tmpReadFds)) {
-			// code to handle new connection and add the fd to the read fd set and  to the client Sockets vector
 			int clientSocket = accept(sockFd, NULL, NULL);
 			if(clientSocket < 0)
 				throw(Http::NetworkingErrorException(strerror(errno)));
 			FD_SET(clientSocket, &_readFds);
+			fcntl(clientSocket, F_SETFL, O_NONBLOCK);
 			_clientSockets.insert(std::make_pair(clientSocket, It->second));
-			// clientSockets.push_back(clientSocket);
 			if(clientSocket > *fdmax)
 				*fdmax = clientSocket;
 			std::cout << CYAN << "new connection from server : " << It->second->getHost() << ":" << It->second->getPort() << RESET << std::endl;
@@ -123,10 +133,10 @@ void ServerFarm::handleNewClient(fd_set *tmpReadFds, int *fdmax) {
 
 void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 	std::map<int, Server*>::iterator It;
+	std::vector<int> keysToErase;
 	for(It = _clientSockets.begin(); It != _clientSockets.end(); It++) {
 		int clientSock = It->first;
 		if(FD_ISSET(clientSock, tmpReadFds)) {
-			// code to handle the request and add the fd to the write fd set and to the write sockets
 			int clientBodySizeLimit = It->second->getClientBodySizeLimit();
 			char read[clientBodySizeLimit];
 			int bytesReceived = recv(clientSock, read, clientBodySizeLimit, 0);
@@ -134,6 +144,7 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 				throw(Http::NetworkingErrorException("recv() failed"));
 			else if(!bytesReceived) {
 				FD_CLR(clientSock, &_readFds);
+				
 				close(clientSock);
 			}
 			else {
@@ -143,9 +154,13 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 				std::cout << "=======================================================" << std::endl;
 				FD_SET(clientSock, &_writeFds); 
 				_writeSockets.insert(std::make_pair(clientSock, It->second));
+				// call the request parser and insert the client socket as key and the request object as value
 			}
 
 		}
+	}
+	for(size_t i = 0; i < keysToErase.size(); i++) {
+		_clientSockets.erase(keysToErase[i]);
 	}
 }
 
@@ -188,3 +203,16 @@ std::ostream& operator<<(std::ostream &out, ServerFarm& c) {
 	out << "===============================================================" << std::endl;
 	return(out);
 }
+
+
+/* persistent connections implementation cons : the connection will remain open until the client (in this case, siege) closes the connection, this means that the port will remain in use by the open connection, which reduces the number of available ports and can lead to the error : "[error] socket: 154005504 address is unavailable.: Can't assign requested address siege"  which leaves two choices : 
+	- either change the implementation to closing the connection once a response is sent . 
+	- or enable the keep-alive connections in siege configuration 
+*/
+
+
+/*
+keep-alive siege directive :
+	at a low level the directive tells siege to use persistent connections when communicating with the target server. specifically, it adds the "connection : keep-alive" header to each request sent by siege
+
+*/

@@ -47,5 +47,4 @@ class ServerFarm {
 
 std::ostream& operator<<(std::ostream &out, ServerFarm& c);
 
-
-// to be noted : might change the way server duplicates are handled depending if we're keeping the server_name or not
+// the write sockets map, will be changed to hold a request object as a value
