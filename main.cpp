@@ -1,11 +1,24 @@
 #include"Http.hpp"
 #include "ServerFarm.hpp"
 
+void signalHandler(int signum) {
+	std::cout << RED << "Interrupt signal (" << signum << ") received." << std::endl;
+	ServerFarm *webserv = ServerFarm::getInstance();
+
+	std::map<int, Server *> activeServers = webserv->getActiveServers();
+	std::map<int, Server *> clientSockets = webserv->getClientSockets();
+	std::map<int, Server*>::iterator It;
+	for(It = activeServers.begin(); It != activeServers.end(); It++)
+		close(It->first);
+	for(It = clientSockets.begin(); It != clientSockets.end(); It++)
+		close(It->first);
+}
 
 int main(int ac, char **av) {
 	if(ac > 2)
 		std::cout << "Usage : ./webserv <config file>" << std::endl;
 	else {
+		std::signal(SIGINT, signalHandler);
 		const char *configFilePath = (ac == 2) ? av[1] : DEFAULT_CONFIG_FILE;
 		ServerFarm *webserv = ServerFarm::getInstance();
 		try {

@@ -13,7 +13,8 @@
 #include "ServerFarm.hpp"
 
 const std::vector<Server>& ServerFarm::getServers() const {return(_servers);}
-
+const std::map<int, Server *>& ServerFarm::getActiveServers() const {return(_activeServers);}
+const std::map<int, Server *>& ServerFarm::getClientSockets() const {return(_clientSockets);}
 
 ServerFarm* ServerFarm::instancePtr = NULL;
 
@@ -31,6 +32,7 @@ ServerFarm *ServerFarm::getInstance() {
 		return(instancePtr);
 	}
 }
+
 
 void ServerFarm::configure(std::string configFilepath) {
 	this->_servers = _config.parse(configFilepath);

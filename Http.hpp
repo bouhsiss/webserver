@@ -24,6 +24,7 @@
 #include<cstring>
 #include<sstream>
 #include<fcntl.h>
+#include<csignal>
 
 #define DEFAULT_CONFIG_FILE "default.conf"
 #define BACKLOG 10

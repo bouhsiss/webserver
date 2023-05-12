@@ -20,6 +20,8 @@ class ServerFarm {
 		void configure(std::string configFilePath);
 		static ServerFarm *getInstance();
 		const std::vector<Server>& getServers() const;
+		const std::map<int, Server *>& getActiveServers() const;
+		const std::map<int, Server *>& getClientSockets() const;
 		void initServers();
 		void runEventLoop();
 	private :
