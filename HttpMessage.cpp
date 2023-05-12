@@ -1,29 +1,19 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   HttpMessage.cpp                                    :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: hbouhsis <marvin@42.fr>                    +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/05/10 09:41:16 by hbouhsis          #+#    #+#             */
-/*   Updated: 2023/05/10 09:41:18 by hbouhsis         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include"HttpMessage.hpp"
 
 HttpMessage::HttpMessage() {}
 
 HttpMessage::HttpMessage(HttpMessage const& other) {
-	*this = other;
+	_StartLine = other._StartLine;
+	_Headers = other._Headers;
+	_Body = other._Body;
 }
 
 HttpMessage& HttpMessage::operator=(HttpMessage const& other) {
-	this->_StartLine = other._StartLine;
-	this->_Headers = other._Headers;
-	this->_Body = other._Body;
+	_StartLine = other._StartLine;
+	_Headers = other._Headers;
+	_Body = other._Body;
 	return(*this);
-}
+	}
 
 HttpMessage::~HttpMessage() {}
 
@@ -39,38 +29,44 @@ void HttpMessage::setBody(std::string Body) { _Body = Body; }
 
 void HttpMessage::setHeaders(std::string name, std::string value) { _Headers[name] = value; }
 
-void HttpMessage::parse(const std::string& Message) {
-	std::vector<std::string> lines;
+HttpMessage::HttpMessage(std::string& Message) {
+	//skip CRLF
+	//added code
+	while(Message.find("\r\n",0) == 0)
+		Message = Message.substr(2);
 
-	int len;
-	size_t pos = 0;
-	while(Message.find("\r\n", pos) != std::string::npos) {
-		len = Message.find("\r\n", pos);
-		lines.push_back(Message.substr(pos , len - pos));
-		pos = len + 2;
+	//set start_line
+	if (Message.find("\r\n")!=std::string::npos){
+		_StartLine = Message.substr(0,Message.find("\r\n"));
+		//remove start_line from body
+		Message = Message.substr(Message.find("\r\n")+2);
 	}
-	if(pos < Message.size())
-		lines.push_back(Message.substr(pos));
-	if(!lines.empty())
-		setStartLine(lines[0]);
+	//isolate all headers in one string
+	std::string heads;
+	if (Message.find("\r\n\r\n")!=std::string::npos)
+	{
+		heads= Message.substr(0,Message.find("\r\n\r\n")+2);
+		//remove headers from 
+		Message = Message.substr(Message.find("\r\n\r\n")+4);
+	}
+	//set body	
+	_Body =Message; 
+	//add headers in map
+	std::string name,value;
 
-	std::vector<std::string>::iterator It;
-	for(It = lines.begin() + 1; It != lines.end(); It++) {
-		if(It->empty()) {
-			std::string body;
-			for( ; It != lines.end(); It++)
-				body.append(*It).append("\r\n");
-			setBody(body);
-			break ;
+	while (heads.length() > 0)
+	{
+		name = heads.substr(0,heads.find(":"));
+		heads = heads.substr(heads.find(":")+1);
+		value = heads.substr(0,heads.find("\r\n"));
+		heads = heads.substr(heads.find("\r\n")+2);
+		setHeaders(name,value);
+		// if the header occupies more than one line append the rest of the header value  
+		while (heads[0] && (heads[0]==' ' || heads[0]==9))//SP or HT
+		{
+			value = heads.substr(0,heads.find("\r\n"));
+			_Headers[name].append(value);
+			heads = heads.substr(heads.find("\r\n")+2);
 		}
-		else {
-			size_t colonPos;
-			if((colonPos = It->find(":")) != std::string::npos) {
-				std::string name = It->substr(0, colonPos);
-				std::string value = It->substr(colonPos+1);
-				setHeaders(name, value);
-			}
-		}
-
 	}
 }
