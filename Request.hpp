@@ -15,7 +15,7 @@ class Request : public HttpMessage {
 	public :
 		Request();
 		//parsing is done here
-		Request(std::string req_data, std::string request_host, int request_port);
+		Request(std::string req_data, std::string request_host, std::string request_port);
 		Request(const Request& other);
 		Request& operator=(const Request& other);
 		~Request();
@@ -33,10 +33,10 @@ class Request : public HttpMessage {
 
         //----------- helper functions
         bool get_requested_resource();
-        void delete_all_folder_content();
+        bool delete_all_folder_content();
         std::string get_resource_type();
         bool is_uri_has_slash_in_end();
-        bool is_dir_has_index_files();
+        bool is_dir_has_index_file();
         std::string get_auto_index();
         bool if_location_has_cgi();
         bool if_location_support_upload();
@@ -51,15 +51,15 @@ class Request : public HttpMessage {
 		std::string _RequestURI;
 		std::string _http_v;
 		int 		_status_code;
-		ServerFarm 	_sf;
-		size_t 		_server_index;
+		ServerFarm 	*_sf;
+		int 		_server_index;
 		std::string	_location_index;
 		std::string _req_host;
-		int 		_req_port;
+		std::string _req_port;
 		std::string _resource_type;
 		std::string _requested_resource;
 		//for chunked request
 		bool request_status;
 		//also for chunked request request is complete when you reach the length in the content_length request header
-		size_t current_content_length;
+		// size_t current_content_length;
 };

@@ -12,7 +12,7 @@
 
 #include "ServerFarm.hpp"
 
-const std::vector<Server>& ServerFarm::getServers() const {return(_servers);}
+std::vector<Server>& ServerFarm::getServers() {return(_servers);}
 const std::map<int, Server *>& ServerFarm::getActiveServers() const {return(_activeServers);}
 const std::map<int, Server *>& ServerFarm::getClientSockets() const {return(_clientSockets);}
 
@@ -87,7 +87,7 @@ std::string defaultResponse() {
 
 
 void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
-	std::map<int, Server*>::iterator It;
+	std::map<int, Request*>::iterator It;
 	std::vector<int> keysToErase;
 	for(It = _writeSockets.begin(); It != _writeSockets.end(); ++It) {
 		int writeSock = It->first;
@@ -139,7 +139,7 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 	for(It = _clientSockets.begin(); It != _clientSockets.end(); It++) {
 		int clientSock = It->first;
 		if(FD_ISSET(clientSock, tmpReadFds)) {
-			int clientBodySizeLimit = It->second->getClientBodySizeLimit();
+			size_t clientBodySizeLimit = It->second->getClientBodySizeLimit();
 			char read[clientBodySizeLimit];
 			int bytesReceived = recv(clientSock, read, clientBodySizeLimit, 0);
 			if(bytesReceived < 0)
@@ -150,12 +150,13 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 				close(clientSock);
 			}
 			else {
-				std::cout << "==================== REQUEST ========================= " << std::endl << std::endl;
-				std::string str(read, bytesReceived);
-				std::cout << MAGENTA << str << RESET << std::endl;
-				std::cout << "=======================================================" << std::endl;
+				// std::cout << "==================== REQUEST ========================= " << std::endl << std::endl;
+				std::string reqData(read, bytesReceived);
+				// std::cout << MAGENTA << reqData << RESET << std::endl;
+				// std::cout << "=======================================================" << std::endl;
+				Request req(reqData, It->second->getHost(), It->second->getPort());
 				FD_SET(clientSock, &_writeFds); 
-				_writeSockets.insert(std::make_pair(clientSock, It->second));
+				_writeSockets.insert(std::make_pair(clientSock, &req));
 				// call the request parser and insert the client socket as key and the request object as value
 			}
 
