@@ -27,12 +27,12 @@
 
 class Server {
     public :
-		const std::map<std::string, Location *>& getLocations();
+		std::map<std::string, Location *>& getLocations();
 		const std::string& getServerName();
 		const std::string& getHost() const;
 		const std::string& getPort() const;
 		const std::vector<std::string>& getErrorPage();
-		const int& getClientBodySizeLimit() const;
+		const size_t& getClientBodySizeLimit() const;
 		const int& getListenSocket() const;
 		
 		void setPort(std::vector<std::string> const &tokens);
@@ -55,7 +55,7 @@ class Server {
 		std::string _host;
 		std::string _port;
         std::vector<std::string> _error_page;
-        int _client_body_size_limit;
+        size_t _client_body_size_limit;
 		friend  class Configuration;
 };
 

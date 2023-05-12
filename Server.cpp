@@ -12,12 +12,12 @@
 
 #include"Server.hpp"
 
-const std::map<std::string, Location *>& Server::getLocations() {return(_Locations);}
+std::map<std::string, Location *>& Server::getLocations() {return(_Locations);}
 const std::string& Server::getServerName() {return(_server_name);}
 const std::string& Server::getHost() const {return(_host);}
 const std::string& Server::getPort() const {return(_port);}
 const std::vector<std::string>& Server::getErrorPage() {return(_error_page);}
-const int& Server::getClientBodySizeLimit() const {return(_client_body_size_limit);}
+const size_t& Server::getClientBodySizeLimit() const {return(_client_body_size_limit);}
 const int& Server::getListenSocket() const {return(_listenSocket);}
 
 void Server::setPort(std::vector<std::string> const &tokens) {
@@ -47,7 +47,7 @@ void Server::setErrorPage(std::vector<std::string> const &tokens) {
 }
 
 void Server::setClientBodySizeLimit(std::vector<std::string> const &tokens) {
-	if(tokens.size() != 1 || !Http::strIsNumber(tokens[0]) || std::stoi(tokens[0]) < 0 || this->_client_body_size_limit != -1)
+	if(tokens.size() != 1 || !Http::strIsNumber(tokens[0]) || std::stoi(tokens[0]) < 0 || this->_client_body_size_limit != (size_t)-1)
 		throw(Http::ConfigFileErrorException("Invalid client body size limit directive"));
 	this->_client_body_size_limit = std::stoi(tokens[0]);
 }
@@ -67,7 +67,7 @@ void Server::isServerValid() {
 		_host = "127.0.0.1";
 	if(_port.empty())
 		_port = 80;
-	if(_client_body_size_limit == -1)
+	if(_client_body_size_limit == (size_t)-1)
 		throw(Http::ConfigFileErrorException("incomplete Server Configuration : client_body_size_limit directive missing"));
 	std::map<std::string, Location *>::iterator It;
 	for(It = _Locations.begin(); It != _Locations.end(); It++)

@@ -1,19 +1,26 @@
 #include "Request.hpp"
 
+
+
 Request::Request() {}
 
-Request::Request(const Request& other) {}
+Request::Request(const Request& other) {
+	(void)other;
+}
 
-Request& Request::operator=(const Request& other) {}
+Request& Request::operator=(const Request& other) {
+	(void)other;
+	return(*this);
+}
 
 Request::~Request() {}
 
-Request::Request(std::string req_data, std::string request_host, int request_port):HttpMessage(req_data),_sf(ServerFarm::getInstance()),_req_host(request_host),_req_port(request_port){
+Request::Request(std::string req_data, std::string request_host, std::string request_port):HttpMessage(req_data),_sf(ServerFarm::getInstance()),_req_host(request_host),_req_port(request_port){
     //initial status code (if status code remain -1 that means no errors found at this stage)
     //if its not a valid httpmessage stop here
     request_status = false;
     _status_code=-1;
-    _server_index =-1
+    _server_index =-1;
     //check if host header field
     if (_Headers.find("Host")==_Headers.end())//there is not a host header
     {
@@ -22,55 +29,28 @@ Request::Request(std::string req_data, std::string request_host, int request_por
     }
     else //choosing the right server to handle the request
     {
-        //test the port and ip add of the request against the listen dirictives of the server blocks
+        //test the port and ip add of the request against the listen directives of the server blocks
         
-        std::vector<Server> valid_listen_dirictives;
-        for (size_t i=0;i < (_sf.getServers()).size();i++)
-        {
-            if ((_sf.getServers())[i].getHost() == _req_host && (_sf.getServers())[i].getPort() == _req_port)
-            {
-                valid_listen_dirictives.push_back((_sf.getServers())[i])
-            }
-        }
-        if(valid_listen_dirictives.size() == 1)
-        {
-            //choose the server to handle the request
-            for (size_t i =0;i<(_sf.getServers()).size();i++)
-            {
-                if (valid_listen_dirictives[0] == (_sf.getServers())[i])
-                {
-                    _server_index = i;
-                    break;
-                }
-            }
-        }
-        else 
-        {
-            for (size_t i=0;i<valid_listen_dirictives.size();i++){
+		std::map<int, Server> valid_listen_directive;
+		std::map<int, Server>::iterator It;
+		for(size_t i = 0; i < _sf->getServers().size(); i++) {
+			if ((_sf->getServers())[i].getHost() == _req_host && (_sf->getServers())[i].getPort() == _req_port) {
+				valid_listen_directive.insert(std::make_pair(i, _sf->getServers()[i]));
+				_server_index = i;
+			}
+		}
+		if(valid_listen_directive.size() != 1) {
+			for(It = valid_listen_directive.begin(); It != valid_listen_directive.end(); It++) {
                 //test the host request header against the server_name entries of the server blocks that matched ip/port
-                if (valid_listen_dirictives[i].getServerName() == _Headers["Host"])
-                {
-                    //choose this server(host header match the exact server_name)
-                    for (size_t j=0;j<(_sf.getServers())size();j++){
-                        if (valid_listen_dirictives[i] == (_sf.getServers())[j])
-                        {
-                            _server_index = j;
-                            break;
-                        }
-                    }
-                    break;
-                }
-            }
-            if (_server_index == -1)
-            {
-                //if you didnt find any match pass the request to the default server for ip/port
-                for (size_t i=0;i<(_sf.getServers()).size();i++)
-                {
-                    if (valid_listen_dirictives.size() && valid_listen_dirictives[0]==_(_sf.getServers())[i])
-                        _server_idex=i;
-                }
-            }
-        }
+					if(It->second.getServerName() == _Headers["Host"])
+						_server_index = It->first;		
+				break;
+			}
+		}
+		if(_server_index == -1) {
+			//if you didnt find any match pass the request to the default server for ip/port (the first one)
+			_server_index = valid_listen_directive.begin()->first;
+		}
     }
     std::istringstream iss(_StartLine);
     std::string m;
@@ -110,7 +90,7 @@ Request::Request(std::string req_data, std::string request_host, int request_por
         //414 Request-URI Too Long
         _status_code = 414;
     }
-    else if ((_sf.getServers())[_server_index].getClientBodySizeLimit() < _Body.length())//request body larger than client max body size in config file
+    else if ((_sf->getServers())[_server_index].getClientBodySizeLimit() < _Body.length())//request body larger than client max body size in config file
     {
         //413 Request Entity Too Large
         _status_code  = 413;
@@ -155,8 +135,9 @@ bool Request::check_for_forbidden_chars(std::string uri)const{
 }
 
 void Request::get_matched_location_for_request_uri(){
+	std::map<std::string, Location *> Locations = _sf->getServers()[_server_index].getLocations();
     //loop the location
-    for (std::map<std::string,Location*>::iterator it = (_sf.getServers())[_server_idex].getLocations().begin();it!=(_sf.getServers())[_server_idex].getLocations().end();it++)
+    for (std::map<std::string,Location*>::iterator it = Locations.begin();it != Locations.end(); it++)
     {
         //if you found a match return location name
         if (_RequestURI.find(it->first)==0)
@@ -168,14 +149,16 @@ void Request::get_matched_location_for_request_uri(){
     _location_index =  "";
 }
 bool Request::is_location_has_redirection(){
-    if (((_sf.getServers())[_server_idex].getLocations())[_location_index].getRedirect()!="")
-        return true;
+	Location *location = _sf->getServers()[_server_index].getLocations()[_location_index];
+	if(location->getRedirect() != "")
+		return(true);
     return false;
 }
 bool Request::is_method_allowed_in_location(){
-    for (size_t i=0;i<((_sf.getServers())[_server_idex].getLocations())[_location_index].getAllowedMethods().size();i++)
+	Location *location = _sf->getServers()[_server_index].getLocations()[_location_index];
+    for (size_t i=0; i < location->getAllowedMethods().size() ; i++)
     {
-        if (_method == ((_sf.getServers())[_server_idex].getLocations())[_location_index].getAllowedMethods()[i])
+        if (_method == location->getAllowedMethods()[i])
             return true;
     }
     return false;
@@ -350,8 +333,8 @@ void Request::DELETE(){
                 }
                 else //location doesnt have cgi
                 {
-                    Request::delete_all_folder_content();
-                    if ()//success
+                    // Request::delete_all_folder_content();
+                    if (Request::delete_all_folder_content())//success
                     {
                         //204 no content
                         _status_code = 204;
@@ -405,15 +388,15 @@ void Request::DELETE(){
 bool Request::get_requested_resource(){
     //append request uri to root
     std::string rsc;
-    if (_sf.getServers()[_server_index].getLocations()[_location_index].getPath() == "/")
-        rsc = _sf.getServers()[_server_index].getLocations()[_location_index].getRoot()+_RequestURI; 
+    if (_sf->getServers()[_server_index].getLocations()[_location_index]->getPath() == "/")
+        rsc = _sf->getServers()[_server_index].getLocations()[_location_index]->getRoot()+_RequestURI; 
     else{
         //remove matched path from req_uri
-        std::string path=_sf.getServers()[_server_index].getLocations()[_location_index].getPath();
-        rsc = _sf.getServers()[_server_index].getLocations()[_location_index].getRoot().+ _RequestURI.substr(path.length());
+        std::string path=_sf->getServers()[_server_index].getLocations()[_location_index]->getPath();
+        rsc = _sf->getServers()[_server_index].getLocations()[_location_index]->getRoot()+ _RequestURI.substr(path.length());
     }
     //check if the requested resource is a file
-    if (access(rcs.c_str(),R_OK) ==0)//file found
+    if (access(rsc.c_str(),R_OK) ==0)//file found
     {
         _resource_type = "file";
         _requested_resource = rsc;
@@ -438,20 +421,20 @@ bool Request::is_uri_has_slash_in_end(){
     return false;
 }
 bool Request::is_dir_has_index_file(){
-    if(_sf.getServers()[_server_index].getLocations()[_location_index].getIndex() == "" )
+    if(_sf->getServers()[_server_index].getLocations()[_location_index]->getIndex() == "" )
         return false ;
     return true;
 }
 std::string Request::get_auto_index(){
-    return _sf.getServers()[_server_index].getLocations()[_location_index].getAutoIndex();
+    return _sf->getServers()[_server_index].getLocations()[_location_index]->getAutoIndex();
 }
 bool Request::if_location_has_cgi(){
-    if (_sf.getServers()[_server_index].getLocations()[_location_index].getCgiPath() == "")
+    if (_sf->getServers()[_server_index].getLocations()[_location_index]->getCgiPath() == "")
         return false;
     return true;
 }
 bool Request::if_location_support_upload(){
-     if (_sf.getServers()[_server_index].getLocations()[_location_index].getUploadPath() == "")
+     if (_sf->getServers()[_server_index].getLocations()[_location_index]->getUploadPath() == "")
         return false;
     return true;
 }
@@ -459,18 +442,20 @@ bool Request::has_write_acces_on_folder(){
     struct stat folderStats;
     if (stat(_requested_resource.c_str(),&folderStats) ==-1)
         return false;
-    if (S_ISDIR(folderStats.st_mode) && (folderStats.st_mode && S_IWOTH))
+    if (S_ISDIR(folderStats.st_mode) && (folderStats.st_mode & S_IWOTH))
         return true; 
     return false;
 }
-void Request::delete_all_folder_content(){
+bool Request::delete_all_folder_content(){
     //how to delete ????? the cleanest way possible
+	return(true);
 }
 void Request::run_cgi(){
     //fork and execve cgi path with arguments
 }
 
 void Request::add_chunk(std::string chunk){
+	(void)chunk;
     //add chunk to body
     //incriment the currunt_request_length
     //check if you reached the value in the header set request_status=true
