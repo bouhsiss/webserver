@@ -3,33 +3,20 @@
 HttpMessage::HttpMessage() {}
 
 HttpMessage::HttpMessage(HttpMessage const& other) {
-	_StartLine = other._StartLine;
-	_Headers = other._Headers;
-	_Body = other._Body;
+	(void)other;
 }
 
 HttpMessage& HttpMessage::operator=(HttpMessage const& other) {
-	_StartLine = other._StartLine;
-	_Headers = other._Headers;
-	_Body = other._Body;
+	(void)other;
 	return(*this);
 	}
 
 HttpMessage::~HttpMessage() {}
 
-const std::string& HttpMessage::getStartLine() const {return(_StartLine);}
-
-const std::string& HttpMessage::getBody() const {return(_Body);}
-
-const std::map<std::string, std::string>& HttpMessage::getHeaders() const {return(_Headers);}
-
-void HttpMessage::setStartLine(std::string StartLine) {_StartLine = StartLine; }
-
-void HttpMessage::setBody(std::string Body) { _Body = Body; }
 
 void HttpMessage::setHeaders(std::string name, std::string value) { _Headers[name] = value; }
 
-HttpMessage::HttpMessage(std::string& Message) {
+HttpMessage::HttpMessage(std::string& Message):_filename(tmpnam(NULL)),_body_length(0){
 	//skip CRLF
 	//added code
 	while(Message.find("\r\n",0) == 0)
@@ -41,16 +28,23 @@ HttpMessage::HttpMessage(std::string& Message) {
 		//remove start_line from body
 		Message = Message.substr(Message.find("\r\n")+2);
 	}
-	//isolate all headers in one string
+	//put all headers in one string
 	std::string heads;
 	if (Message.find("\r\n\r\n")!=std::string::npos)
 	{
 		heads= Message.substr(0,Message.find("\r\n\r\n")+2);
-		//remove headers from 
+		//remove headers from  message
 		Message = Message.substr(Message.find("\r\n\r\n")+4);
 	}
 	//set body	
-	_Body =Message; 
+	
+	_Body.open(_filename,std::ios::in);
+	if (_Body.is_open())
+	{
+		_Body<<Message;
+		_body_length +=  Message.length();
+		_Body.close();
+	}
 	//add headers in map
 	std::string name,value;
 
@@ -68,5 +62,15 @@ HttpMessage::HttpMessage(std::string& Message) {
 			_Headers[name].append(value);
 			heads = heads.substr(heads.find("\r\n")+2);
 		}
+	}
+}
+
+void HttpMessage::append_chunk(std::string chunk){
+	_Body.open(_filename,std::ios::in);
+	if (_Body.is_open())
+	{
+		_Body<<chunk;
+		_body_length +=  chunk.length();
+		_Body.close();
 	}
 }

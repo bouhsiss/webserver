@@ -92,7 +92,7 @@ Request::Request(std::string req_data, std::string request_host, std::string req
         //414 Request-URI Too Long
         _status_code = 414;
     }
-    else if ((_sf->getServers())[_server_index].getClientBodySizeLimit() < _Body.length())//request body larger than client max body size in config file
+    else if ((_sf->getServers())[_server_index].getClientBodySizeLimit() < _body_length)//request body larger than client max body size in config file
     {
         //413 Request Entity Too Large
         _status_code  = 413;
@@ -505,8 +505,7 @@ void Request::run_cgi(){
 }
 
 void Request::add_chunk(std::string chunk){
-	(void)chunk;
-    //add chunk to body
+    append_chunk(chunk);
     //incriment the currunt_request_length
     //check if you reached the value in the header set request_status=true
 }

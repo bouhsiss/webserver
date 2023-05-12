@@ -5,6 +5,9 @@
 #include <map>
 #include <vector>
 #include <sstream>
+#include <fstream>
+#include <cstdio>
+
 // #include "Server.hpp"
 
 class HttpMessage {
@@ -15,17 +18,13 @@ class HttpMessage {
 		HttpMessage(HttpMessage const& other);
 		HttpMessage& operator=(HttpMessage const& other);
 		~HttpMessage();
-
-		const std::string& getStartLine() const;
-		const std::string& getBody() const;
-		const std::map<std::string, std::string>& getHeaders() const;
-
-		void setStartLine(std::string StartLine);
-		void setBody(std::string Body);
+		void append_chunk(std::string chunk);
 		void setHeaders(std::string name, std::string value);
 
 	protected :
-		std::string _StartLine;
-		std::map<std::string, std::string> _Headers;
-		std::string _Body;
+		std::string 						_StartLine;
+		std::map<std::string, std::string> 	_Headers;
+		std::fstream 						_Body;
+		int									_body_length;
+		char 								*_filename;
 };

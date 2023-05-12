@@ -18,7 +18,7 @@ cgi...........
 -----read cgi part RFC
 
 delete........
---testing file type????
+--testing file type????(everywhere else not just delete)
 --dont delete project files(try changing permissions)
 
 --failed send ---->resend
