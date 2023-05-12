@@ -336,7 +336,6 @@ void Request::DELETE(){
                 }
                 else //location doesnt have cgi
                 {
-                    // Request::delete_all_folder_content();
                     if (Request::delete_all_folder_content())//success
                     {
                         //204 no content
@@ -372,10 +371,24 @@ void Request::DELETE(){
             }
             else
             {
-                //delete the file
-                //if you cant ?
-                //204 no content
-                _status_code = 204;
+                if (remove(_requested_resource.c_str())==0)//success
+                {
+                    //204 no content
+                    _status_code = 204;
+                }
+                else//remove failed
+                {
+                    if (access(_requested_resource.c_str(),W_OK) ==0)
+                    {
+                        // //500 internal server error
+                        _status_code = 500;
+                    }
+                    else
+                    {
+                        //403 forbidden
+                        _status_code = 403;
+                    }
+                }
             }
         }
     }
@@ -454,13 +467,36 @@ bool Request::has_write_acces_on_folder(){
 int nftwfunc(const char *filename, const struct stat *statptr, int fileflags, struct FTW *pfwt)
 {
     //delete here
+    if (fileflags == FTW_SL)//symbolik link
+    {
+        if (unlink(filename)==-1)
+            return -1;
+    }
+    else if (fileflags == FTW_DP|| fileflags == FTW_DNR)//directory 
+    {
+        //FTW_DNR
+        // The object is a directory that cannot be read. The fn function shall not be called for any of its descendants.
+        //FTW_DP
+        // The object is a directory and subdirectories have been visited. (This condition shall only occur if the FTW_DEPTH flag is included in flags.)
+        if (rmdir(filename)==-1)
+            return -1;
+    }
+    else//file or other type
+    {
+        if (remove(filename) == -1)
+            return -1;
+    }
     return 0;
 }
 bool Request::delete_all_folder_content(){
-    //how to delete ????? the cleanest way possible
-    // int flags = ????;
+    int flags = FTW_DEPTH;
 	if (nftw(_requested_resource.c_str(), nftwfunc, 100, flags) ==0)
+    {
+        //nftw does not remove the parent folder
+        if (rmdir(_requested_resource.c_str())==-1)
+            return false;
         return true;
+    }
     return false;
 }
 
