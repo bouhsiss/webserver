@@ -22,9 +22,10 @@ delete........
 --dont delete project files(try changing permissions)
 --what status code you should return if cant delete the file???????
 --nftw()
+---unlink
 
 --failed send ---->resend
----move body to a file
+---move body to a file use file stream
 
 
 <!-- https://github.com/f0lio/webserv -->

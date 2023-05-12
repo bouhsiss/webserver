@@ -43,8 +43,10 @@ Request::Request(std::string req_data, std::string request_host, std::string req
 			for(It = valid_listen_directive.begin(); It != valid_listen_directive.end(); It++) {
                 //test the host request header against the server_name entries of the server blocks that matched ip/port
 					if(It->second.getServerName() == _Headers["Host"])
+                    {
 						_server_index = It->first;		
-				break;
+				        break;
+                    }
 			}
 		}
 		if(_server_index == -1) {
@@ -105,7 +107,8 @@ Request::Request(std::string req_data, std::string request_host, std::string req
             //301 Moved Permanently
             _status_code = 301;
         }
-        else{
+        else
+        {
             if (Request::is_method_allowed_in_location())
                 Request::check_which_requested_method();
             else{
@@ -446,10 +449,21 @@ bool Request::has_write_acces_on_folder(){
         return true; 
     return false;
 }
+
+
+int nftwfunc(const char *filename, const struct stat *statptr, int fileflags, struct FTW *pfwt)
+{
+    //delete here
+    return 0;
+}
 bool Request::delete_all_folder_content(){
     //how to delete ????? the cleanest way possible
-	return(true);
+    // int flags = ????;
+	if (nftw(_requested_resource.c_str(), nftwfunc, 100, flags) ==0)
+        return true;
+    return false;
 }
+
 void Request::run_cgi(){
     //fork and execve cgi path with arguments
 }
