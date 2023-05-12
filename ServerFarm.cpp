@@ -144,7 +144,7 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 				throw(Http::NetworkingErrorException("recv() failed"));
 			else if(!bytesReceived) {
 				FD_CLR(clientSock, &_readFds);
-				
+				std::cout << RED << "client closed connection" << RESET << std::endl;
 				close(clientSock);
 			}
 			else {

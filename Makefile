@@ -3,7 +3,6 @@ CC = c++
 CFLAGS = -fsanitize=address -Wall -Wextra -Werror
 INCLUDES = 
 SRCS = Configuration.cpp HttpMessage.cpp Location.cpp Server.cpp Http.cpp  main.cpp ServerFarm.cpp 
-SRCS = Configuration.cpp HttpMessage.cpp Location.cpp Server.cpp Http.cpp  main.cpp ServerFarm.cpp
 
 all : $(NAME)
 
