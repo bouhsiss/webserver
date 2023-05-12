@@ -1,0 +1,32 @@
+
+--->read rfc
+-- use getinstance() to access configuration
+--check rfc for mandatory headers(general/request headers)
+
+location.......
+--can we set the last location to be / ????????
+
+chunked request...........
+---add a function to append request data for chunked request?
+---when the request is complete generate a response and remove request
+--wait for the body to arrive
+
+cgi...........
+--environ??
+--tmpfile
+-----read cgi part RFC
+
+delete........
+--file type????
+--rmdir
+--dont delete project files(try changing permissions)
+--what status code you should return if cant delete the file???????
+--nftw()
+
+--failed send ---->resend
+---move body to a file
+
+
+<!-- https://github.com/f0lio/webserv -->
+
+--dont forget the other guy request flow ****************
