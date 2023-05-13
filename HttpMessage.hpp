@@ -18,6 +18,7 @@ class HttpMessage {
 		HttpMessage(HttpMessage const& other);
 		HttpMessage& operator=(HttpMessage const& other);
 		~HttpMessage();
+		bool getb() const { return(_b_complete);}
 	protected :
 		void parse();
 		void append_chunk(std::string chunk);

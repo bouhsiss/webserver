@@ -92,8 +92,7 @@ void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
 	for(It = _writeSockets.begin(); It != _writeSockets.end(); ++It) {
 		int writeSock = It->first;
 		if(It->second->request_is_ready()) {
-			std::cout << "ready" << std::endl;
-			if(FD_ISSET(writeSock, tmpWriteFds)) {
+				if(FD_ISSET(writeSock, tmpWriteFds)) {
 				if(FD_ISSET(writeSock, tmpWriteFds)) {
 					if(send( writeSock, defaultResponse().c_str(), defaultResponse().length(), 0 ) < 0)
 					{	FD_CLR(writeSock, &_writeFds);
@@ -163,9 +162,10 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 						FD_SET(clientSock, &_writeFds); 
 				}
 				else {
-					
 					Request req(It->second->getHost(), It->second->getPort());
 					req.proccess_Request(reqData);
+					if(req.request_is_ready())
+						FD_SET(clientSock, &_writeFds); 
 					_writeSockets.insert(std::make_pair(clientSock, &req));
 				}
 				// call the request parser and insert the client socket as key and the request object as value
