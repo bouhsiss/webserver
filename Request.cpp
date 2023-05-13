@@ -258,9 +258,16 @@ void Request::POST(){
     //dont forget chunked request
     if (Request::if_location_support_upload())//location support upload
     {
-        //uplaod the post request body
-        //if transfer-encoding doesnt exist upload file to path
-        //else decode body and then upload it
+        if (_Headers.find("Transfer-Encoding")!=_Headers.end())
+        {
+            //decode chunks annd upload them to the new file
+            //where location??
+        }
+        else
+        {
+            //just upload the body
+            //where location??
+        }
         //201 created
         _status_code = 201;
     }

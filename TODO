@@ -7,14 +7,11 @@ LOCATION.......
 --can we set the last location to be / ????????(to be handled lateeer)
 
 POST............................
-use the current content length variable to track chunks
 how to upload a folder/video....????????????
+now you have the full body if there no transfer-encoding upload the body
+else decode chunks
 
 chunked request...........
-headers?????
----add a function to append request data for chunked request?
----when the request is complete generate a response and remove request
---wait for the body to arrive
 
 CGI...........
 --environ??
@@ -22,7 +19,6 @@ CGI...........
 -----read cgi part RFC
 
 DELETE.......
---testing file type????(everywhere else not just delete)
 --dont delete project files(try changing permissions)
 
 <!-- https://github.com/f0lio/webserv -->
