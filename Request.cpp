@@ -468,6 +468,8 @@ bool Request::has_write_acces_on_folder(){
 
 int nftwfunc(const char *filename, const struct stat *statptr, int fileflags, struct FTW *pfwt)
 {
+    (void)pfwt;
+    (void)statptr;
     //delete here
     if (fileflags == FTW_SL)//symbolik link
     {

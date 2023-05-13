@@ -25,6 +25,6 @@ class HttpMessage {
 		std::string 						_StartLine;
 		std::map<std::string, std::string> 	_Headers;
 		std::fstream 						_Body;
-		int									_body_length;
-		char 								*_filename;
+		size_t								_body_length;
+		std::string							_filename;
 };

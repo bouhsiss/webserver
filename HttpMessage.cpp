@@ -16,9 +16,23 @@ HttpMessage::~HttpMessage() {}
 
 void HttpMessage::setHeaders(std::string name, std::string value) { _Headers[name] = value; }
 
-HttpMessage::HttpMessage(std::string& Message):_filename(tmpnam(NULL)),_body_length(0){
+//generate random filename
+std::string random_filename() {
+	int length = 6;
+    static const char charset[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    const int charset_size = sizeof(charset) - 1;
+    std::string result(length, '\0');
+    std::srand(std::time(nullptr));
+    for (int i = 0; i < length; ++i) {
+        result[i] = charset[std::rand() % charset_size];
+    }
+    return result;
+}
+
+HttpMessage::HttpMessage(std::string& Message):_body_length(0){
 	//skip CRLF
 	//added code
+	_filename = random_filename();
 	while(Message.find("\r\n",0) == 0)
 		Message = Message.substr(2);
 
@@ -38,7 +52,7 @@ HttpMessage::HttpMessage(std::string& Message):_filename(tmpnam(NULL)),_body_len
 	}
 	//set body	
 	
-	_Body.open(_filename,std::ios::in);
+	_Body.open(_filename.c_str(),std::ios::in);
 	if (_Body.is_open())
 	{
 		_Body<<Message;
