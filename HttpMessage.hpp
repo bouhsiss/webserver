@@ -7,6 +7,7 @@
 #include <sstream>
 #include <fstream>
 #include <cstdio>
+#include "Http.hpp"
 
 // #include "Server.hpp"
 

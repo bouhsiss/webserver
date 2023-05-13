@@ -91,20 +91,23 @@ void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
 	std::vector<int> keysToErase;
 	for(It = _writeSockets.begin(); It != _writeSockets.end(); ++It) {
 		int writeSock = It->first;
-		if(FD_ISSET(writeSock, tmpWriteFds)) {
+		if(It->second->request_is_ready()) {
+			std::cout << "ready" << std::endl;
 			if(FD_ISSET(writeSock, tmpWriteFds)) {
-				if(send( writeSock, defaultResponse().c_str(), defaultResponse().length(), 0 ) < 0)
-				{	FD_CLR(writeSock, &_writeFds);
-					FD_CLR(writeSock, &_readFds);
-					close(writeSock);
-					_writeSockets.erase(writeSock);
-					_clientSockets.erase(writeSock);
-					throw(Http::NetworkingErrorException("send failed"));
+				if(FD_ISSET(writeSock, tmpWriteFds)) {
+					if(send( writeSock, defaultResponse().c_str(), defaultResponse().length(), 0 ) < 0)
+					{	FD_CLR(writeSock, &_writeFds);
+						FD_CLR(writeSock, &_readFds);
+						close(writeSock);
+						_writeSockets.erase(writeSock);
+						_clientSockets.erase(writeSock);
+						throw(Http::NetworkingErrorException("send failed"));
+					}
+					FD_CLR(writeSock, &_writeFds);
+					keysToErase.push_back(writeSock);
+					// FD_CLR(writeSock, &_readFds);
+					// close(writeSock);
 				}
-				FD_CLR(writeSock, &_writeFds);
-				keysToErase.push_back(writeSock);
-				// FD_CLR(writeSock, &_readFds);
-				// close(writeSock);
 			}
 		}
 	}
@@ -160,7 +163,9 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 						FD_SET(clientSock, &_writeFds); 
 				}
 				else {
+					
 					Request req(It->second->getHost(), It->second->getPort());
+					req.proccess_Request(reqData);
 					_writeSockets.insert(std::make_pair(clientSock, &req));
 				}
 				// call the request parser and insert the client socket as key and the request object as value

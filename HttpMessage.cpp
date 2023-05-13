@@ -33,6 +33,7 @@ std::string random_filename() {
 void HttpMessage::parse(){
 	//skip CRLF
 	//added code
+	
 	_filename = random_filename();
 
 	//set start_line
@@ -42,6 +43,7 @@ void HttpMessage::parse(){
 		//remove start_line from buffer
 		_sl_complete = true;
 		_message = _message.substr(_message.find("\r\n")+2);
+		std::cout << RED << "sl" << RESET << std::endl;
 	}
 	//put all headers in one string
 	if (_hd_complete ==false&& _message.find("\r\n\r\n")!=std::string::npos)
@@ -70,9 +72,10 @@ void HttpMessage::parse(){
 				heads = heads.substr(heads.find("\r\n")+2);
 			}
 		}
+		std::cout << RED << "headers" << RESET << std::endl;
 	}
 	//set body	
-	else
+	if(_sl_complete == true && _hd_complete == true)
 	{
 		_Body.open(_filename.c_str(),std::ios::in);
 		if (_Body.is_open())
@@ -80,12 +83,17 @@ void HttpMessage::parse(){
 			_Body<<_message;
 			if ((_Headers.find("Transfer-Encoding")!=_Headers.end() && _message.find("0/r/n"))||
 				(_Headers.find("Content-Length")!=_Headers.end()&& (int)_body_length >= atoi(_Headers.find("Content-Length")->second.c_str())))
-				_b_complete = true;
+				{
+					_b_complete = true;
+				}
+
 			_message = "";
 			_body_length +=  _message.length();
 			_Body.close();
 		}
 	}
+	std::cout << YELLOW << _StartLine << RESET << std::endl;
+	std::cout << YELLOW << _Headers["Host"] << RESET << std::endl;
 }
 
 void HttpMessage::append_chunk(std::string chunk){

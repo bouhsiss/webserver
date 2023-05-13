@@ -71,6 +71,7 @@
 		"__functional_03": "cpp",
 		"memory_resource": "cpp",
 		"filesystem": "cpp",
-		"list": "cpp"
+		"list": "cpp",
+		"csignal": "cpp"
 	}
 }
