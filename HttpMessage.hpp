@@ -14,13 +14,14 @@ class HttpMessage {
 	public :
 		HttpMessage();
 		//parsing is done here
-		void parse();
 		HttpMessage(HttpMessage const& other);
 		HttpMessage& operator=(HttpMessage const& other);
 		~HttpMessage();
+	protected :
+		void parse();
 		void append_chunk(std::string chunk);
 		void setHeaders(std::string name, std::string value);
-	protected :
+
 		std::string 						_StartLine;
 		std::map<std::string, std::string> 	_Headers;
 		std::fstream 						_Body;

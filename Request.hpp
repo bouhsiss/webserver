@@ -23,6 +23,11 @@ class Request : public HttpMessage {
         std::string getMethod()const;
         std::string getRequestURI()const;
 		void proccess_Request(std::string req_data);
+		bool request_is_ready();
+
+
+	private :
+
 		bool check_for_forbidden_chars(std::string)const;
 		void get_matched_location_for_request_uri();
         bool is_location_has_redirection();
@@ -48,10 +53,8 @@ class Request : public HttpMessage {
 		//chunked request
 		void add_chunk(std::string chunk);
 		//check if request arrived fully
-		bool request_is_ready();
 
 
-	private :
 		std::string _method;
 		std::string _RequestURI;
 		std::string _http_v;

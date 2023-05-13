@@ -151,12 +151,18 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 			}
 			else {
 				// std::cout << "==================== REQUEST ========================= " << std::endl << std::endl;
-				std::string reqData(read, bytesReceived);
 				// std::cout << MAGENTA << reqData << RESET << std::endl;
 				// std::cout << "=======================================================" << std::endl;
-				Request req(reqData, It->second->getHost(), It->second->getPort());
-				FD_SET(clientSock, &_writeFds); 
-				_writeSockets.insert(std::make_pair(clientSock, &req));
+				std::string reqData(read, bytesReceived);
+				if(_writeSockets.find(clientSock) != _writeSockets.end()) {
+					_writeSockets[clientSock]->proccess_Request(reqData);
+					if(_writeSockets[clientSock]->request_is_ready())
+						FD_SET(clientSock, &_writeFds); 
+				}
+				else {
+					Request req(It->second->getHost(), It->second->getPort());
+					_writeSockets.insert(std::make_pair(clientSock, &req));
+				}
 				// call the request parser and insert the client socket as key and the request object as value
 			}
 
