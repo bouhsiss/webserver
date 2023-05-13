@@ -109,9 +109,9 @@ Request::Request(std::string req_data, std::string request_host, std::string req
         }
         else
         {
-            if (Request::is_method_allowed_in_location())
-                Request::check_which_requested_method();
-            else{
+            if (Request::is_method_allowed_in_location());
+            else
+            {
                 //405 Method Not Allowed
                 _status_code = 405;
             }
@@ -166,10 +166,10 @@ bool Request::is_method_allowed_in_location(){
     }
     return false;
 }
-void Request::check_which_requested_method(){
+void Request::check_which_requested_method(){//check if the body arrived fully before sending response ps: call this function  manualy
     if (_method == "GET")
         GET();
-    else if (_method == "POST")//check if the body arrived fully before sending response else dont call delete until then manualy?????
+    else if (_method == "POST")
         POST();
     else if (_method == "DELETE")
         DELETE();
@@ -508,4 +508,8 @@ void Request::add_chunk(std::string chunk){
     append_chunk(chunk);
     //incriment the currunt_request_length
     //check if you reached the value in the header set request_status=true
+}
+
+bool Request::request_is_ready(){
+    return request_status;
 }

@@ -44,8 +44,11 @@ class Request : public HttpMessage {
         bool has_write_acces_on_folder();
 		//function to run cgi
 		void run_cgi();
-		//add a function to append chunk to body
+		//chunked request
 		void add_chunk(std::string chunk);
+		//check if request arrived fully
+		bool request_is_ready();
+
 
 	private :
 		std::string _method;
