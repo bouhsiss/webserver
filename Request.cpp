@@ -251,6 +251,8 @@ void Request::POST(){
     if (Request::if_location_support_upload())//location support upload
     {
         //uplaod the post request body
+        //if transfer-encoding doesnt exist upload file to path
+        //else decode body and then upload it
         //201 created
         _status_code = 201;
     }
