@@ -4,7 +4,7 @@
 --check rfc for mandatory headers(general/request/response)
 
 LOCATION.......
---can we set the last location to be / ????????
+--can we set the last location to be / ????????(to be handled lateeer)
 
 POST............................
 use the current content length variable to track chunks

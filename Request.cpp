@@ -3,6 +3,9 @@
 
 
 Request::Request() {}
+Request::Request(std::string request_host, std::string request_port):_sf(ServerFarm::getInstance()),_req_host(request_host),_req_port(request_port){
+
+}
 
 Request::Request(const Request& other) {
 	(void)other;
@@ -15,113 +18,118 @@ Request& Request::operator=(const Request& other) {
 
 Request::~Request() {}
 
-Request::Request(std::string req_data, std::string request_host, std::string request_port):HttpMessage(req_data),_sf(ServerFarm::getInstance()),_req_host(request_host),_req_port(request_port){
+
+void Request::proccess_Request(std::string req_data){
+    _message+=req_data;
+    parse();
     //initial status code (if status code remain -1 that means no errors found at this stage)
     //if its not a valid httpmessage stop here
-    request_status = false;
-    _status_code=-1;
-    _server_index =-1;
-    //check if host header field
-    if (_Headers.find("Host")==_Headers.end())//there is not a host header
+    if (request_is_ready())
     {
-        //400 bad request
-        _status_code = 400;
-    }
-    else //choosing the right server to handle the request
-    {
-        //test the port and ip add of the request against the listen directives of the server blocks
-        
-		std::map<int, Server> valid_listen_directive;
-		std::map<int, Server>::iterator It;
-		for(size_t i = 0; i < _sf->getServers().size(); i++) {
-			if ((_sf->getServers())[i].getHost() == _req_host && (_sf->getServers())[i].getPort() == _req_port) {
-				valid_listen_directive.insert(std::make_pair(i, _sf->getServers()[i]));
-				_server_index = i;
-			}
-		}
-		if(valid_listen_directive.size() != 1) {
-			for(It = valid_listen_directive.begin(); It != valid_listen_directive.end(); It++) {
-                //test the host request header against the server_name entries of the server blocks that matched ip/port
-					if(It->second.getServerName() == _Headers["Host"])
-                    {
-						_server_index = It->first;		
-				        break;
-                    }
-			}
-		}
-		if(_server_index == -1) {
-			//if you didnt find any match pass the request to the default server for ip/port (the first one)
-			_server_index = valid_listen_directive.begin()->first;
-		}
-    }
-    std::istringstream iss(_StartLine);
-    std::string m;
-    std::string r_uri;
-    std::string http_v;
-    iss>>m>>r_uri>>http_v;
-    if (m != "GET" && m != "DELETE" && m != "POST")
-    {
-        //RETURN 501 (Not Implemented)
-        _status_code = 501;
-    }
-    _method = m;
-    //check http version should be 1.1 does this check matter?
-    if (http_v != "HTTP/1.1")
-    {
-        //505 not supported version
-        _status_code = 505;
-    }
-    //get requestURI (should be absolute path) if the request URI doesnt exist -->error
-    else if (_Headers.find("Transfer-Encoding")!=_Headers.end() && _Headers["Transfer-Encoding"].find("chunked",0)!=std::string::npos)
-    {
-        //return 501 Not Implemented
-        _status_code = 501;
-    }
-    else if (_Headers.find("Transfer-Encoding")==_Headers.end()&& _Headers.find("Content-Length")==_Headers.end() && _method == "POST")
-    {
-        //return 400 Bad Request
-        _status_code = 400;
-    }
-    else if (Request::check_for_forbidden_chars(r_uri))//request uri contains a char not allowed
-    {
-        //400 Bad Request
-        _status_code = 400;
-    }
-    else if (r_uri.length() > 2097152)//chrome max uri size
-    {
-        //414 Request-URI Too Long
-        _status_code = 414;
-    }
-    else if ((_sf->getServers())[_server_index].getClientBodySizeLimit() < _body_length)//request body larger than client max body size in config file
-    {
-        //413 Request Entity Too Large
-        _status_code  = 413;
-    }
-    _RequestURI = r_uri;
-    Request::get_matched_location_for_request_uri();
-    if (_location_index != "")//location found
-    {
-        if (Request::is_location_has_redirection())
+        _status_code=-1;
+        _server_index =-1;
+        //check if host header field
+        if (_Headers.find("Host")==_Headers.end())//there is not a host header
         {
-            //location have redirection like :return 301 /home/index.html
-            //301 Moved Permanently
-            _status_code = 301;
+            //400 bad request
+            _status_code = 400;
         }
-        else
+        else //choosing the right server to handle the request
         {
-            if (Request::is_method_allowed_in_location());
-            else
-            {
-                //405 Method Not Allowed
-                _status_code = 405;
+            //test the port and ip add of the request against the listen directives of the server blocks
+            
+            std::map<int, Server> valid_listen_directive;
+            std::map<int, Server>::iterator It;
+            for(size_t i = 0; i < _sf->getServers().size(); i++) {
+                if ((_sf->getServers())[i].getHost() == _req_host && (_sf->getServers())[i].getPort() == _req_port) {
+                    valid_listen_directive.insert(std::make_pair(i, _sf->getServers()[i]));
+                    _server_index = i;
+                }
+            }
+            if(valid_listen_directive.size() != 1) {
+                for(It = valid_listen_directive.begin(); It != valid_listen_directive.end(); It++) {
+                    //test the host request header against the server_name entries of the server blocks that matched ip/port
+                        if(It->second.getServerName() == _Headers["Host"])
+                        {
+                            _server_index = It->first;		
+                            break;
+                        }
+                }
+            }
+            if(_server_index == -1) {
+                //if you didnt find any match pass the request to the default server for ip/port (the first one)
+                _server_index = valid_listen_directive.begin()->first;
             }
         }
-    }  
-    else//if no location match the request uri
-    {
-        //404 Not found
-        _status_code = 404;
-    }  
+        std::istringstream iss(_StartLine);
+        std::string m;
+        std::string r_uri;
+        std::string http_v;
+        iss>>m>>r_uri>>http_v;
+        if (m != "GET" && m != "DELETE" && m != "POST")
+        {
+            //RETURN 501 (Not Implemented)
+            _status_code = 501;
+        }
+        _method = m;
+        //check http version should be 1.1 does this check matter?
+        if (http_v != "HTTP/1.1")
+        {
+            //505 not supported version
+            _status_code = 505;
+        }
+        //get requestURI (should be absolute path) if the request URI doesnt exist -->error
+        else if (_Headers.find("Transfer-Encoding")!=_Headers.end() && _Headers["Transfer-Encoding"].find("chunked",0)!=std::string::npos)
+        {
+            //return 501 Not Implemented
+            _status_code = 501;
+        }
+        else if (_Headers.find("Transfer-Encoding")==_Headers.end()&& _Headers.find("Content-Length")==_Headers.end() && _method == "POST")
+        {
+            //return 400 Bad Request
+            _status_code = 400;
+        }
+        else if (Request::check_for_forbidden_chars(r_uri))//request uri contains a char not allowed
+        {
+            //400 Bad Request
+            _status_code = 400;
+        }
+        else if (r_uri.length() > 2097152)//chrome max uri size
+        {
+            //414 Request-URI Too Long
+            _status_code = 414;
+        }
+        else if ((_sf->getServers())[_server_index].getClientBodySizeLimit() < _body_length)//request body larger than client max body size in config file
+        {
+            //413 Request Entity Too Large
+            _status_code  = 413;
+        }
+        _RequestURI = r_uri;
+        Request::get_matched_location_for_request_uri();
+        if (_location_index != "")//location found
+        {
+            if (Request::is_location_has_redirection())
+            {
+                //location have redirection like :return 301 /home/index.html
+                //301 Moved Permanently
+                _status_code = 301;
+            }
+            else
+            {
+                if (Request::is_method_allowed_in_location());
+                else
+                {
+                    //405 Method Not Allowed
+                    _status_code = 405;
+                }
+            }
+        }  
+        else//if no location match the request uri
+        {
+            //404 Not found
+            _status_code = 404;
+        }  
+    }
 }
 
 std::string Request::getMethod()const{return _method;}
@@ -515,5 +523,5 @@ void Request::add_chunk(std::string chunk){
 }
 
 bool Request::request_is_ready(){
-    return request_status;
+    return _b_complete;
 }

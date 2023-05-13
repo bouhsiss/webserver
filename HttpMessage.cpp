@@ -1,6 +1,6 @@
 #include"HttpMessage.hpp"
 
-HttpMessage::HttpMessage() {}
+HttpMessage::HttpMessage(): _body_length(0),_sl_complete(false),_hd_complete(false),_b_complete(false){}
 
 HttpMessage::HttpMessage(HttpMessage const& other) {
 	(void)other;
@@ -29,52 +29,61 @@ std::string random_filename() {
     return result;
 }
 
-HttpMessage::HttpMessage(std::string& Message):_body_length(0){
+
+void HttpMessage::parse(){
 	//skip CRLF
 	//added code
 	_filename = random_filename();
-	while(Message.find("\r\n",0) == 0)
-		Message = Message.substr(2);
 
 	//set start_line
-	if (Message.find("\r\n")!=std::string::npos){
-		_StartLine = Message.substr(0,Message.find("\r\n"));
-		//remove start_line from body
-		Message = Message.substr(Message.find("\r\n")+2);
+	if (_sl_complete==false && _message.find("\r\n")!=std::string::npos )
+	{
+		_StartLine = _message.substr(0,_message.find("\r\n"));
+		//remove start_line from buffer
+		_sl_complete = true;
+		_message = _message.substr(_message.find("\r\n")+2);
 	}
 	//put all headers in one string
-	std::string heads;
-	if (Message.find("\r\n\r\n")!=std::string::npos)
+	if (_hd_complete ==false&& _message.find("\r\n\r\n")!=std::string::npos)
 	{
-		heads= Message.substr(0,Message.find("\r\n\r\n")+2);
+		_hd_complete=true;
+		if (_StartLine.find("GET")!=std::string::npos || _StartLine.find("DELETE")!=std::string::npos)
+			_b_complete=true;
+		std::string heads;
+		heads= _message.substr(0,_message.find("\r\n\r\n")+2);
 		//remove headers from  message
-		Message = Message.substr(Message.find("\r\n\r\n")+4);
+		_message = _message.substr(_message.find("\r\n\r\n")+4);
+			//add headers in map
+		std::string name,value;
+		while (heads.length() > 0)
+		{
+			name = heads.substr(0,heads.find(":"));
+			heads = heads.substr(heads.find(":")+1);
+			value = heads.substr(0,heads.find("\r\n"));
+			heads = heads.substr(heads.find("\r\n")+2);
+			setHeaders(name,value);
+			// if the header occupies more than one line append the rest of the header value  
+			while (heads[0] && (heads[0]==' ' || heads[0]==9))//SP or HT
+			{
+				value = heads.substr(0,heads.find("\r\n"));
+				_Headers[name].append(value);
+				heads = heads.substr(heads.find("\r\n")+2);
+			}
+		}
 	}
 	//set body	
-	
-	_Body.open(_filename.c_str(),std::ios::in);
-	if (_Body.is_open())
+	else
 	{
-		_Body<<Message;
-		_body_length +=  Message.length();
-		_Body.close();
-	}
-	//add headers in map
-	std::string name,value;
-
-	while (heads.length() > 0)
-	{
-		name = heads.substr(0,heads.find(":"));
-		heads = heads.substr(heads.find(":")+1);
-		value = heads.substr(0,heads.find("\r\n"));
-		heads = heads.substr(heads.find("\r\n")+2);
-		setHeaders(name,value);
-		// if the header occupies more than one line append the rest of the header value  
-		while (heads[0] && (heads[0]==' ' || heads[0]==9))//SP or HT
+		_Body.open(_filename.c_str(),std::ios::in);
+		if (_Body.is_open())
 		{
-			value = heads.substr(0,heads.find("\r\n"));
-			_Headers[name].append(value);
-			heads = heads.substr(heads.find("\r\n")+2);
+			_Body<<_message;
+			if ((_Headers.find("Transfer-Encoding")!=_Headers.end() && _message.find("0/r/n"))||
+				(_Headers.find("Content-Length")!=_Headers.end()&& _body_length >= atoi(_Headers.find("Content-Length")->second.c_str())))
+				_b_complete = true;
+			_message = "";
+			_body_length +=  _message.length();
+			_Body.close();
 		}
 	}
 }
@@ -87,4 +96,5 @@ void HttpMessage::append_chunk(std::string chunk){
 		_body_length +=  chunk.length();
 		_Body.close();
 	}
+	//
 }

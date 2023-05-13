@@ -16,12 +16,13 @@ class Request : public HttpMessage {
 	public :
 		Request();
 		//parsing is done here
-		Request(std::string req_data, std::string request_host, std::string request_port);
+		Request(std::string request_host, std::string request_port);
 		Request(const Request& other);
 		Request& operator=(const Request& other);
 		~Request();
         std::string getMethod()const;
         std::string getRequestURI()const;
+		void Request::proccess_Request(std::string req_data);
 		bool check_for_forbidden_chars(std::string)const;
 		void get_matched_location_for_request_uri();
         bool is_location_has_redirection();
@@ -63,7 +64,6 @@ class Request : public HttpMessage {
 		std::string _resource_type;
 		std::string _requested_resource;
 		//for chunked request
-		bool request_status;
 		//also for chunked request request is complete when you reach the length in the content_length request header
 		// size_t current_content_length;
 };
