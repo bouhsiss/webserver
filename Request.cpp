@@ -422,18 +422,19 @@ bool Request::get_requested_resource(){
         rsc = _sf->getServers()[_server_index].getLocations()[_location_index]->getRoot()+ _RequestURI.substr(path.length());
     }
     //check if the requested resource is a file
-    if (access(rsc.c_str(),R_OK) ==0)//file found
+    struct stat fileInfo;
+    if (stat(rsc.c_str(),&fileInfo)!=0)
+        std::cout<<"stat function: failed to get information"<<std::endl;
+    else if (S_ISREG(fileInfo.st_mode))//regular file found
     {
         _resource_type = "file";
         _requested_resource = rsc;
         return true;
     }
-    DIR* dir = opendir(rsc.c_str());
-    if (dir != NULL)//directory found
+    else if (S_ISDIR(fileInfo.st_mode))//directory found
     {
-        closedir(dir);
-        _requested_resource = rsc;
         _resource_type = "directory";
+        _requested_resource = rsc;
         return true;
     }
     _resource_type = "";
