@@ -79,7 +79,7 @@ void HttpMessage::parse(){
 		{
 			_Body<<_message;
 			if ((_Headers.find("Transfer-Encoding")!=_Headers.end() && _message.find("0/r/n"))||
-				(_Headers.find("Content-Length")!=_Headers.end()&& _body_length >= atoi(_Headers.find("Content-Length")->second.c_str())))
+				(_Headers.find("Content-Length")!=_Headers.end()&& (int)_body_length >= atoi(_Headers.find("Content-Length")->second.c_str())))
 				_b_complete = true;
 			_message = "";
 			_body_length +=  _message.length();

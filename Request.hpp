@@ -22,7 +22,7 @@ class Request : public HttpMessage {
 		~Request();
         std::string getMethod()const;
         std::string getRequestURI()const;
-		void Request::proccess_Request(std::string req_data);
+		void proccess_Request(std::string req_data);
 		bool check_for_forbidden_chars(std::string)const;
 		void get_matched_location_for_request_uri();
         bool is_location_has_redirection();
