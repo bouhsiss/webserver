@@ -56,10 +56,12 @@ void Request::proccess_Request(std::string req_data){
                         }
                 }
             }
-            if(_server_index == -1) {
+            if(_server_index == -1 && valid_listen_directive.size()) {
                 //if you didnt find any match pass the request to the default server for ip/port (the first one)
                 _server_index = valid_listen_directive.begin()->first;
             }
+            else
+                std::cout<<"error: no server found to handle the request"<<std::endl;
         }
         std::istringstream iss(_StartLine);
         std::string m;
@@ -147,18 +149,29 @@ bool Request::check_for_forbidden_chars(std::string uri)const{
 }
 
 void Request::get_matched_location_for_request_uri(){
-	std::map<std::string, Location *> Locations = _sf->getServers()[_server_index].getLocations();
+	std::map<std::string, Location *> tmp;
     //loop the location
-    for (std::map<std::string,Location*>::iterator it = Locations.begin();it != Locations.end(); it++)
+    for (std::map<std::string,Location*>::iterator it = _sf->getServers()[_server_index].getLocations().begin();it != _sf->getServers()[_server_index].getLocations().end(); it++)
     {
-        //if you found a match return location name
+        //if you found a match return add the location to the map
         if (_RequestURI.find(it->first)==0)
+            tmp.insert(std::make_pair(it->first,it->second));
+    }
+    //get the longest match
+    if (tmp.size()!=0)
+    {
+        _location_index = "";
+        for (std::map<std::string,Location*>::iterator it;it!=tmp.end();it++)
         {
-            _location_index =  it->first;
-            return ;
+            if (_location_index.length() < it->first.length())
+                _location_index = it->first;
         }
     }
-    _location_index =  "";
+    else
+    {
+        std::cout<<"error: no location found to handle the request"<<std::endl;
+        _location_index = "";
+    }
 }
 bool Request::is_location_has_redirection(){
 	Location *location = _sf->getServers()[_server_index].getLocations()[_location_index];
