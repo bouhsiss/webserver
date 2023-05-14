@@ -1,10 +1,7 @@
 
 --->read rfc
--- use getinstance() to access configuration
 --check rfc for mandatory headers(general/request/response)
 
-LOCATION.......
---can we set the last location to be / ????????(to be handled lateeer)
 
 POST............................
 how to upload a folder/video....????????????
@@ -22,10 +19,3 @@ DELETE.......
 --dont delete project files(try changing permissions)
 
 <!-- https://github.com/f0lio/webserv -->
-
-..whenevere an activity happens on a socket if read append data
-..check if request_is_ready ----> check_which requested method()----->generate response
-.....how to check if the request has fully arrived?????????????????
-----if there was a body without content_lentgh header set _body to 0 and mark request as ready
-----if the body arrived fully first time set the request as finished
---- whenever you add a chunk keep track of size and checkif its the last chunk
