@@ -116,7 +116,8 @@ void Request::proccess_Request(std::string req_data){
             }
             else
             {
-                if (Request::is_method_allowed_in_location());
+                if (Request::is_method_allowed_in_location())
+                    check_which_requested_method();
                 else
                 {
                     //405 Method Not Allowed
@@ -522,12 +523,6 @@ bool Request::delete_all_folder_content(){
 
 void Request::run_cgi(){
     //fork and execve cgi path with arguments
-}
-
-void Request::add_chunk(std::string chunk){
-    append_chunk(chunk);
-    //incriment the currunt_request_length
-    //check if you reached the value in the header set request_status=true
 }
 
 bool Request::request_is_ready(){

@@ -91,14 +91,3 @@ void HttpMessage::parse(){
 		}
 	}
 }
-
-void HttpMessage::append_chunk(std::string chunk){
-	_Body.open(_filename,std::ios::in);
-	if (_Body.is_open())
-	{
-		_Body<<chunk;
-		_body_length +=  chunk.length();
-		_Body.close();
-	}
-	//
-}

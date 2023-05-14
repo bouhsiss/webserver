@@ -21,7 +21,6 @@ class HttpMessage {
 		bool getb() const { return(_b_complete);}
 	protected :
 		void parse();
-		void append_chunk(std::string chunk);
 		void setHeaders(std::string name, std::string value);
 
 		std::string 						_StartLine;

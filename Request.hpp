@@ -15,13 +15,13 @@ class ServerFarm;
 class Request : public HttpMessage {
 	public :
 		Request();
-		//parsing is done here
 		Request(std::string request_host, std::string request_port);
 		Request(const Request& other);
 		Request& operator=(const Request& other);
 		~Request();
         std::string getMethod()const;
         std::string getRequestURI()const;
+		//parsing is done here
 		void proccess_Request(std::string req_data);
 		bool request_is_ready();
 
@@ -50,9 +50,6 @@ class Request : public HttpMessage {
         bool has_write_acces_on_folder();
 		//function to run cgi
 		void run_cgi();
-		//chunked request
-		void add_chunk(std::string chunk);
-		//check if request arrived fully
 
 
 		std::string _method;
@@ -66,7 +63,4 @@ class Request : public HttpMessage {
 		std::string _req_port;
 		std::string _resource_type;
 		std::string _requested_resource;
-		//for chunked request
-		//also for chunked request request is complete when you reach the length in the content_length request header
-		// size_t current_content_length;
 };
