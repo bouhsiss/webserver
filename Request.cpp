@@ -56,7 +56,7 @@ void Request::proccess_Request(std::string req_data){
                         }
                 }
             }
-            if(_server_index == -1 && valid_listen_directive.size()) {
+            if(_sf->getServers()[_server_index].getServerName() != _Headers["Host"]) {
                 //if you didnt find any match pass the request to the default server for ip/port (the first one)
                 _server_index = valid_listen_directive.begin()->first;
             }
@@ -107,6 +107,8 @@ void Request::proccess_Request(std::string req_data){
             _status_code  = 413;
         }
         _RequestURI = r_uri;
+		std::cout << RED <<  _RequestURI << RESET << std::endl;
+		std::cout << YELLOW << _sf->getServers()[_server_index] << RESET << std::endl;
         Request::get_matched_location_for_request_uri();
         if (_location_index != "")//location found
         {
