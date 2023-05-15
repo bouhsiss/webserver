@@ -38,10 +38,10 @@ void Request::proccess_Request(std::string req_data){
         {
             //test the port and ip add of the request against the listen directives of the server blocks
             
-            std::map<int, Server> valid_listen_directive;
-            std::map<int, Server>::iterator It;
+            std::map<int, Server*> valid_listen_directive;
+            std::map<int, Server*>::iterator It;
             for(size_t i = 0; i < _sf->getServers().size(); i++) {
-                if ((_sf->getServers())[i].getHost() == _req_host && (_sf->getServers())[i].getPort() == _req_port) {
+                if ((_sf->getServers())[i]->getHost() == _req_host && (_sf->getServers())[i]->getPort() == _req_port) {
                     valid_listen_directive.insert(std::make_pair(i, _sf->getServers()[i]));
                     _server_index = i;
                 }
@@ -49,14 +49,14 @@ void Request::proccess_Request(std::string req_data){
             if(valid_listen_directive.size() != 1) {
                 for(It = valid_listen_directive.begin(); It != valid_listen_directive.end(); It++) {
                     //test the host request header against the server_name entries of the server blocks that matched ip/port
-                        if(It->second.getServerName() == _Headers["Host"])
+                        if(It->second->getServerName() == _Headers["Host"])
                         {
                             _server_index = It->first;		
                             break;
                         }
                 }
             }
-            if(_sf->getServers()[_server_index].getServerName() != _Headers["Host"]) {
+            if(_sf->getServers()[_server_index]->getServerName() != _Headers["Host"]) {
                 //if you didnt find any match pass the request to the default server for ip/port (the first one)
                 _server_index = valid_listen_directive.begin()->first;
             }
@@ -101,7 +101,7 @@ void Request::proccess_Request(std::string req_data){
             //414 Request-URI Too Long
             _status_code = 414;
         }
-        else if ((_sf->getServers())[_server_index].getClientBodySizeLimit() < _body_length)//request body larger than client max body size in config file
+        else if ((_sf->getServers())[_server_index]->getClientBodySizeLimit() < _body_length)//request body larger than client max body size in config file
         {
             //413 Request Entity Too Large
             _status_code  = 413;
@@ -150,11 +150,9 @@ bool Request::check_for_forbidden_chars(std::string uri)const{
 }
 
 void Request::get_matched_location_for_request_uri(){
-	std::cout << "before" << std::endl;
-	std::cout << YELLOW << _sf->getServers()[_server_index] << RESET << std::endl;
 	std::map<std::string, Location *> tmp;
     //loop the location
-    for (std::map<std::string,Location*>::iterator it = _sf->getServers()[_server_index].getLocations().begin();it != _sf->getServers()[_server_index].getLocations().end(); it++)
+    for (std::map<std::string,Location*>::iterator it = _sf->getServers()[_server_index]->getLocations().begin();it != _sf->getServers()[_server_index]->getLocations().end(); it++)
     {
         //if you found a match return add the location to the map
         if (_RequestURI.find(it->first)==0)
@@ -162,14 +160,12 @@ void Request::get_matched_location_for_request_uri(){
             tmp.insert(std::make_pair(it->first,it->second));
 		}
     }
-	std::cout << "after" << std::endl;
     //get the longest match
     if (tmp.size()!=0)
     {
         _location_index = "";
         for (std::map<std::string,Location*>::iterator it = tmp.begin();it!=tmp.end();it++)
         {
-			std::cout << RED << "inserted" << std::endl;
             if (_location_index.size() < it->first.size())
 			{
                 _location_index = it->first;
@@ -183,13 +179,13 @@ void Request::get_matched_location_for_request_uri(){
     }
 }
 bool Request::is_location_has_redirection(){
-	Location *location = _sf->getServers()[_server_index].getLocations()[_location_index];
+	Location *location = _sf->getServers()[_server_index]->getLocations()[_location_index];
 	if(location->getRedirect() != "")
 		return(true);
     return false;
 }
 bool Request::is_method_allowed_in_location(){
-	Location *location = _sf->getServers()[_server_index].getLocations()[_location_index];
+	Location *location = _sf->getServers()[_server_index]->getLocations()[_location_index];
     for (size_t i=0; i < location->getAllowedMethods().size() ; i++)
     {
         if (_method == location->getAllowedMethods()[i])
@@ -444,12 +440,12 @@ void Request::DELETE(){
 bool Request::get_requested_resource(){
     //append request uri to root
     std::string rsc;
-    if (_sf->getServers()[_server_index].getLocations()[_location_index]->getPath() == "/")
-        rsc = _sf->getServers()[_server_index].getLocations()[_location_index]->getRoot()+_RequestURI; 
+    if (_sf->getServers()[_server_index]->getLocations()[_location_index]->getPath() == "/")
+        rsc = _sf->getServers()[_server_index]->getLocations()[_location_index]->getRoot()+_RequestURI; 
     else{
         //remove matched path from req_uri
-        std::string path=_sf->getServers()[_server_index].getLocations()[_location_index]->getPath();
-        rsc = _sf->getServers()[_server_index].getLocations()[_location_index]->getRoot()+ _RequestURI.substr(path.length());
+        std::string path=_sf->getServers()[_server_index]->getLocations()[_location_index]->getPath();
+        rsc = _sf->getServers()[_server_index]->getLocations()[_location_index]->getRoot()+ _RequestURI.substr(path.length());
     }
     //check if the requested resource is a file
     struct stat fileInfo;
@@ -478,20 +474,20 @@ bool Request::is_uri_has_slash_in_end(){
     return false;
 }
 bool Request::is_dir_has_index_file(){
-    if(_sf->getServers()[_server_index].getLocations()[_location_index]->getIndex() == "" )
+    if(_sf->getServers()[_server_index]->getLocations()[_location_index]->getIndex() == "" )
         return false ;
     return true;
 }
 std::string Request::get_auto_index(){
-    return _sf->getServers()[_server_index].getLocations()[_location_index]->getAutoIndex();
+    return _sf->getServers()[_server_index]->getLocations()[_location_index]->getAutoIndex();
 }
 bool Request::if_location_has_cgi(){
-    if (_sf->getServers()[_server_index].getLocations()[_location_index]->getCgiPath() == "")
+    if (_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath() == "")
         return false;
     return true;
 }
 bool Request::if_location_support_upload(){
-     if (_sf->getServers()[_server_index].getLocations()[_location_index]->getUploadPath() == "")
+     if (_sf->getServers()[_server_index]->getLocations()[_location_index]->getUploadPath() == "")
         return false;
     return true;
 }

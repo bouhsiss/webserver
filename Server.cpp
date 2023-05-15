@@ -60,7 +60,11 @@ Server::Server() {
 	this->_server_name = "";
 }
 
-
+Server::~Server() {
+	std::map<std::string, Location *>::iterator It;
+	for(It = _Locations.begin(); It != _Locations.end(); It++)
+		delete It->second;
+}
 
 void Server::isServerValid() {
 	if(_host.empty())

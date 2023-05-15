@@ -16,7 +16,7 @@
 
 class Configuration {
 	public :
-		std::vector<Server> parse(std::string configFilePath);
+		std::vector<Server *> parse(std::string configFilePath);
 
 	private :
 		bool _extractServerConfigLine(std::string line, Server& current_server);

@@ -12,7 +12,7 @@
 
 #include "ServerFarm.hpp"
 
-std::vector<Server>& ServerFarm::getServers() {return(_servers);}
+std::vector<Server*>& ServerFarm::getServers() {return(_servers);}
 const std::map<int, Server *>& ServerFarm::getActiveServers() const {return(_activeServers);}
 const std::map<int, Server *>& ServerFarm::getClientSockets() const {return(_clientSockets);}
 
@@ -22,6 +22,7 @@ ServerFarm::ServerFarm() {
 	FD_ZERO(&_readFds);
 	FD_ZERO(&_writeFds);
 }
+
 
 ServerFarm *ServerFarm::getInstance() {
 	if (instancePtr == NULL) {
@@ -33,6 +34,13 @@ ServerFarm *ServerFarm::getInstance() {
 	}
 }
 
+ServerFarm::~ServerFarm() {
+	for(size_t i = 0; i < _servers.size(); i++)
+	{
+		std::cout << "deleted" << std::endl;
+		delete _servers[i];
+	}
+}
 
 void ServerFarm::configure(std::string configFilepath) {
 	this->_servers = _config.parse(configFilepath);
@@ -40,12 +48,12 @@ void ServerFarm::configure(std::string configFilepath) {
 }
 
 void ServerFarm::initServers() {
-	std::vector<Server>::iterator It;
-	for(It = _servers.begin(); It != _servers.end(); It++)
+	for(size_t i = 0; i < _servers.size(); i++)
 	{
-		if(!isServerActive(*It))
-			It->setupListenSocket(); // check whether there's an already open listening socket listening to this host:port
-		_activeServers.insert(std::make_pair(It->getListenSocket(), &(*It)));
+		if(!isServerActive(*_servers[i]))
+			_servers[i]->setupListenSocket(); // check whether there's an already open listening socket listening to this host:port
+		_activeServers.insert(std::make_pair(_servers[i]->getListenSocket(), _servers[i]));
+
 	}
 }
 
@@ -61,10 +69,10 @@ bool ServerFarm::isServerActive(Server &server) {
 void ServerFarm::areServersDuplicated() {
 	for(size_t i = 0; i < _servers.size(); i++) {
 		for(size_t j = i + 1 ; j < _servers.size(); j++) {
-			if(_servers[i].getHost() == _servers[j].getHost() &&
-			_servers[i].getPort() == _servers[j].getPort() &&
-			_servers[i].getServerName() == _servers[j].getServerName())
-				throw(Http::ConfigFileErrorException("server : " + _servers[i].getHost() + ":" + _servers[i].getPort() + " is duplicated."));
+			if(_servers[i]->getHost() == _servers[j]->getHost() &&
+			_servers[i]->getPort() == _servers[j]->getPort() &&
+			_servers[i]->getServerName() == _servers[j]->getServerName())
+				throw(Http::ConfigFileErrorException("server : " + _servers[i]->getHost() + ":" + _servers[i]->getPort() + " is duplicated."));
 		}
 	}
 }
@@ -152,10 +160,10 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 				close(clientSock);
 			}
 			else {
-				// std::cout << "==================== REQUEST ========================= " << std::endl << std::endl;
-				// std::cout << MAGENTA << reqData << RESET << std::endl;
-				// std::cout << "=======================================================" << std::endl;
 				std::string reqData(read, bytesReceived);
+				std::cout << "==================== REQUEST ========================= " << std::endl << std::endl;
+				std::cout << MAGENTA << reqData << RESET << std::endl;
+				std::cout << "=======================================================" << std::endl;
 				if(_writeSockets.find(clientSock) != _writeSockets.end()) {
 					_writeSockets[clientSock]->proccess_Request(reqData);
 					if(_writeSockets[clientSock]->request_is_ready())
@@ -205,8 +213,8 @@ void ServerFarm::runEventLoop() {
 }
 
 std::ostream& operator<<(std::ostream &out, ServerFarm& c) {
-	std::vector<Server>::iterator It;
-	std::vector<Server> servers = c.getServers();
+	std::vector<Server*>::iterator It;
+	std::vector<Server*> servers = c.getServers();
 	out << "======================== CONFIGURATION ========================" << std::endl;
 	for(It = servers.begin(); It != servers.end(); It++) {
 		int serverCount = 0;

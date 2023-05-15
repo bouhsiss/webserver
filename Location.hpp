@@ -15,6 +15,7 @@
 class Location {
     public :
 		Location();
+		~Location(){}
 
 		const std::string getPath() const;
 		const std::vector<std::string> getAllowedMethods();

@@ -21,7 +21,7 @@ class ServerFarm {
 	public :
 		void configure(std::string configFilePath);
 		static ServerFarm *getInstance();
-		std::vector<Server>& getServers();
+		std::vector<Server *>& getServers();
 		const std::map<int, Server *>& getActiveServers() const;
 		const std::map<int, Server *>& getClientSockets() const;
 		void initServers();
@@ -30,6 +30,7 @@ class ServerFarm {
 		ServerFarm(const ServerFarm &other);
 		void operator=(const ServerFarm &other);
 		ServerFarm();
+		~ServerFarm();
 
 		bool isServerActive(Server &server);
 		void areServersDuplicated();
@@ -40,7 +41,7 @@ class ServerFarm {
 		static ServerFarm *instancePtr;
 
 		Configuration _config;
-		std::vector<Server> _servers;
+		std::vector<Server *> _servers;
 		std::map<int, Server *> _activeServers; // a map with the listening socket as key, and a pointer to the socket's server as a value
 		std::map<int, Server *> _clientSockets;
 		std::map<int, Request *> _writeSockets;

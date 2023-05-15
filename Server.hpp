@@ -45,7 +45,7 @@ class Server {
 		void setupListenSocket();
 
 		Server();
-
+		~Server();
 
     private :
 		int _listenSocket;
