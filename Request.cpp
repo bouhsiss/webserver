@@ -566,7 +566,7 @@ void Request::unchunk_body(){
         //read chunk size
         std::getline(_Body, line);
         //convert chunk_size into decimal
-        int chunk_size = stoi(line,0,16);
+        size_t chunk_size = stoi(line,0,16);
         while(chunk_size != 0)
         {
             //read chunk
@@ -582,7 +582,7 @@ void Request::unchunk_body(){
             //read chunk size
             std::getline(_Body, line);
             //convert chunk_size into decimal
-            int chunk_size = stoi(line,0,16);
+            chunk_size = stoi(line,0,16);
         }
         _Body.close();
         _body_unchunked.close();
