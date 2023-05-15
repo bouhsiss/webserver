@@ -39,6 +39,7 @@ class Request : public HttpMessage {
         void DELETE();
 
         //----------- helper functions
+		void upload_resource();
         bool get_requested_resource();
         bool delete_all_folder_content();
         std::string get_resource_type();
@@ -48,19 +49,23 @@ class Request : public HttpMessage {
         bool if_location_has_cgi();
         bool if_location_support_upload();
         bool has_write_acces_on_folder();
+		void unchunk_body();
 		//function to run cgi
 		void run_cgi();
 
 
-		std::string _method;
-		std::string _RequestURI;
-		std::string _http_v;
-		int 		_status_code;
-		ServerFarm 	*_sf;
-		int 		_server_index;
-		std::string	_location_index;
-		std::string _req_host;
-		std::string _req_port;
-		std::string _resource_type;
-		std::string _requested_resource;
+		std::string 	_method;
+		std::string 	_RequestURI;
+		std::string 	_http_v;
+		int 			_status_code;
+		ServerFarm 		*_sf;
+		int 			_server_index;
+		std::string		_location_index;
+		std::string 	_req_host;
+		std::string 	_req_port;
+		std::string 	_resource_type;
+		std::string 	_requested_resource;
+		//for chunked request
+		std::fstream	_body_unchunked;
+		std::string		_unchunked_filename;
 };

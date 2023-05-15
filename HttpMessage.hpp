@@ -22,6 +22,7 @@ class HttpMessage {
 	protected :
 		void parse();
 		void setHeaders(std::string name, std::string value);
+		std::string random_filename(); 
 
 		std::string 						_StartLine;
 		std::map<std::string, std::string> 	_Headers;

@@ -17,7 +17,7 @@ HttpMessage::~HttpMessage() {}
 void HttpMessage::setHeaders(std::string name, std::string value) { _Headers[name] = value; }
 
 //generate random filename
-std::string random_filename() {
+std::string HttpMessage::random_filename() {
 	int length = 6;
     static const char charset[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     const int charset_size = sizeof(charset) - 1;
