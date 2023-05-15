@@ -117,7 +117,9 @@ std::ostream& operator<<(std::ostream &out, Server &c) {
 	std::map<std::string, Location *>::iterator Itr;
 	out << "      - locations : " << std::endl;
 	for(Itr = locations.begin(); Itr != locations.end(); Itr++)
+	{
 		out << *Itr->second << std::endl;
+	}
 
 	out << "=================================================================" << std::endl;
 	return(out);

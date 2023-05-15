@@ -107,8 +107,7 @@ void Request::proccess_Request(std::string req_data){
             _status_code  = 413;
         }
         _RequestURI = r_uri;
-		std::cout << RED <<  _RequestURI << RESET << std::endl;
-		std::cout << YELLOW << _sf->getServers()[_server_index] << RESET << std::endl;
+
         Request::get_matched_location_for_request_uri();
         if (_location_index != "")//location found
         {
@@ -151,22 +150,30 @@ bool Request::check_for_forbidden_chars(std::string uri)const{
 }
 
 void Request::get_matched_location_for_request_uri(){
+	std::cout << "before" << std::endl;
+	std::cout << YELLOW << _sf->getServers()[_server_index] << RESET << std::endl;
 	std::map<std::string, Location *> tmp;
     //loop the location
     for (std::map<std::string,Location*>::iterator it = _sf->getServers()[_server_index].getLocations().begin();it != _sf->getServers()[_server_index].getLocations().end(); it++)
     {
         //if you found a match return add the location to the map
         if (_RequestURI.find(it->first)==0)
+		{
             tmp.insert(std::make_pair(it->first,it->second));
+		}
     }
+	std::cout << "after" << std::endl;
     //get the longest match
     if (tmp.size()!=0)
     {
         _location_index = "";
-        for (std::map<std::string,Location*>::iterator it;it!=tmp.end();it++)
+        for (std::map<std::string,Location*>::iterator it = tmp.begin();it!=tmp.end();it++)
         {
-            if (_location_index.length() < it->first.length())
+			std::cout << RED << "inserted" << std::endl;
+            if (_location_index.size() < it->first.size())
+			{
                 _location_index = it->first;
+			}
         }
     }
     else
