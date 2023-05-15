@@ -173,10 +173,7 @@ void Request::get_matched_location_for_request_uri(){
         }
     }
     else
-    {
-        std::cout<<"error: no location found to handle the request"<<std::endl;
         _location_index = "";
-    }
 }
 bool Request::is_location_has_redirection(){
 	Location *location = _sf->getServers()[_server_index]->getLocations()[_location_index];
@@ -277,16 +274,7 @@ void Request::POST(){
     //dont forget chunked request
     if (Request::if_location_support_upload())//location support upload
     {
-        if (_Headers.find("Transfer-Encoding")!=_Headers.end())
-        {
-            //decode chunks annd upload them to the new file
-            //where location??
-        }
-        else
-        {
-            //just upload the body
-            //where location??
-        }
+       upload_resource();
         //201 created
         _status_code = 201;
     }
@@ -545,4 +533,63 @@ void Request::run_cgi(){
 
 bool Request::request_is_ready(){
     return _b_complete;
+}
+
+void Request::upload_resource(){
+    if (_Headers.find("Transfer-Encoding")!=_Headers.end())//transfer_encoding header exist
+    {
+        //unchunk the data 
+        Request::unchunk_body();
+        //add attribute body_unchunked
+        //upload it to upload_path (new filestream)
+        //check content-type exist and = "multipart/form-data"
+        if (_Headers.find("Content-Type")!= _Headers.end() && _Headers["Content-Type"]=="multipart/form-data")
+        {
+
+        }
+    }
+    else//just content-length header
+    {
+        //check content-type exist and = "multipart/form-data"
+        //transfer the data from the _body file stream to uplad_path filestream
+        if (_Headers.find("Content-Type")!= _Headers.end() && _Headers["Content-Type"]=="multipart/form-data")
+        {
+
+        }
+    }
+}
+
+void Request::unchunk_body(){
+    std::string buffer;
+    std::string line;
+    std::string chunk;
+    _Body.open(_filename,std::ios::in | std::ios::out);
+    _body_unchunked.open(_unchunked_filename, std::ios::in | std::ios::out);
+    _unchunked_filename = random_filename();
+    if (_Body.is_open() && _body_unchunked.is_open()) 
+    {
+        //read chunk size
+        std::getline(_Body, line);
+        //convert chunk_size into decimal
+        int chunk_size = stoi(line,0,16);
+        while(chunk_size != 0)
+        {
+            //read chunk
+            while(buffer.length()< chunk_size)
+            {
+                std::getline(_Body, line);
+                buffer+=line;
+            }
+            //read the exact chunk size
+            chunk = buffer.substr(0,chunk_size);
+            buffer = "";
+            _body_unchunked<<chunk;
+            //read chunk size
+            std::getline(_Body, line);
+            //convert chunk_size into decimal
+            int chunk_size = stoi(line,0,16);
+        }
+        _Body.close();
+        _body_unchunked.close();
+    }
 }
