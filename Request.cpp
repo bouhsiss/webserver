@@ -549,6 +549,7 @@ void Request::upload_resource(){
     if (_uplaod_filename == "")// is the search for filename done here?????
         _uplaod_filename = random_filename();
     //uploading file
+    _uplaod_filename = _sf->getServers()[_server_index]->getLocations()[_location_index]->getUploadPath() + _uplaod_filename;
     _Body.open(_filename,std::ios::in | std::ios::out);
     _upload_file.open(_uplaod_filename,std::ios::in | std::ios::out);
     if (_Body.is_open() && _upload_file.is_open())
