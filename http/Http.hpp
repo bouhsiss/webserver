@@ -26,7 +26,7 @@
 #include<fcntl.h>
 #include<csignal>
 
-#define DEFAULT_CONFIG_FILE "default.conf"
+#define DEFAULT_CONFIG_FILE "./conf.d/default.conf"
 #define BACKLOG 200
 
 #define RED "\033[1;31m"
