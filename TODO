@@ -15,7 +15,8 @@ where you should upload the resource?????(config)
 how to upload video....????????????(same way for other types)
 if the server uploaded the file with a different name how the user will get his file back with get method?????????????
 what part of multipart/form-data i will post(is it just the file)
-
+-----dont forget the file extension???????
+------
 chunked request...........
 
 CGI...........
@@ -32,4 +33,4 @@ DELETE.......
 
 //later remove the _body unchunked and copy data back to _body
 
-
+//locaton not found??????ngnix behavior

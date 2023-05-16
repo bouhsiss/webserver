@@ -69,4 +69,5 @@ class Request : public HttpMessage {
 		//for POST method
 		std::string		_uplaod_filename;
 		std::fstream	_upload_file;
+		std::string		_uplaod_filename_extension;
 };

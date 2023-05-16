@@ -462,7 +462,7 @@ bool Request::is_uri_has_slash_in_end(){
     return false;
 }
 bool Request::is_dir_has_index_file(){
-    if(_sf->getServers()[_server_index]->getLocations()[_location_index]->getIndex() == "" )
+    if(_sf->getServers()[_server_index]->getLocations()[_location_index]->getIndex() == "")
         return false ;
     return true;
 }
@@ -537,17 +537,16 @@ bool Request::request_is_ready(){
 
 void Request::upload_resource(){
     _filename = "";
+    //default extension is nothing for now
+    _uplaod_filename_extension="";
     if (_Headers.find("Transfer-Encoding")!=_Headers.end())//transfer_encoding header exist
-    {
-        //unchunk the data 
         Request::unchunk_body();
-    }
     //check content-type exist and = "multipart/form-data"
     if (_Headers.find("Content-Type")!= _Headers.end() && _Headers["Content-Type"]=="multipart/form-data")
         Request::handle_multipart_form_data();
     //get filename
-    if (_uplaod_filename == "")// is the search for filename done here?????
-        _uplaod_filename = random_filename();
+    if (_uplaod_filename == "")
+        _uplaod_filename = random_filename()+_uplaod_filename_extension;//add extension
     //uploading file
     _uplaod_filename = _sf->getServers()[_server_index]->getLocations()[_location_index]->getUploadPath() + _uplaod_filename;
     _Body.open(_filename,std::ios::in | std::ios::out);
@@ -608,46 +607,45 @@ void Request::handle_multipart_form_data(){
     std::string line;
     std::string content;
     std::string field;
-    if (_Headers.find("Transfer-Encoding")!=_Headers.end())
+        
+    _Body.open(_filename,std::ios::in|std::ios::out);
+    if (_Body.is_open())
     {
-        //work with _body_unchunked attribute
-        _Body.open(_filename,std::ios::in|std::ios::out);
+        //read file content into content string
+        while(std::getline(_Body,line))
+            content+=line.append("\n");
+        char *token = strtok(&content[0],boundary.c_str());
+        while (token!=NULL)
+        {
+            //process token
+            field = token;
+            std::string content_disposition = field.substr(0,field.find("\r\n"));
+            if (content_disposition.find("filename")!= std::string::npos)
+            {
+                //found the file field
+                _uplaod_filename = content_disposition.substr(content_disposition.find("filename=")+9);
+                //remove parenthesis from filename
+                if (_uplaod_filename.length() >2)
+                    _uplaod_filename = _uplaod_filename.substr(1,_uplaod_filename.length()-1);
+                if (_upload_filename.find(".")!=std::string::npos)//file has extension
+                    _uplaod_filename_extension = _uplaod_filename.substr(_uplaod_filename.find_first_of("."));
+                //remove content-disposition header
+                field = field.substr(field.find("\r\n")+2);
+                //remove content-type header
+                field = field.substr(field.find("\r\n")+2);
+                //put field in _body
+                break;
+            }
+            else
+                token = std::strtok(nullptr,boundary.c_str());
+            //if token isnt a file go to next token 
+        }
+        _Body.close();
+        _Body.open(_filename,std::ios::in | std::ios::out|std::ios::trunc);
         if (_Body.is_open())
         {
-            //read file content into content string
-            while(std::getline(_Body,line))
-                content+=line.append("\n");
-            char *token = strtok(&content[0],boundary.c_str());
-            while (token!=NULL)
-            {
-                //process token
-                field = token;
-                std::string content_disposition = field.substr(0,field.find("\r\n"));
-                if (content_disposition.find("filename")!= std::string::npos)
-                {
-                    //found the file field
-                    _uplaod_filename = content_disposition.substr(content_disposition.find("filename=")+9);
-                    //remove parenthesis from filename
-                    if (_uplaod_filename.length() >2)
-                        _uplaod_filename = _uplaod_filename.substr(1,_uplaod_filename.length()-1);
-                    //remove content-disposition header
-                    field = field.substr(field.find("\r\n")+2);
-                    //remove content-type header
-                    field = field.substr(field.find("\r\n")+2);
-                    //put field in _body
-                    break;
-                }
-                else
-                    token = std::strtok(nullptr,boundary.c_str());
-                //if token isnt a file go to next token 
-            }
+            _Body<<field;
             _Body.close();
-            _Body.open(_filename,std::ios::in | std::ios::out|std::ios::trunc);
-            if (_Body.is_open())
-            {
-                _Body<<field;
-                _Body.close();
-            }
         }
     }
 }
