@@ -28,6 +28,7 @@
 
 #define DEFAULT_CONFIG_FILE "./conf.d/default.conf"
 #define BACKLOG 200
+#define DEFAULT_LANDING_PAGE 
 
 #define RED "\033[1;31m"
 #define BLUE "\033[1;34m"

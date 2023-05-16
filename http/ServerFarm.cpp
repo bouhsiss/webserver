@@ -78,7 +78,7 @@ void ServerFarm::areServersDuplicated() {
 }
 
 std::string defaultResponse() {
-	std::ifstream html_file("default.html");
+	std::ifstream html_file("/Users/hbouhsis/Desktop/webserver/ressources/default.html");
 	std::stringstream buffer;
 	buffer << html_file.rdbuf();
 	html_file.close();
