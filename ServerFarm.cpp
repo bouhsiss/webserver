@@ -100,34 +100,33 @@ void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
 	for(It = _writeSockets.begin(); It != _writeSockets.end(); ++It) {
 		int writeSock = It->first;
 		if(It->second->request_is_ready()) {
-				if(FD_ISSET(writeSock, tmpWriteFds)) {
-				if(FD_ISSET(writeSock, tmpWriteFds)) {
-					if(send( writeSock, defaultResponse().c_str(), defaultResponse().length(), 0 ) < 0)
-					{	FD_CLR(writeSock, &_writeFds);
-						FD_CLR(writeSock, &_readFds);
-						close(writeSock);
-						_writeSockets.erase(writeSock);
-						_clientSockets.erase(writeSock);
-						throw(Http::NetworkingErrorException("send failed"));
-					}
-					FD_CLR(writeSock, &_writeFds);
-					keysToErase.push_back(writeSock);
-					// FD_CLR(writeSock, &_readFds);
-					// close(writeSock);
+			if(FD_ISSET(writeSock, tmpWriteFds)) {
+				if(send( writeSock, defaultResponse().c_str(), defaultResponse().length(), 0 ) < 0)
+				{	FD_CLR(writeSock, &_writeFds);
+					FD_CLR(writeSock, &_readFds);
+					close(writeSock);
+					_writeSockets.erase(writeSock);
+					_clientSockets.erase(writeSock);
+					throw(Http::NetworkingErrorException("send failed"));
 				}
+				keysToErase.push_back(writeSock);
+				FD_CLR(writeSock, &_writeFds);
+				FD_CLR(writeSock, &_readFds);
+				close(writeSock);
 			}
+			std::cout << GREEN << "response sent to socket : " << writeSock << RESET << std::endl;
 		}
 	}
 	for(size_t i = 0; i < keysToErase.size(); i++)
 	{
 		_writeSockets.erase(keysToErase[i]);
-		// _clientSockets.erase(keysToErase[i]);
+		_clientSockets.erase(keysToErase[i]);
 	}
 }
 
 void ServerFarm::handleNewClient(fd_set *tmpReadFds, int *fdmax) {
 	std::map<int, Server *>::iterator It;
-	for(It = _activeServers.begin(); It != _activeServers.end(); It++) {
+	for(It = _activeServers.begin(); It != _activeServers.end(); ++It) {
 		int sockFd = It->first;
 		if(FD_ISSET(sockFd, tmpReadFds)) {
 			int clientSocket = accept(sockFd, NULL, NULL);
@@ -147,17 +146,19 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 	std::map<int, Server*>::iterator It;
 	std::vector<int> keysToErase;
 	for(It = _clientSockets.begin(); It != _clientSockets.end(); It++) {
+		// std::cout << RED << "client sockets size : " << _clientSockets.size() << RESET << std::endl;
 		int clientSock = It->first;
 		if(FD_ISSET(clientSock, tmpReadFds)) {
-			size_t clientBodySizeLimit = It->second->getClientBodySizeLimit();
-			char read[clientBodySizeLimit];
-			int bytesReceived = recv(clientSock, read, clientBodySizeLimit, 0);
+			char read[1024];
+			int bytesReceived = recv(clientSock, read, 1024, 0);
 			if(bytesReceived < 0)
 				throw(Http::NetworkingErrorException("recv() failed"));
 			else if(!bytesReceived) {
+				keysToErase.push_back(clientSock);
 				FD_CLR(clientSock, &_readFds);
 				std::cout << RED << "client closed connection" << RESET << std::endl;
 				close(clientSock);
+
 			}
 			else {
 				std::string reqData(read, bytesReceived);
@@ -166,14 +167,17 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 				std::cout << "=======================================================" << std::endl;
 				if(_writeSockets.find(clientSock) != _writeSockets.end()) {
 					_writeSockets[clientSock]->proccess_Request(reqData);
-					if(_writeSockets[clientSock]->request_is_ready())
+					if(_writeSockets[clientSock]->request_is_ready()){
 						FD_SET(clientSock, &_writeFds); 
+					}
 				}
 				else {
 					Request req(It->second->getHost(), It->second->getPort());
 					req.proccess_Request(reqData);
 					if(req.request_is_ready())
-						FD_SET(clientSock, &_writeFds); 
+					{
+						FD_SET(clientSock, &_writeFds);
+					}
 					_writeSockets.insert(std::make_pair(clientSock, &req));
 				}
 				// call the request parser and insert the client socket as key and the request object as value
@@ -181,9 +185,8 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 
 		}
 	}
-	for(size_t i = 0; i < keysToErase.size(); i++) {
+	for(size_t i = 0 ; i < keysToErase.size(); i++)
 		_clientSockets.erase(keysToErase[i]);
-	}
 }
 
 // the main select() event loop

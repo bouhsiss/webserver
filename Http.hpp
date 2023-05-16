@@ -27,7 +27,7 @@
 #include<csignal>
 
 #define DEFAULT_CONFIG_FILE "default.conf"
-#define BACKLOG 100
+#define BACKLOG 200
 
 #define RED "\033[1;31m"
 #define BLUE "\033[1;34m"
