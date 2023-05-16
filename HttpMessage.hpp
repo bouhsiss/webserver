@@ -6,6 +6,7 @@
 #include <vector>
 #include <sstream>
 #include <fstream>
+#include <cstring>
 #include <cstdio>
 #include "Http.hpp"
 

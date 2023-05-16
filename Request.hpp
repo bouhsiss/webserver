@@ -50,6 +50,7 @@ class Request : public HttpMessage {
         bool if_location_support_upload();
         bool has_write_acces_on_folder();
 		void unchunk_body();
+		void handle_multipart_form_data();
 		//function to run cgi
 		void run_cgi();
 
@@ -65,7 +66,7 @@ class Request : public HttpMessage {
 		std::string 	_req_port;
 		std::string 	_resource_type;
 		std::string 	_requested_resource;
-		//for chunked request
-		std::fstream	_body_unchunked;
-		std::string		_unchunked_filename;
+		//for POST method
+		std::string		_uplaod_filename;
+		std::fstream	_upload_file;
 };
