@@ -461,9 +461,9 @@ bool Request::is_uri_has_slash_in_end(){
 }
 
 //helper function
-bool search_for_filename(const char *dir_path){
+bool search_for_indexfile(const char *dir_path){
     struct dirent* entry;
-    char *filename = "index"; 
+    std::string filename = "index"; 
     DIR* directory =opendir(dir_path);
     if (directory == nullptr)
     {
@@ -472,7 +472,7 @@ bool search_for_filename(const char *dir_path){
     }
     while ((entry = readdir(directory)) != nullptr)
     {
-        if (strncmp(entry->d_name,filename,5)==0)
+        if (strncmp(entry->d_name,filename.c_str(),5)==0)
         {
             closedir(directory);
             return true;
@@ -483,7 +483,7 @@ bool search_for_filename(const char *dir_path){
 }
 
 bool Request::is_dir_has_index_file(){
-    return search_for_indexfile(const char *dir_path);
+    return search_for_indexfile(_requested_resource.c_str());
 }
 std::string Request::get_auto_index(){
     return _sf->getServers()[_server_index]->getLocations()[_location_index]->getAutoIndex();
@@ -565,12 +565,12 @@ void Request::upload_resource(){
     if (_Headers.find("Content-Type")!= _Headers.end() && _Headers["Content-Type"]=="multipart/form-data")
         Request::handle_multipart_form_data();
     //get filename
-    if (_uplaod_filename == "")// is the search for filename done here?????
-        _uplaod_filename = random_filename();
+    if (_upload_filename == "")// is the search for filename done here?????
+        _upload_filename = random_filename();
     //uploading file
-    _uplaod_filename = _sf->getServers()[_server_index]->getLocations()[_location_index]->getUploadPath() + _uplaod_filename;
+    _upload_filename = _sf->getServers()[_server_index]->getLocations()[_location_index]->getUploadPath() + _upload_filename;
     _Body.open(_filename,std::ios::in | std::ios::out);
-    _upload_file.open(_uplaod_filename,std::ios::in | std::ios::out);
+    _upload_file.open(_upload_filename,std::ios::in | std::ios::out);
     if (_Body.is_open() && _upload_file.is_open())
     {
         _upload_file<<_Body.rdbuf();
@@ -645,10 +645,10 @@ void Request::handle_multipart_form_data(){
                 if (content_disposition.find("filename")!= std::string::npos)
                 {
                     //found the file field
-                    _uplaod_filename = content_disposition.substr(content_disposition.find("filename=")+9);
+                    _upload_filename = content_disposition.substr(content_disposition.find("filename=")+9);
                     //remove parenthesis from filename
-                    if (_uplaod_filename.length() >2)
-                        _uplaod_filename = _uplaod_filename.substr(1,_uplaod_filename.length()-1);
+                    if (_upload_filename.length() >2)
+                        _upload_filename = _upload_filename.substr(1,_upload_filename.length()-1);
                     //remove content-disposition header
                     field = field.substr(field.find("\r\n")+2);
                     //remove content-type header
