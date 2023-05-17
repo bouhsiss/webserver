@@ -16,6 +16,9 @@ std::map<std::string, Location *>& Server::getLocations() {return(_Locations);}
 const std::string& Server::getServerName() {return(_server_name);}
 const std::string& Server::getHost() const {return(_host);}
 const std::string& Server::getPort() const {return(_port);}
+const std::string& Server::getRoot() const {return(_root);}
+const std::string& Server::getIndex() const {return(_index);}
+const std::string& Server::getAutoIndex() const {return(_autoIndex);}
 const std::vector<std::string>& Server::getErrorPage() {return(_error_page);}
 const size_t& Server::getClientBodySizeLimit() const {return(_client_body_size_limit);}
 const int& Server::getListenSocket() const {return(_listenSocket);}
@@ -52,12 +55,31 @@ void Server::setClientBodySizeLimit(std::vector<std::string> const &tokens) {
 	this->_client_body_size_limit = std::stoi(tokens[0]);
 }
 
+void Server::setRoot(std::vector<std::string> const &tokens) {
+	if(tokens.empty() || !this->_root.empty() || tokens.size() != 1)
+		throw(Http::ConfigFileErrorException("invalid root directive"));
+	this->_root = tokens[0];
+}
+
+void Server::setIndex(std::vector<std::string> const &tokens) {
+	if(tokens.empty() || !this->_index.empty() || tokens.size() != 1)
+		throw(Http::ConfigFileErrorException("invalid index directive"));
+	this->_index = tokens[0];
+}
+
+void Server::setAutoIndex(std::vector<std::string> const &tokens) {
+	if(tokens.size() != 1 || !_autoIndex.empty() || (tokens[0] != "ON" && tokens[0] != "on" && tokens[0] != "off" && tokens[0] != "OFF" ))
+		throw(Http::ConfigFileErrorException("Invalid autoindex directive"));
+	this->_autoIndex = tokens[0];
+}
 
 Server::Server() {
 	this->_port = "";
 	this->_host = "";
 	this->_client_body_size_limit = -1;
 	this->_server_name = "";
+	this->_root = "";
+	this->_index = "";
 }
 
 Server::~Server() {
@@ -66,6 +88,17 @@ Server::~Server() {
 		delete It->second;
 }
 
+void Server::setDefaultLocation() {
+	Location *defaultLocation = new Location();
+	defaultLocation->setPath(std::vector<std::string>(1, "/"));
+	defaultLocation->setRoot(std::vector<std::string>(1, _root));
+	if(!_index.empty())
+		defaultLocation->setIndex(std::vector<std::string>(1, _index));
+	if(!_autoIndex.empty())
+		defaultLocation->setAutoIndex(std::vector<std::string>(1, _autoIndex));
+	_Locations.insert(std::make_pair(defaultLocation->getPath(), defaultLocation));
+} 
+
 void Server::setServerDefaultValues() {
 	if(_host.empty())
 		_host = "127.0.0.1";
@@ -73,9 +106,11 @@ void Server::setServerDefaultValues() {
 		_port = 80;
 	if(_client_body_size_limit == (size_t)-1)
 		_client_body_size_limit = 100000;
+	if(_Locations.empty() && !_root.empty())
+		setDefaultLocation();
 	std::map<std::string, Location *>::iterator It;
 	for(It = _Locations.begin(); It != _Locations.end(); It++)
-		It->second->isLocationValid();
+		It->second->isLocationComplete(*this);
 }
 
 void Server::setupListenSocket() {

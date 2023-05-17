@@ -62,7 +62,7 @@ void Location::setRedirect(std::vector<std::string> const &tokens) {
 }
 
 void Location::setRoot(std::vector<std::string> const &tokens) {
-	if(tokens.size() != 1 || !_root.empty())
+	if(tokens.size() != 1 || !_root.empty() )
 		throw(Http::ConfigFileErrorException("Invalid root directive"));
 	this->_root = tokens[0];
 }
@@ -95,16 +95,21 @@ void Location::setCgiPath(std::vector<std::string> const &tokens) {
 	this->_cgi_path = tokens[0];
 }
 
-void Location::isLocationValid() {
+void Location::isLocationComplete(Server &parentServer) {
 	if(_path.empty())
 		throw(Http::ConfigFileErrorException("Incomplete location configuration : path value missing."));
+	if(_root.empty())
+		_root = parentServer.getRoot();
+	if(_index.empty())
+		_index = parentServer.getIndex();
+	if(_autoindex.empty())
+		_autoindex = parentServer.getAutoIndex();
 	if(std::find(_allowed_methods.begin(), _allowed_methods.end(), "GET") == _allowed_methods.end())
 		_allowed_methods.push_back("GET");
 	if(std::find(_allowed_methods.begin(), _allowed_methods.end(), "POST") == _allowed_methods.end())
 		_allowed_methods.push_back("POST");
-	if(_autoindex.empty())
-		_autoindex = "off";
-	// might need some checks
+	if(std::find(_allowed_methods.begin(), _allowed_methods.end(), "POST") == _allowed_methods.end())
+		_allowed_methods.push_back("POST");
 }
 
 std::ostream& operator<<(std::ostream &out, Location &c) {
