@@ -26,8 +26,9 @@
 #include<fcntl.h>
 #include<csignal>
 
-#define DEFAULT_CONFIG_FILE "default.conf"
-#define BACKLOG 10
+#define DEFAULT_CONFIG_FILE "./conf.d/default.conf"
+#define BACKLOG 200
+#define DEFAULT_LANDING_PAGE 
 
 #define RED "\033[1;31m"
 #define BLUE "\033[1;34m"
@@ -57,6 +58,7 @@ namespace Http {
 		public :
 			NetworkingErrorException(std::string msg) : Http::HttpException(msg) {}
 	};
+	
 
 	std::vector<std::string> tokenize(std::string const &str, const char* delim);
 	void trimSpaces(std::string &line);

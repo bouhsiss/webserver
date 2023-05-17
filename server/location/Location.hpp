@@ -12,9 +12,14 @@
 
 #pragma once 
 #include"Http.hpp"
+#include "Server.hpp"
+
+class Server;
+
 class Location {
     public :
 		Location();
+		~Location(){}
 
 		const std::string getPath() const;
 		const std::vector<std::string> getAllowedMethods();
@@ -36,7 +41,7 @@ class Location {
 		void setCgiExtension(std::vector<std::string> const &tokens);
 		void setCgiPath(std::vector<std::string> const &tokens);
 
-		void isLocationValid();
+		void isLocationComplete(Server &parentServer);
     private :
         std::string _path;
         std::vector<std::string> _allowed_methods;

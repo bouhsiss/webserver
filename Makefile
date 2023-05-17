@@ -1,13 +1,13 @@
 NAME = webserv
 CC = c++
 CFLAGS = -fsanitize=address -Wall -Wextra -Werror
-INCLUDES = 
-SRCS = Configuration.cpp HttpMessage.cpp Location.cpp Server.cpp Http.cpp  main.cpp ServerFarm.cpp Request.cpp 
+INCLUDES = -I./config -I./http -I./HttpMessage -I./server -I./server/Location
+SRCS = ./config/Configuration.cpp ./httpMessage/HttpMessage.cpp ./server/location/Location.cpp ./server/Server.cpp ./http/Http.cpp  main.cpp ./http/ServerFarm.cpp ./httpMessage/Request.cpp 
 
 all : $(NAME)
 
 $(NAME):
-	$(CC)  $(CFLAGS) $(SRCS) $(Includes) -o $(NAME)
+	$(CC)  $(CFLAGS) $(SRCS) $(INCLUDES) -o $(NAME)
 
 clean :
 

@@ -12,7 +12,7 @@
 
 #include "ServerFarm.hpp"
 
-std::vector<Server>& ServerFarm::getServers() {return(_servers);}
+std::vector<Server*>& ServerFarm::getServers() {return(_servers);}
 const std::map<int, Server *>& ServerFarm::getActiveServers() const {return(_activeServers);}
 const std::map<int, Server *>& ServerFarm::getClientSockets() const {return(_clientSockets);}
 
@@ -22,6 +22,7 @@ ServerFarm::ServerFarm() {
 	FD_ZERO(&_readFds);
 	FD_ZERO(&_writeFds);
 }
+
 
 ServerFarm *ServerFarm::getInstance() {
 	if (instancePtr == NULL) {
@@ -33,6 +34,13 @@ ServerFarm *ServerFarm::getInstance() {
 	}
 }
 
+ServerFarm::~ServerFarm() {
+	for(size_t i = 0; i < _servers.size(); i++)
+	{
+		std::cout << "deleted" << std::endl;
+		delete _servers[i];
+	}
+}
 
 void ServerFarm::configure(std::string configFilepath) {
 	this->_servers = _config.parse(configFilepath);
@@ -40,12 +48,13 @@ void ServerFarm::configure(std::string configFilepath) {
 }
 
 void ServerFarm::initServers() {
-	std::vector<Server>::iterator It;
-	for(It = _servers.begin(); It != _servers.end(); It++)
+	for(size_t i = 0; i < _servers.size(); i++)
 	{
-		if(!isServerActive(*It))
-			It->setupListenSocket(); // check whether there's an already open listening socket listening to this host:port
-		_activeServers.insert(std::make_pair(It->getListenSocket(), &(*It)));
+		if(!isServerActive(*_servers[i]))
+		{
+			_servers[i]->setupListenSocket(); // check whether there's an already open listening socket listening to this host:port
+			_activeServers.insert(std::make_pair(_servers[i]->getListenSocket(), _servers[i]));
+		}
 	}
 }
 
@@ -61,16 +70,16 @@ bool ServerFarm::isServerActive(Server &server) {
 void ServerFarm::areServersDuplicated() {
 	for(size_t i = 0; i < _servers.size(); i++) {
 		for(size_t j = i + 1 ; j < _servers.size(); j++) {
-			if(_servers[i].getHost() == _servers[j].getHost() &&
-			_servers[i].getPort() == _servers[j].getPort() &&
-			_servers[i].getServerName() == _servers[j].getServerName())
-				throw(Http::ConfigFileErrorException("server : " + _servers[i].getHost() + ":" + _servers[i].getPort() + " is duplicated."));
+			if(_servers[i]->getHost() == _servers[j]->getHost() &&
+			_servers[i]->getPort() == _servers[j]->getPort() &&
+			_servers[i]->getServerName() == _servers[j]->getServerName())
+				throw(Http::ConfigFileErrorException("server : " + _servers[i]->getHost() + ":" + _servers[i]->getPort() + " is duplicated."));
 		}
 	}
 }
 
 std::string defaultResponse() {
-	std::ifstream html_file("default.html");
+	std::ifstream html_file("/Users/hbouhsis/Desktop/webserver/ressources/default.html");
 	std::stringstream buffer;
 	buffer << html_file.rdbuf();
 	html_file.close();
@@ -91,7 +100,7 @@ void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
 	std::vector<int> keysToErase;
 	for(It = _writeSockets.begin(); It != _writeSockets.end(); ++It) {
 		int writeSock = It->first;
-		if(FD_ISSET(writeSock, tmpWriteFds)) {
+		if(It->second->request_is_ready()) {
 			if(FD_ISSET(writeSock, tmpWriteFds)) {
 				if(send( writeSock, defaultResponse().c_str(), defaultResponse().length(), 0 ) < 0)
 				{	FD_CLR(writeSock, &_writeFds);
@@ -101,23 +110,24 @@ void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
 					_clientSockets.erase(writeSock);
 					throw(Http::NetworkingErrorException("send failed"));
 				}
-				FD_CLR(writeSock, &_writeFds);
 				keysToErase.push_back(writeSock);
-				// FD_CLR(writeSock, &_readFds);
-				// close(writeSock);
+				FD_CLR(writeSock, &_writeFds);
+				FD_CLR(writeSock, &_readFds);
+				close(writeSock);
 			}
+			std::cout << GREEN << "response sent to socket : " << writeSock << RESET << std::endl;
 		}
 	}
 	for(size_t i = 0; i < keysToErase.size(); i++)
 	{
 		_writeSockets.erase(keysToErase[i]);
-		// _clientSockets.erase(keysToErase[i]);
+		_clientSockets.erase(keysToErase[i]);
 	}
 }
 
 void ServerFarm::handleNewClient(fd_set *tmpReadFds, int *fdmax) {
 	std::map<int, Server *>::iterator It;
-	for(It = _activeServers.begin(); It != _activeServers.end(); It++) {
+	for(It = _activeServers.begin(); It != _activeServers.end(); ++It) {
 		int sockFd = It->first;
 		if(FD_ISSET(sockFd, tmpReadFds)) {
 			int clientSocket = accept(sockFd, NULL, NULL);
@@ -137,34 +147,47 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 	std::map<int, Server*>::iterator It;
 	std::vector<int> keysToErase;
 	for(It = _clientSockets.begin(); It != _clientSockets.end(); It++) {
+		// std::cout << RED << "client sockets size : " << _clientSockets.size() << RESET << std::endl;
 		int clientSock = It->first;
 		if(FD_ISSET(clientSock, tmpReadFds)) {
-			size_t clientBodySizeLimit = It->second->getClientBodySizeLimit();
-			char read[clientBodySizeLimit];
-			int bytesReceived = recv(clientSock, read, clientBodySizeLimit, 0);
+			char read[1024];
+			int bytesReceived = recv(clientSock, read, 1024, 0);
 			if(bytesReceived < 0)
 				throw(Http::NetworkingErrorException("recv() failed"));
 			else if(!bytesReceived) {
+				keysToErase.push_back(clientSock);
 				FD_CLR(clientSock, &_readFds);
 				std::cout << RED << "client closed connection" << RESET << std::endl;
 				close(clientSock);
+
 			}
 			else {
-				// std::cout << "==================== REQUEST ========================= " << std::endl << std::endl;
 				std::string reqData(read, bytesReceived);
-				// std::cout << MAGENTA << reqData << RESET << std::endl;
-				// std::cout << "=======================================================" << std::endl;
-				Request req(reqData, It->second->getHost(), It->second->getPort());
-				FD_SET(clientSock, &_writeFds); 
-				_writeSockets.insert(std::make_pair(clientSock, &req));
+				std::cout << "==================== REQUEST ========================= " << std::endl << std::endl;
+				std::cout << MAGENTA << reqData << RESET << std::endl;
+				std::cout << "=======================================================" << std::endl;
+				if(_writeSockets.find(clientSock) != _writeSockets.end()) {
+					_writeSockets[clientSock]->proccess_Request(reqData);
+					if(_writeSockets[clientSock]->request_is_ready()){
+						FD_SET(clientSock, &_writeFds); 
+					}
+				}
+				else {
+					Request req(It->second->getHost(), It->second->getPort());
+					req.proccess_Request(reqData);
+					if(req.request_is_ready())
+					{
+						FD_SET(clientSock, &_writeFds);
+					}
+					_writeSockets.insert(std::make_pair(clientSock, &req));
+				}
 				// call the request parser and insert the client socket as key and the request object as value
 			}
 
 		}
 	}
-	for(size_t i = 0; i < keysToErase.size(); i++) {
+	for(size_t i = 0 ; i < keysToErase.size(); i++)
 		_clientSockets.erase(keysToErase[i]);
-	}
 }
 
 // the main select() event loop
@@ -194,8 +217,8 @@ void ServerFarm::runEventLoop() {
 }
 
 std::ostream& operator<<(std::ostream &out, ServerFarm& c) {
-	std::vector<Server>::iterator It;
-	std::vector<Server> servers = c.getServers();
+	std::vector<Server*>::iterator It;
+	std::vector<Server*> servers = c.getServers();
 	out << "======================== CONFIGURATION ========================" << std::endl;
 	for(It = servers.begin(); It != servers.end(); It++) {
 		int serverCount = 0;
