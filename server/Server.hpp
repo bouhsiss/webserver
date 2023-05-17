@@ -42,6 +42,7 @@ class Server {
 		void setClientBodySizeLimit(std::vector<std::string> const &tokens);
 
 		void isServerValid();
+		void setServerDefaultValues();
 		void setupListenSocket();
 
 		Server();

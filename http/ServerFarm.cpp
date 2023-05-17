@@ -51,9 +51,10 @@ void ServerFarm::initServers() {
 	for(size_t i = 0; i < _servers.size(); i++)
 	{
 		if(!isServerActive(*_servers[i]))
+		{
 			_servers[i]->setupListenSocket(); // check whether there's an already open listening socket listening to this host:port
-		_activeServers.insert(std::make_pair(_servers[i]->getListenSocket(), _servers[i]));
-
+			_activeServers.insert(std::make_pair(_servers[i]->getListenSocket(), _servers[i]));
+		}
 	}
 }
 

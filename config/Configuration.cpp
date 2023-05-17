@@ -136,7 +136,7 @@ std::vector<Server *> Configuration::parse(std::string configFilePath) {
 		}
 		else if(inServer && braceCount == 0) {
 			inServer = false;
-			currentServer->isServerValid();
+			currentServer->setServerDefaultValues();
 			servers.push_back(currentServer);
 		}
 		else if(inServer && !inLocation) {
