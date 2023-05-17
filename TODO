@@ -8,11 +8,7 @@ upload to a file or filestream????
 check transer-encoding ->yes ->check if content-type exist and ="mulripart/form-data"->yes 
 add a filestream to hold the uploaded data
 boundaryyyyy???????
-should i wait until the entire body to start processing??????????????yes
-what content-type we should handle????????(boundary)
-how to unchunk files????(remove chunk size-->read chunk-->write to upload path)
 where you should upload the resource?????(config)
-how to upload video....????????????(same way for other types)
 if the server uploaded the file with a different name how the user will get his file back with get method?????????????
 what part of multipart/form-data i will post(is it just the file)
 -----dont forget the file extension???????
@@ -23,6 +19,8 @@ CGI...........
 --environ??
 --tmpfile
 -----read cgi part RFC
+---run cgi if you find the cgi extension in request uri
+
 
 DELETE.......
 --dont delete project files(try changing permissions)
@@ -33,4 +31,5 @@ DELETE.......
 
 //later remove the _body unchunked and copy data back to _body
 
-//locaton not found??????ngnix behavior
+//when the file_name doent have an extension should i give it one ????????
+is_dir_has_index_file()-------->look for the index of the dir not the location you souldnt check the server root 
