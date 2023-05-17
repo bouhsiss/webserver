@@ -424,14 +424,19 @@ void Request::DELETE(){
 
 //----------helper functions
 bool Request::get_requested_resource(){
-    //append request uri to root
+//append request uri to root
     std::string rsc;
+    std::string tmp = _sf->getServers()[_server_index]->getLocations()[_location_index]->getRoot();
+    if (tmp.find("/")==tmp.length()-1)//remove "/" from root
+        tmp = tmp.substr(0,tmp.length()-1);
     if (_sf->getServers()[_server_index]->getLocations()[_location_index]->getPath() == "/")
-        rsc = _sf->getServers()[_server_index]->getLocations()[_location_index]->getRoot()+_RequestURI; 
+        rsc = tmp+_RequestURI; 
     else{
         //remove matched path from req_uri
-        std::string path=_sf->getServers()[_server_index]->getLocations()[_location_index]->getPath();
-        rsc = _sf->getServers()[_server_index]->getLocations()[_location_index]->getRoot()+ _RequestURI.substr(path.length());
+        std::string new_rsc = _RequestURI.substr(_sf->getServers()[_server_index]->getLocations()[_location_index]->getPath().length());
+        if (new_rsc.find("/")!=0)
+            tmp.append("/");
+        rsc = tmp+ new_rsc;
     }
     //check if the requested resource is a file
     struct stat fileInfo;
