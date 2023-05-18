@@ -25,6 +25,15 @@ class Request : public HttpMessage {
 		//parsing is done here
 		void proccess_Request(std::string req_data);
 		bool request_is_ready();
+		//getters
+		std::string getHttp_version()const;
+		int			getServerIndex()const;
+		std::string getLocationIndex()const;
+		std::string	getResourceType()const;
+		std::string	getRequestedResource()const;
+		std::string getUploadFilename()const;
+		std::string getUploadFile()const;
+		std::string getFilenameExtension()const;
 
 
 	private :
@@ -52,15 +61,6 @@ class Request : public HttpMessage {
         bool has_write_acces_on_folder();
 		void unchunk_body();
 		void handle_multipart_form_data();
-		//getters
-		std::string getHttp_version()const;
-		int			getServerIndex()const;
-		std::string getLocationIndex()const;
-		std::string	getResourceType()const;
-		std::string	getRequestedResource()const;
-		std::string getUploadFilename()const;
-		std::string getUploadFile()const;
-		std::string getFilenameExtension()const;
 
 		//function to run cgi
 		void run_cgi();
