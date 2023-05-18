@@ -494,12 +494,13 @@ std::string Request::get_auto_index(){
     return _sf->getServers()[_server_index]->getLocations()[_location_index]->getAutoIndex();
 }
 bool Request::if_location_has_cgi(){
-    if (_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath() == "")
+    if (_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath() == ""
+    ||_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiExtension()!= _filename_extension)
         return false;
     return true;
 }
 bool Request::if_location_support_upload(){
-     if (_sf->getServers()[_server_index]->getLocations()[_location_index]->getUploadPath() == "")
+     if (_sf->getServers()[_server_index]->getLocations()[_location_index]->getUploadPath() == "" )
         return false;
     return true;
 }
@@ -551,10 +552,6 @@ bool Request::delete_all_folder_content(){
     return false;
 }
 
-void Request::run_cgi(){
-    //fork and execve cgi path with arguments
-}
-
 bool Request::request_is_ready(){
     return _b_complete;
 }
@@ -562,10 +559,7 @@ bool Request::request_is_ready(){
 void Request::upload_resource(){
     _filename = "";
     if (_Headers.find("Transfer-Encoding")!=_Headers.end())//transfer_encoding header exist
-    {
-        //unchunk the data 
         Request::unchunk_body();
-    }
     //check content-type exist and = "multipart/form-data"
     if (_Headers.find("Content-Type")!= _Headers.end() && _Headers["Content-Type"]=="multipart/form-data")
         Request::handle_multipart_form_data();
@@ -653,7 +647,10 @@ void Request::handle_multipart_form_data(){
                     _upload_filename = content_disposition.substr(content_disposition.find("filename=")+9);
                     //remove parenthesis from filename
                     if (_upload_filename.length() >2)
+                    {
                         _upload_filename = _upload_filename.substr(1,_upload_filename.length()-1);
+                        _filename_extension = _upload_filename.substr(_upload_filename.find_last_of("."));
+                    }
                     //remove content-disposition header
                     field = field.substr(field.find("\r\n")+2);
                     //remove content-type header
@@ -675,3 +672,144 @@ void Request::handle_multipart_form_data(){
         }
     }
 }
+
+
+
+
+//this the code below is for cgi
+void Request::prepare_env(){
+    //prepare the env vars that you dont have already
+    //PATH_INFO
+}
+
+//use putenv() to add env vars
+void Request::set_cgi_env()
+{
+    std::string head;
+    //SERVER_SOFTWARE???
+    //SERVER_NAME
+    head = "SERVER_NAME="+ _sf->getServers()[_server_index]->getServerName();
+    putenv(&head[0]);
+    head.clear();
+    //GATEWAY-INTERFACE???
+   
+    //SERVER_PROTOCOL
+    head = "SERVER_PROTOCOL="+_http_v;
+    putenv(&head[0]);
+    head.clear();
+    //SERVER_PORT
+    head ="SERVER_PORT="+ _req_port;
+    putenv(&head[0]);
+    head.clear();
+    //REQUEST_METHOD
+    head = "REQUEST_METHOD="+_method;
+    putenv(&head[0]);
+    head.clear();
+    //PATH_INFO
+    head = "PATH_INFO="+_path_info;
+    putenv(&head[0]);
+    head.clear();
+    //PATH_TRANSLATED
+    head = "PATH_TRANSLATED="+_path_translated;
+    putenv(&head[0]);
+    head.clear();    
+    //SCRIPT_NAME
+    head = "SCRIPT_NAME="+_script_name;
+    putenv(&head[0]);
+    head.clear();    
+    //QUERY_STRING
+    head = "QUERY_STRING="+_query_string;
+    putenv(&head[0]);
+    head.clear();    
+    //REMOTE_HOST
+    head = "REMOTE_HOST="+_remote_host;
+    putenv(&head[0]);
+    head.clear();    
+    //REMOTE_ADDR
+    head = "REMOTE_ADDR="+_remote_addr;
+    putenv(&head[0]);
+    head.clear();    
+    //AUTH_TYPE
+    head = "AUTH_TYPE="+_auth_type;
+    putenv(&head[0]);
+    head.clear();    
+    //REMOTE_USER
+    head = "REMOTE_USER="+_remote_user;
+    putenv(&head[0]);
+    head.clear();    
+    //REMOTE_IDENT
+    head = "REMOTE_IDENT="+_remote_ident;
+    putenv(&head[0]);
+    head.clear();    
+    //CONTENT-TYPE
+    if (_Headers.find("Content-Type")!= _Headers.end())
+        head = "CONTENT_TYPE="+_Headers["Content-type"];
+    else 
+        head = "CONTENT_TYPE=";
+    putenv(&head[0]);
+    head.clear();
+    //CONTENT-LENGTH
+    if (_Headers.find("Content-Length")!= _Headers.end())
+        head = "CONTENT_LENGTH="+_Headers["Content-Length"];
+    else 
+        head = "CONTENT_LENGTH=";
+    putenv(&head[0]);
+    head.clear();    
+    // HTTP_ + "to_upper<header-name>" (replace any '-' with '_')
+    for (std::map<std::string,std::string>::iterator it = _Headers.begin(); it != _Headers.end();it++)
+    {
+        std::string head_name= it->first;
+        for (size_t i=0;i<head_name.length();i++)
+        {
+            if (head_name[i] == '-')
+                head_name = '_';
+        }
+        std::transform(head_name.begin(), head_name.end(), head_name.begin(), ::toupper);//transform every char in head_name to upper case
+        head = "HTTP_" + head_name + "=" + it->second;
+        //add env var
+        putenv(&head[0]);
+        head.clear();
+    }
+}
+
+
+extern char** environ;//user env
+void Request::run_cgi(){
+    //BEFORE CGI EXECUTION
+    //set cgi env -> use environ variable
+    set_cgi_env();
+    //what check should i perform on cgi scritp ????????? ex:for infinite loop.....
+    //dup STDIN????(to what file)
+    //dup STDOUT????(to what file)
+    //fork
+    pid_t  child_pid = fork();
+    if (child_pid == -1)
+        std::cout<<"run_cgi: fork function failed"<<std::endl;
+    else if (child_pid ==0)
+    {
+            //what arguments the cgi takes?????
+            // execve(&(_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath())[0],arguments???,environ);
+    }
+    else
+    {
+        //wait for cgi to finish
+        waitpid(child_pid,NULL,0);
+    }
+    //execv cgi
+    //wait for cgi to finish
+    //AFTER CGI EXECUTION
+    //remove cgi headers and everything else the response dont need
+}
+
+
+
+//getters for debugging purposes
+//getters
+std::string Request::getHttp_version()const{return _http_v;}
+int			Request::getServerIndex()const{return _server_index;}
+std::string Request::getLocationIndex()const{return _location_index;}
+std::string	Request::getResourceType()const{return _resource_type;}
+std::string	Request::getRequestedResource()const{return _requested_resource;}
+std::string Request::getUploadFilename()const{return _upload_filename;}
+std::string Request::getUploadFile()const{return _upload_filename;}
+std::string Request::getFilenameExtension()const{return _filename_extension;}
