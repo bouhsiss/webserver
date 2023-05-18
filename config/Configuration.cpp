@@ -32,6 +32,12 @@ bool Configuration::_extractServerConfigLine(std::string line, Server& current_s
 		current_server.setErrorPage(Http::tokenize(value, " "));
 	else if(key == "client_body_size_limit")
 		current_server.setClientBodySizeLimit(Http::tokenize(value, " "));
+	else if(key == "root")
+		current_server.setRoot(Http::tokenize(value, " "));
+	else if(key == "index")
+		current_server.setIndex(Http::tokenize(value, " "));
+	else if(key == "autoindex")
+		current_server.setAutoIndex(Http::tokenize(value, " "));
 	else
 		return(false);
 	// need to add the extracting of the root and index directives !!!!!
