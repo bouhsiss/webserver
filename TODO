@@ -20,6 +20,8 @@ CGI...........
 --tmpfile
 -----read cgi part RFC
 ---run cgi if you find the cgi extension in request uri
+----cgi script has infinite loop??????????
+--rfc p12
 
 
 DELETE.......
@@ -33,3 +35,6 @@ DELETE.......
 
 //when the file_name doent have an extension should i give it one ????????
 is_dir_has_index_file()-------->look for the index of the dir not the location you souldnt check the server root 
+
+
+--pay attention to case-sensitive shiit.........

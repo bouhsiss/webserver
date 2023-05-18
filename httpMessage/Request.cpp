@@ -494,12 +494,13 @@ std::string Request::get_auto_index(){
     return _sf->getServers()[_server_index]->getLocations()[_location_index]->getAutoIndex();
 }
 bool Request::if_location_has_cgi(){
-    if (_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath() == "")
+    if (_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath() == ""
+    ||_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiExtension()!= _filename_extension)
         return false;
     return true;
 }
 bool Request::if_location_support_upload(){
-     if (_sf->getServers()[_server_index]->getLocations()[_location_index]->getUploadPath() == "")
+     if (_sf->getServers()[_server_index]->getLocations()[_location_index]->getUploadPath() == "" )
         return false;
     return true;
 }
@@ -562,10 +563,7 @@ bool Request::request_is_ready(){
 void Request::upload_resource(){
     _filename = "";
     if (_Headers.find("Transfer-Encoding")!=_Headers.end())//transfer_encoding header exist
-    {
-        //unchunk the data 
         Request::unchunk_body();
-    }
     //check content-type exist and = "multipart/form-data"
     if (_Headers.find("Content-Type")!= _Headers.end() && _Headers["Content-Type"]=="multipart/form-data")
         Request::handle_multipart_form_data();
@@ -653,7 +651,10 @@ void Request::handle_multipart_form_data(){
                     _upload_filename = content_disposition.substr(content_disposition.find("filename=")+9);
                     //remove parenthesis from filename
                     if (_upload_filename.length() >2)
+                    {
                         _upload_filename = _upload_filename.substr(1,_upload_filename.length()-1);
+                        _filename_extension = _upload_filename.substr(_upload_filename.find_last_of("."));
+                    }
                     //remove content-disposition header
                     field = field.substr(field.find("\r\n")+2);
                     //remove content-type header
