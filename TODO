@@ -15,11 +15,14 @@ what part of multipart/form-data i will post(is it just the file)
 ------
 chunked request...........
 
+...MIME-TYPE?????
+
 CGI...........
 --environ??
 --tmpfile
 -----read cgi part RFC
 ---run cgi if you find the cgi extension in request uri
+----cgi script has infinite loop??????????
 
 
 DELETE.......
@@ -33,3 +36,7 @@ DELETE.......
 
 //when the file_name doent have an extension should i give it one ????????
 is_dir_has_index_file()-------->look for the index of the dir not the location you souldnt check the server root 
+
+
+--pay attention to case-sensitive shiit.........
+----for chunked request in case it didnt work check recv return value....
