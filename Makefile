@@ -2,7 +2,7 @@ NAME = webserv
 CC = c++
 CFLAGS = -fsanitize=address -Wall -Wextra -Werror
 INCLUDES = -I./config -I./http -I./HttpMessage -I./server -I./server/Location
-SRCS = ./config/Configuration.cpp ./httpMessage/HttpMessage.cpp ./server/location/Location.cpp ./server/Server.cpp ./http/Http.cpp  main.cpp ./http/ServerFarm.cpp ./httpMessage/Request.cpp 
+SRCS = ./config/Configuration.cpp ./httpMessage/HttpMessage.cpp ./server/location/Location.cpp ./server/Server.cpp ./http/Http.cpp  main.cpp ./http/ServerFarm.cpp ./httpMessage/Request.cpp ./httpMessage/Response.cpp
 
 all : $(NAME)
 
