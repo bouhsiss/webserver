@@ -9,6 +9,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <ftw.h>
+#include <algorithm>
 #include "ServerFarm.hpp"
 class ServerFarm;
 
@@ -51,8 +52,20 @@ class Request : public HttpMessage {
         bool has_write_acces_on_folder();
 		void unchunk_body();
 		void handle_multipart_form_data();
+		//getters
+		std::string getHttp_version()const;
+		int			getServerIndex()const;
+		std::string getLocationIndex()const;
+		std::string	getResourceType()const;
+		std::string	getRequestedResource()const;
+		std::string getUploadFilename()const;
+		std::string getUploadFile()const;
+		std::string getFilenameExtension()const;
+
 		//function to run cgi
 		void run_cgi();
+		void set_cgi_env();
+		void prepare_env();
 
 
 		std::string 	_method;
@@ -70,4 +83,15 @@ class Request : public HttpMessage {
 		std::string		_upload_filename;
 		std::fstream	_upload_file;
 		std::string		_filename_extension;
+		//for cgi
+		//maybe i will change this later to a struct or something
+		std::string		_script_name;
+		std::string		_query_string;
+		std::string		_path_info;
+		std::string		_path_translated;
+		std::string		_remote_host;
+		std::string		_remote_addr;
+		std::string		_auth_type;
+		std::string		_remote_user;
+		std::string		_remote_ident;
 };
