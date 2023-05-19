@@ -504,7 +504,7 @@ std::string Request::get_auto_index(){
 }
 bool Request::if_location_has_cgi(){
     if (_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath().empty()
-    ||_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiExtension()!= _filename_extension)
+    || (_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath().find(_filename_extension) == _sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath().end()))
         return false;
     return true;
 }
@@ -658,7 +658,7 @@ void Request::handle_multipart_form_data(){
                     if (_upload_filename.length() >2)
                     {
                         _upload_filename = _upload_filename.substr(1,_upload_filename.length()-1);
-                        _filename_extension = _upload_filename.substr(_upload_filename.find_last_of("."));
+                        _filename_extension = _upload_filename.substr(_upload_filename.find_last_of(".")+1);
                     }
                     //remove content-disposition header
                     field = field.substr(field.find("\r\n")+2);
