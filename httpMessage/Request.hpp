@@ -28,6 +28,7 @@ class Request : public HttpMessage {
 		//getters
 		std::string getHttp_version()const;
 		int			getServerIndex()const;
+		int			getStatusCode() const;
 		std::string getLocationIndex()const;
 		std::string	getResourceType()const;
 		std::string	getRequestedResource()const;
