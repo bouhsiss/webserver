@@ -21,15 +21,15 @@ class Location {
 		Location();
 		~Location(){}
 
-		std::vector<std::string>& getAllowedMethods();
-		std::map<std::string, std::string>& getCgiPath() const;
-		std::string& getPath() const;
-		std::string& getRedirect() const;
-		std::string& getRoot() const;
-		std::string& getAutoIndex() const;
-		std::string& getIndex();
-		std::string& getUploadPath() const;
-		std::string& getCgiExtension() const;
+		std::vector<std::string> getAllowedMethods();
+		std::map<std::string, std::string> getCgiPath() const;
+		std::string getPath() const;
+		std::string getRedirect() const;
+		std::string getRoot() const;
+		std::string getAutoIndex() const;
+		std::string getIndex();
+		std::string getUploadPath() const;
+		std::string getCgiExtension() const;
 
 		void setPath(std::vector<std::string> const &tokens);
 		void setAllowedMethods(std::vector<std::string> const &tokens);

@@ -21,16 +21,15 @@ Location::Location() {
 	_cgi_extension = "";
 }
 
-const std::vector<std::string> Location::getAllowedMethods() {return(_allowed_methods);}
-const std::map<std::string, std::string> Location::getCgiPath() const {return(_cgi_path);}
-const std::string Location::getIndex() {return(_index);}
-const std::string Location::getPath() const {return(_path);}
-const std::string Location::getRoot() const {return(_root);}
-const std::string Location::getRedirect() const {return(_redirect);}
-const std::string Location::getAutoIndex() const {return(_autoindex);}
-const std::string Location::getUploadPath() const {return(_upload_path);}
-const std::string Location::getCgiExtension() const {return(_cgi_extension);}
-
+std::vector<std::string> Location::getAllowedMethods() {return(_allowed_methods);}
+std::map<std::string, std::string> Location::getCgiPath() const {return(_cgi_path);}
+std::string Location::getIndex() {return(_index);}
+std::string Location::getPath() const {return(_path);}
+std::string Location::getRoot() const {return(_root);}
+std::string Location::getRedirect() const {return(_redirect);}
+std::string Location::getAutoIndex() const {return(_autoindex);}
+std::string Location::getUploadPath() const {return(_upload_path);}
+std::string Location::getCgiExtension() const {return(_cgi_extension);}
 
 void Location::setPath(std::vector<std::string> const &tokens) {
 	if(tokens.size() != 1)
