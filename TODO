@@ -20,9 +20,9 @@ chunked request...........
 CGI...........
 --environ??
 --tmpfile
------read cgi part RFC
 ---run cgi if you find the cgi extension in request uri
-----cgi script has infinite loop??????????
+--cgi script has infinite loop??????????(catch signals from cgi proccess )
+------
 
 
 DELETE.......
@@ -40,3 +40,6 @@ is_dir_has_index_file()-------->look for the index of the dir not the location y
 
 --pay attention to case-sensitive shiit.........
 ----for chunked request in case it didnt work check recv return value....
+-----should we handle url decoding???????????????? 
+---should i consider a coded forbidden char forbidden also???????
+

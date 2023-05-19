@@ -689,6 +689,22 @@ void Request::handle_multipart_form_data(){
 void Request::prepare_env(){
     //prepare the env vars that you dont have already
     //PATH_INFO
+    _path_info = _RequestURI.substr(0,_RequestURI.find("?"));
+    if (!_path_info.empty())
+    {
+        //PATH_TRANSLATED
+        //if PATH_INFO is not set you should set the var too
+    }
+    //SCRIPT_NAME
+    _script_name = _RequestURI.substr(0,_RequestURI.find("?"));
+    //QUERY_STRING
+    if (_RequestURI.find("?")!=std::string::npos)
+        _query_string = _RequestURI.substr(_RequestURI.find("?")+1);
+    //REMOTE_HOST
+    //REMOTE_ADDR
+    //AUTH_TYPE
+    //REMOTE_USER
+    //REMOTE_IDENT
 }
 
 //use putenv() to add env vars
@@ -784,28 +800,38 @@ void Request::set_cgi_env()
 
 extern char** environ;//user env
 void Request::run_cgi(){
-    //BEFORE CGI EXECUTION
-    //set cgi env -> use environ variable
+    _cgi_out_filename = random_filename();
     set_cgi_env();
     //what check should i perform on cgi scritp ????????? ex:for infinite loop.....
-    //dup STDIN????(to what file)
-    //dup STDOUT????(to what file)
+    int in_fd = open(&_filename[0],O_RDONLY);
+    if (in_fd==-1)
+        std::cout<<"run_cgi:failed to open the request body file for reading"<<std::endl;
+    dup2(0,in_fd);
+    close(0);
+    int out_fd = open(&_cgi_out_filename[0],O_WRONLY);
+    if (out_fd==-1)
+        std::cout<<"run_cgi:failed to open the cgi out file for writing"<<std::endl;
+    dup2(1,out_fd);
+    close(1);
     //fork
-    pid_t  child_pid = fork();
+    pid_t child_pid = fork();
+            //what arguments the cgi takes?????
     if (child_pid == -1)
         std::cout<<"run_cgi: fork function failed"<<std::endl;
     else if (child_pid ==0)
     {
-            //what arguments the cgi takes?????
-            // execve(&(_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath())[0],arguments???,environ);
+            //add signals to kill the cgi proccess if it takes too long for cgi to finish
+            std::string cgi_path=_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath()[_filename_extension];
+            execve(&(_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath()[_filename_extension]),NULL,environ);
     }
     else
     {
         //wait for cgi to finish
+        //check if any flags are needed
         waitpid(child_pid,NULL,0);
+        close(in_fd);
+        close(out_fd);
     }
-    //execv cgi
-    //wait for cgi to finish
     //AFTER CGI EXECUTION
     //remove cgi headers and everything else the response dont need
 }

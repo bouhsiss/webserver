@@ -9,6 +9,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <ftw.h>
+#include <fcntl.h>
 #include <algorithm>
 #include "ServerFarm.hpp"
 class ServerFarm;
@@ -95,4 +96,6 @@ class Request : public HttpMessage {
 		std::string		_auth_type;
 		std::string		_remote_user;
 		std::string		_remote_ident;
+		std::string		_cgi_out_filename;
+		std::fstream 	_cgi_out_file;
 };
