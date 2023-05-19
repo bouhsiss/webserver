@@ -4,7 +4,16 @@
 
 Request::Request() {}
 Request::Request(std::string request_host, std::string request_port):_sf(ServerFarm::getInstance()),_req_host(request_host),_req_port(request_port){
-
+	_method = "";
+	_RequestURI = "";
+	_http_v = "";
+	_status_code = -1;
+	_server_index = -1;
+	_location_index = -1;
+	_resource_type = "";
+	_requested_resource = "";
+	_upload_filename = "";
+	_filename_extension = "";
 }
 
 Request::Request(const Request& other) {
@@ -494,7 +503,7 @@ std::string Request::get_auto_index(){
     return _sf->getServers()[_server_index]->getLocations()[_location_index]->getAutoIndex();
 }
 bool Request::if_location_has_cgi(){
-    if (_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath() == ""
+    if (_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath().empty()
     ||_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiExtension()!= _filename_extension)
         return false;
     return true;
@@ -803,7 +812,6 @@ void Request::run_cgi(){
 
 
 
-//getters for debugging purposes
 //getters
 std::string Request::getHttp_version()const{return _http_v;}
 int			Request::getServerIndex()const{return _server_index;}
@@ -813,3 +821,33 @@ std::string	Request::getRequestedResource()const{return _requested_resource;}
 std::string Request::getUploadFilename()const{return _upload_filename;}
 std::string Request::getUploadFile()const{return _upload_filename;}
 std::string Request::getFilenameExtension()const{return _filename_extension;}
+
+
+// print all request attributes
+void Request::print() {
+	// std::cout << CYAN << "Http message class : " << std::endl;
+	// std::cout << "startline : " << _StartLine << std::endl;
+	// std::cout << "Headers : " << std::endl;
+	// std::map<std::string, std::string>::iterator It;
+	// for(It = _Headers.begin(); It != _Headers.end(); It++) {
+	// 	std::cout << "key : " << It->first << std::endl;
+	// 	std::cout << "value : " << It->second << std::endl;
+	// }
+	// std::ostringstream out;
+	// out << _Body.rdbuf();
+	// std::cout << "body : " << out.str() << RESET << std::endl;
+	std::cout << GREEN << "method : " << _method << std::endl;
+	std::cout << "Request URI : " << _RequestURI << std::endl;
+	std::cout << "http_v : " << _http_v << std::endl;
+	std::cout << "status code : " << _status_code << std::endl;
+	std::cout << "server index : " << _server_index << std::endl;
+	std::cout << "location index : " << _location_index << std::endl;
+	std::cout << "req host : " << _req_host << std::endl;
+	std::cout << "req port : " << _req_port << std::endl;
+	std::cout << "ressource type : " << _resource_type << std::endl;
+	std::cout << "requested ressource : " << _requested_resource << std::endl;
+	std::cout << "====== for POST METHOD ======" << std::endl; 
+	std::cout << "upload filename : " << _upload_filename << std::endl;
+	std::cout << "upload file : " << _upload_file << std::endl;
+	std::cout << "filename extension : " << _filename_extension << RESET << std::endl;
+}

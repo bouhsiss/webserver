@@ -19,10 +19,10 @@ Location::Location() {
 	_autoindex = "";
 	_upload_path = "";
 	_cgi_extension = "";
-	_cgi_path = "";
 }
 
 const std::vector<std::string> Location::getAllowedMethods() {return(_allowed_methods);}
+const std::map<std::string, std::string> Location::getCgiPath() const {return(_cgi_path);}
 const std::string Location::getIndex() {return(_index);}
 const std::string Location::getPath() const {return(_path);}
 const std::string Location::getRoot() const {return(_root);}
@@ -30,7 +30,6 @@ const std::string Location::getRedirect() const {return(_redirect);}
 const std::string Location::getAutoIndex() const {return(_autoindex);}
 const std::string Location::getUploadPath() const {return(_upload_path);}
 const std::string Location::getCgiExtension() const {return(_cgi_extension);}
-const std::string Location::getCgiPath() const {return(_cgi_path);}
 
 
 void Location::setPath(std::vector<std::string> const &tokens) {
@@ -89,10 +88,11 @@ void Location::setCgiExtension(std::vector<std::string> const &tokens) {
 		throw(Http::ConfigFileErrorException("Invalid cgi extension directive"));
 	this->_cgi_extension = tokens[0];
 }
+
 void Location::setCgiPath(std::vector<std::string> const &tokens) {
-	if(tokens.size() != 1 || !_cgi_path.empty())
+	if(tokens.size() != 2 || _cgi_path.find(tokens[0]) != _cgi_path.end())
 		throw(Http::ConfigFileErrorException("Invalid cgi path directive"));
-	this->_cgi_path = tokens[0];
+	this->_cgi_path.insert(std::make_pair(tokens[0], tokens[1]));
 }
 
 void Location::isLocationComplete(Server &parentServer) {
@@ -120,7 +120,14 @@ std::ostream& operator<<(std::ostream &out, Location &c) {
 	out << "      - location autoindex : " << c.getAutoIndex() << std::endl;
 	out << "      - location upload path : " << c.getUploadPath() << std::endl;
 	out << "      - location cgi extension : " << c.getCgiExtension() << std::endl;
-	out << "      - location cgi path : " << c.getCgiPath() << std::endl;
+	out << "      - location cgi path : " << std::endl;
+	std::map<std::string, std::string>::iterator mapIt;
+	std::map<std::string, std::string> cgiPath = c.getCgiPath();
+	for(mapIt = cgiPath.begin() ; mapIt != cgiPath.end() ; mapIt++)
+	{
+		std::cout << "key : " << mapIt->first << std::endl;
+		std::cout << "value : " << mapIt->second << std::endl;
+	}
 	out << "      - location index : " << c.getIndex() << std::endl;
 	std::vector<std::string> vect = c.getAllowedMethods();
 	std::vector<std::string>::iterator It;

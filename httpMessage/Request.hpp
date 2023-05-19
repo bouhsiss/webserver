@@ -34,6 +34,7 @@ class Request : public HttpMessage {
 		std::string getUploadFilename()const;
 		std::string getUploadFile()const;
 		std::string getFilenameExtension()const;
+		void print();
 
 
 	private :

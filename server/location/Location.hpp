@@ -21,15 +21,15 @@ class Location {
 		Location();
 		~Location(){}
 
-		const std::string getPath() const;
 		const std::vector<std::string> getAllowedMethods();
+		const std::map<std::string, std::string> getCgiPath() const;
+		const std::string getPath() const;
 		const std::string getRedirect() const;
 		const std::string getRoot() const;
 		const std::string getAutoIndex() const;
 		const std::string getIndex();
 		const std::string getUploadPath() const;
 		const std::string getCgiExtension() const;
-		const std::string getCgiPath() const;
 
 		void setPath(std::vector<std::string> const &tokens);
 		void setAllowedMethods(std::vector<std::string> const &tokens);
@@ -51,7 +51,7 @@ class Location {
         std::string _index;
         std::string _upload_path;
         std::string _cgi_extension;
-        std::string _cgi_path;
+		std::map<std::string, std::string> _cgi_path;
 
 		friend class Configuration;
 };

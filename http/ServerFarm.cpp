@@ -100,7 +100,8 @@ void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
 	std::vector<int> keysToErase;
 	for(It = _writeSockets.begin(); It != _writeSockets.end(); ++It) {
 		int writeSock = It->first;
-		if(It->second->request_is_ready()) {
+		if(It->second->request_is_ready() == true) {
+			It->second->print();
 			if(FD_ISSET(writeSock, tmpWriteFds)) {
 				if(send( writeSock, defaultResponse().c_str(), defaultResponse().length(), 0 ) < 0)
 				{	FD_CLR(writeSock, &_writeFds);
@@ -173,13 +174,13 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 					}
 				}
 				else {
-					Request req(It->second->getHost(), It->second->getPort());
-					req.proccess_Request(reqData);
-					if(req.request_is_ready())
+					Request *req = new  Request(It->second->getHost(), It->second->getPort());
+					req->proccess_Request(reqData);
+					if(req->request_is_ready())
 					{
 						FD_SET(clientSock, &_writeFds);
 					}
-					_writeSockets.insert(std::make_pair(clientSock, &req));
+					_writeSockets.insert(std::make_pair(clientSock, req));
 				}
 				// call the request parser and insert the client socket as key and the request object as value
 			}
