@@ -841,6 +841,7 @@ void Request::run_cgi(){
 //getters
 std::string Request::getHttp_version()const{return _http_v;}
 int			Request::getServerIndex()const{return _server_index;}
+int 		Request::getStatusCode() const{return _status_code;}
 std::string Request::getLocationIndex()const{return _location_index;}
 std::string	Request::getResourceType()const{return _resource_type;}
 std::string	Request::getRequestedResource()const{return _requested_resource;}
@@ -851,17 +852,17 @@ std::string Request::getFilenameExtension()const{return _filename_extension;}
 
 // print all request attributes
 void Request::print() {
-	// std::cout << CYAN << "Http message class : " << std::endl;
-	// std::cout << "startline : " << _StartLine << std::endl;
-	// std::cout << "Headers : " << std::endl;
-	// std::map<std::string, std::string>::iterator It;
-	// for(It = _Headers.begin(); It != _Headers.end(); It++) {
-	// 	std::cout << "key : " << It->first << std::endl;
-	// 	std::cout << "value : " << It->second << std::endl;
-	// }
-	// std::ostringstream out;
-	// out << _Body.rdbuf();
-	// std::cout << "body : " << out.str() << RESET << std::endl;
+	std::cout << CYAN << "Http message class : " << std::endl;
+	std::cout << "startline : " << _StartLine << std::endl;
+	std::cout << "Headers : " << std::endl;
+	std::map<std::string, std::string>::iterator It;
+	for(It = _Headers.begin(); It != _Headers.end(); It++) {
+		std::cout << "key : " << It->first << std::endl;
+		std::cout << "value : " << It->second << std::endl;
+	}
+	std::ostringstream out;
+	out << _Body.rdbuf();
+	std::cout << "body : " << out.str() << RESET << std::endl;
 	std::cout << GREEN << "method : " << _method << std::endl;
 	std::cout << "Request URI : " << _RequestURI << std::endl;
 	std::cout << "http_v : " << _http_v << std::endl;

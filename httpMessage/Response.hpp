@@ -3,10 +3,21 @@
 #include "HttpMessage.hpp"
 #include "Request.hpp"
 
+class Request;
+
 class Response : public HttpMessage {
 	public :
-		Response(Request &Request);
+		Response(Request &Request, int clientSock);
+		Request& getRequest();
+		void sendResponse();
+		void responseClass200();
+		void responseClass300();
+		void responseClass400();
+		void responseClass500();
 	private :
+		Request &_request;
+		int _writeSocket;
+		int _statusCode;
 };
 
 /*

@@ -96,13 +96,14 @@ std::string defaultResponse() {
 
 
 void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
-	std::map<int, Request*>::iterator It;
+	std::map<int, Response *>::iterator It;
 	std::vector<int> keysToErase;
 	for(It = _writeSockets.begin(); It != _writeSockets.end(); ++It) {
 		int writeSock = It->first;
-		if(It->second->request_is_ready() == true) {
-			It->second->print();
+		if(It->second->getRequest().request_is_ready() == true) {
+			It->second->getRequest().print();
 			if(FD_ISSET(writeSock, tmpWriteFds)) {
+				It->second->sendResponse();
 				if(send( writeSock, defaultResponse().c_str(), defaultResponse().length(), 0 ) < 0)
 				{	FD_CLR(writeSock, &_writeFds);
 					FD_CLR(writeSock, &_readFds);
@@ -168,19 +169,20 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 				std::cout << MAGENTA << reqData << RESET << std::endl;
 				std::cout << "=======================================================" << std::endl;
 				if(_writeSockets.find(clientSock) != _writeSockets.end()) {
-					_writeSockets[clientSock]->proccess_Request(reqData);
-					if(_writeSockets[clientSock]->request_is_ready()){
+					_writeSockets[clientSock]->getRequest().proccess_Request(reqData);
+					if(_writeSockets[clientSock]->getRequest().request_is_ready()){
 						FD_SET(clientSock, &_writeFds); 
 					}
 				}
 				else {
-					Request *req = new  Request(It->second->getHost(), It->second->getPort());
-					req->proccess_Request(reqData);
-					if(req->request_is_ready())
+					Request *request = new  Request(It->second->getHost(), It->second->getPort());
+					request->proccess_Request(reqData);
+					Response *response = new Response(*request, clientSock);
+					if(request->request_is_ready())
 					{
 						FD_SET(clientSock, &_writeFds);
 					}
-					_writeSockets.insert(std::make_pair(clientSock, req));
+					_writeSockets.insert(std::make_pair(clientSock, response));
 				}
 				// call the request parser and insert the client socket as key and the request object as value
 			}
