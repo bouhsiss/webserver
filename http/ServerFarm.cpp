@@ -79,7 +79,7 @@ void ServerFarm::areServersDuplicated() {
 }
 
 std::string defaultResponse() {
-	std::ifstream html_file("/Users/hbouhsis/Desktop/webserver/ressources/var/www/default.html");
+	std::ifstream html_file("/Users/hbouhsis/Desktop/webserver/resources/var/www/default.html");
 	std::stringstream buffer;
 	buffer << html_file.rdbuf();
 	html_file.close();
@@ -103,7 +103,6 @@ void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
 		if(It->second->getRequest().request_is_ready() == true) {
 			It->second->getRequest().print();
 			if(FD_ISSET(writeSock, tmpWriteFds)) {
-				It->second->sendResponse();
 				if(send( writeSock, defaultResponse().c_str(), defaultResponse().length(), 0 ) < 0)
 				{	FD_CLR(writeSock, &_writeFds);
 					FD_CLR(writeSock, &_readFds);
@@ -149,7 +148,6 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 	std::map<int, Server*>::iterator It;
 	std::vector<int> keysToErase;
 	for(It = _clientSockets.begin(); It != _clientSockets.end(); It++) {
-		// std::cout << RED << "client sockets size : " << _clientSockets.size() << RESET << std::endl;
 		int clientSock = It->first;
 		if(FD_ISSET(clientSock, tmpReadFds)) {
 			char read[1024];
@@ -170,7 +168,7 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 				std::cout << "=======================================================" << std::endl;
 				if(_writeSockets.find(clientSock) != _writeSockets.end()) {
 					_writeSockets[clientSock]->getRequest().proccess_Request(reqData);
-					if(_writeSockets[clientSock]->getRequest().request_is_ready()){
+					if(_writeSockets[clientSock]->getRequest().request_is_ready()) {
 						FD_SET(clientSock, &_writeFds); 
 					}
 				}

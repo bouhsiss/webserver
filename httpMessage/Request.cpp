@@ -72,7 +72,7 @@ void Request::proccess_Request(std::string req_data){
             else
                 std::cout<<"error: no server found to handle the request"<<std::endl;
         }
-        std::istringstream iss(_StartLine);
+        std::istringstream iss(_startLine);
         std::string m;
         std::string r_uri;
         std::string http_v;
@@ -217,6 +217,7 @@ void Request::GET(){
             {
                 if (Request::is_dir_has_index_file())//this directory has an index file
                 {
+					std::cout << RED << "am hr" << RESET << std::endl;
                     if (Request::if_location_has_cgi())//location has cgi
                     {
                         //run cgi on requested file with GET REQUEST_METHOD
@@ -469,7 +470,8 @@ bool Request::get_requested_resource(){
 std::string Request::get_resource_type(){return _resource_type;}
 
 bool Request::is_uri_has_slash_in_end(){
-    if (_RequestURI.find("/") == _RequestURI.length()-1)
+    if (_RequestURI[_RequestURI.length()-1] == '/')
+
         return true;
     return false;
 }
@@ -817,8 +819,8 @@ std::string Request::getHttp_version()const{return _http_v;}
 int			Request::getServerIndex()const{return _server_index;}
 int 		Request::getStatusCode() const{return _status_code;}
 std::string Request::getLocationIndex()const{return _location_index;}
-std::string	Request::getResourceType()const{return _resource_type;}
-std::string	Request::getRequestedResource()const{return _requested_resource;}
+std::string	Request::getresourceType()const{return _resource_type;}
+std::string	Request::getRequestedresource()const{return _requested_resource;}
 std::string Request::getUploadFilename()const{return _upload_filename;}
 std::string Request::getUploadFile()const{return _upload_filename;}
 std::string Request::getFilenameExtension()const{return _filename_extension;}
@@ -827,7 +829,7 @@ std::string Request::getFilenameExtension()const{return _filename_extension;}
 // print all request attributes
 void Request::print() {
 	std::cout << CYAN << "Http message class : " << std::endl;
-	std::cout << "startline : " << _StartLine << std::endl;
+	std::cout << "startLine : " << _startLine << std::endl;
 	std::cout << "Headers : " << std::endl;
 	std::map<std::string, std::string>::iterator It;
 	for(It = _Headers.begin(); It != _Headers.end(); It++) {
@@ -845,8 +847,8 @@ void Request::print() {
 	std::cout << "location index : " << _location_index << std::endl;
 	std::cout << "req host : " << _req_host << std::endl;
 	std::cout << "req port : " << _req_port << std::endl;
-	std::cout << "ressource type : " << _resource_type << std::endl;
-	std::cout << "requested ressource : " << _requested_resource << std::endl;
+	std::cout << "resource type : " << _resource_type << std::endl;
+	std::cout << "requested resource : " << _requested_resource << std::endl;
 	std::cout << "====== for POST METHOD ======" << std::endl; 
 	std::cout << "upload filename : " << _upload_filename << std::endl;
 	std::cout << "upload file : " << _upload_file << std::endl;
