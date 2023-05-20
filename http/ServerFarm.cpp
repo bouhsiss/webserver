@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerFarm.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: hbouhsis <marvin@42.fr>                    +#+  +:+       +#+        */
+/*   By: hassan <hassan@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/10 09:42:24 by hbouhsis          #+#    #+#             */
-/*   Updated: 2023/05/10 09:42:26 by hbouhsis         ###   ########.fr       */
+/*   Updated: 2023/05/20 16:31:56 by hassan           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,7 +101,7 @@ void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
 	for(It = _writeSockets.begin(); It != _writeSockets.end(); ++It) {
 		int writeSock = It->first;
 		if(It->second->getRequest().request_is_ready() == true) {
-			It->second->getRequest().print();
+			// It->second->getRequest().print();
 			if(FD_ISSET(writeSock, tmpWriteFds)) {
 				It->second->sendResponse();
 				if(send( writeSock, defaultResponse().c_str(), defaultResponse().length(), 0 ) < 0)

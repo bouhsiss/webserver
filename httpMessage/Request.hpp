@@ -69,6 +69,8 @@ class Request : public HttpMessage {
 		void run_cgi();
 		void set_cgi_env();
 		void prepare_env();
+    	void clean_cgi_output();
+
 
 
 		std::string 	_method;

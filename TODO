@@ -22,7 +22,7 @@ CGI...........
 --tmpfile
 ---run cgi if you find the cgi extension in request uri
 --cgi script has infinite loop??????????(catch signals from cgi proccess )
-------
+------add cgi script and debug  cgi and everything else
 
 
 DELETE.......
@@ -42,4 +42,19 @@ is_dir_has_index_file()-------->look for the index of the dir not the location y
 ----for chunked request in case it didnt work check recv return value....
 -----should we handle url decoding???????????????? 
 ---should i consider a coded forbidden char forbidden also???????
+    //dont forget decoding the uri???????????????????????????????????????????
+    //remove headers you dont need>???????????????????????????????????
+--change webserv program to accept config as an argument
 
+
+TESTING..................................
+........write unit tests for http/request methods 
+........test request parsing(http/request/chunked-request/mulripart) create log_files
+........test methods (get/post/delete)
+........test cgi
+........get should work with image video ....try serving  static website wait until response is done
+........test post and delete tomorrow and cgi...
+.......fix config file structure(server/location/path.......)
+......create files before opening them
+........fix upload paths
+........where do you store the proccessing files ????????(rmp)

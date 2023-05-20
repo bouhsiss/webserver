@@ -73,18 +73,16 @@ void Request::proccess_Request(std::string req_data){
                 std::cout<<"error: no server found to handle the request"<<std::endl;
         }
         std::istringstream iss(_StartLine);
-        std::string m;
-        std::string r_uri;
-        std::string http_v;
-        iss>>m>>r_uri>>http_v;
-        if (m != "GET" && m != "DELETE" && m != "POST")
+        iss>>_method;
+        iss>>_RequestURI;
+        iss>>_http_v;
+        if (_method != "GET" && _method != "DELETE" && _method != "POST")
         {
             //RETURN 501 (Not Implemented)
             _status_code = 501;
         }
-        _method = m;
         //check http version should be 1.1 does this check matter?
-        if (http_v != "HTTP/1.1")
+        if (_http_v != "HTTP/1.1")
         {
             //505 not supported version
             _status_code = 505;
@@ -100,12 +98,12 @@ void Request::proccess_Request(std::string req_data){
             //return 400 Bad Request
             _status_code = 400;
         }
-        else if (Request::check_for_forbidden_chars(r_uri))//request uri contains a char not allowed
+        else if (Request::check_for_forbidden_chars(_RequestURI))//request uri contains a char not allowed
         {
             //400 Bad Request
             _status_code = 400;
         }
-        else if (r_uri.length() > 2097152)//chrome max uri size
+        else if (_RequestURI.length() > 2097152)//chrome max uri size
         {
             //414 Request-URI Too Long
             _status_code = 414;
@@ -115,8 +113,6 @@ void Request::proccess_Request(std::string req_data){
             //413 Request Entity Too Large
             _status_code  = 413;
         }
-        _RequestURI = r_uri;
-
         Request::get_matched_location_for_request_uri();
         if (_location_index != "")//location found
         {
@@ -143,6 +139,7 @@ void Request::proccess_Request(std::string req_data){
             _status_code = 404;
         }  
     }
+    print();
 }
 
 std::string Request::getMethod()const{return _method;}
@@ -221,7 +218,7 @@ void Request::GET(){
                     {
                         //run cgi on requested file with GET REQUEST_METHOD
                         //return code Depend on cgi 
-                        Request::run_cgi();
+                        //Request::run_cgi();
                     }
                     else //location doensnt have cgi
                     {
@@ -258,7 +255,7 @@ void Request::GET(){
             {
                 //run cgi on requested file with GET REQUEST_METHOD
                 //return code depend on cgi
-                Request::run_cgi();
+                // Request::run_cgi();
             }
             else// location doesnt has cgi
             {
@@ -281,6 +278,9 @@ void Request::POST(){
     //dont forget chunked request
     if (Request::if_location_support_upload())//location support upload
     {
+        //debug
+        std::cerr<<"Request: location support upload"<<std::endl;
+        //end debug
        upload_resource();
         //201 created
         _status_code = 201;
@@ -299,7 +299,7 @@ void Request::POST(){
                         {
                             //run cgi on requested file with POST REQUEST_METHOD
                             //return code depend on cgi
-                            Request::run_cgi();
+                            // Request::run_cgi();
                         }
                         else//location doesnt have cgi
                         {
@@ -326,7 +326,7 @@ void Request::POST(){
                 {
                     //run cgi on requested file with POST REQUEST_METHOD
                     //return code depend on cgi
-                    Request::run_cgi();
+                    // Request::run_cgi();
                 }
                 else //location doesnt have cgi
                 {
@@ -357,7 +357,7 @@ void Request::DELETE(){
                     {
                         //run cgi on requested file with DELETE REQUEST_METHOD
                         //return code depend on cgi
-                        Request::run_cgi();
+                        // Request::run_cgi();
                     }
                     else
                     {
@@ -398,7 +398,7 @@ void Request::DELETE(){
             if (Request::if_location_has_cgi())
             {
                 //return code depend on cgi
-                Request::run_cgi();
+                // Request::run_cgi();
             }
             else
             {
@@ -577,8 +577,8 @@ void Request::upload_resource(){
         _upload_filename = random_filename();
     //uploading file
     _upload_filename = _sf->getServers()[_server_index]->getLocations()[_location_index]->getUploadPath() + _upload_filename;
-    _Body.open(_filename,std::ios::in | std::ios::out);
-    _upload_file.open(_upload_filename,std::ios::in | std::ios::out);
+    _Body.open(_filename,std::ios::in);
+    _upload_file.open(_upload_filename,std::ios::out);
     if (_Body.is_open() && _upload_file.is_open())
     {
         _upload_file<<_Body.rdbuf();
@@ -591,9 +591,9 @@ void Request::unchunk_body(){
     std::string buffer;
     std::string line;
     std::string chunk;
-    _Body.open(_filename,std::ios::in | std::ios::out);
-    std::string _unchunked_filename = random_filename();
-    std::fstream _body_unchunked(_unchunked_filename, std::ios::in | std::ios::out);
+    _Body.open(_filename,std::ios::in);
+    std::string _unchunked_filename = "/Users/hassan/Desktop/request2.0/tmp/"+random_filename();
+    std::fstream _body_unchunked(_unchunked_filename,std::ios::out);
     if (_Body.is_open() && _body_unchunked.is_open()) 
     {
         //read chunk size
@@ -618,12 +618,14 @@ void Request::unchunk_body(){
             chunk_size = stoi(line,0,16);
         }
         _Body.close();
-        _Body.open(_filename,std::ios::in | std::ios::out|std::ios::trunc);
-        if (_Body.is_open())
-        {
-            _Body<<_body_unchunked.rdbuf();
-            _Body.close();
-        }
+        _body_unchunked.close();
+    }
+    _Body.open(_filename,std::ios::out|std::ios::trunc);
+    _body_unchunked.open(_unchunked_filename,std::ios::in);
+    if (_Body.is_open() && _body_unchunked.is_open())
+    {
+        _Body<<_body_unchunked.rdbuf();
+        _Body.close();
         _body_unchunked.close();
     }
 }
@@ -638,7 +640,7 @@ void Request::handle_multipart_form_data(){
     if (_Headers.find("Transfer-Encoding")!=_Headers.end())
     {
         //work with _body_unchunked attribute
-        _Body.open(_filename,std::ios::in|std::ios::out);
+        _Body.open(_filename,std::ios::in);
         if (_Body.is_open())
         {
             //read file content into content string
@@ -653,12 +655,12 @@ void Request::handle_multipart_form_data(){
                 if (content_disposition.find("filename")!= std::string::npos)
                 {
                     //found the file field
-                    _upload_filename = content_disposition.substr(content_disposition.find("filename=")+9);
+                    std::string name = content_disposition.substr(content_disposition.find("filename=")+9);
                     //remove parenthesis from filename
-                    if (_upload_filename.length() >2)
+                    if (name.length() >2)
                     {
-                        _upload_filename = _upload_filename.substr(1,_upload_filename.length()-1);
-                        _filename_extension = _upload_filename.substr(_upload_filename.find_last_of(".")+1);
+                        _upload_filename = "/Users/hassan/Desktop/request2.0/tmp/"+name.substr(1,_upload_filename.length()-1);
+                        _filename_extension = name.substr(_upload_filename.find_last_of(".")+1);
                     }
                     //remove content-disposition header
                     field = field.substr(field.find("\r\n")+2);
@@ -672,7 +674,7 @@ void Request::handle_multipart_form_data(){
                 //if token isnt a file go to next token 
             }
             _Body.close();
-            _Body.open(_filename,std::ios::in | std::ios::out|std::ios::trunc);
+            _Body.open(_filename,std::ios::out|std::ios::trunc);
             if (_Body.is_open())
             {
                 _Body<<field;
@@ -687,6 +689,7 @@ void Request::handle_multipart_form_data(){
 
 //this the code below is for cgi
 void Request::prepare_env(){
+
     //prepare the env vars that you dont have already
     //PATH_INFO
     _path_info = _RequestURI.substr(0,_RequestURI.find("?"));
@@ -797,10 +800,15 @@ void Request::set_cgi_env()
     }
 }
 
+void Request::clean_cgi_output(){
+        //clean cgi output extract just the body and put back to cgi_out_file
+}
+
 
 extern char** environ;//user env
 void Request::run_cgi(){
     _cgi_out_filename = random_filename();
+    prepare_env();
     set_cgi_env();
     //what check should i perform on cgi scritp ????????? ex:for infinite loop.....
     int in_fd = open(&_filename[0],O_RDONLY);
@@ -815,14 +823,17 @@ void Request::run_cgi(){
     close(1);
     //fork
     pid_t child_pid = fork();
-            //what arguments the cgi takes?????
     if (child_pid == -1)
         std::cout<<"run_cgi: fork function failed"<<std::endl;
     else if (child_pid ==0)
     {
+            //cgi arguments (script name +file name)
+            char **args = new char*[3];
+            args[0] = &_script_name[0];
+            args[1] = &_filename[0];
+            args[3] =NULL;
             //add signals to kill the cgi proccess if it takes too long for cgi to finish
-            std::string cgi_path=_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath()[_filename_extension];
-            execve(&(_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath()[_filename_extension]),NULL,environ);
+            execve(&(_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath()[_filename_extension][0]),args,environ);
     }
     else
     {
@@ -833,7 +844,24 @@ void Request::run_cgi(){
         close(out_fd);
     }
     //AFTER CGI EXECUTION
+
+    //print the cgi output and debugg
+    //debug
+    _cgi_out_file.open(_cgi_out_filename,std::ios::in);
+    if (_cgi_out_file.is_open())
+    {
+        std::cout<<"---------------------------| this is cgi output |------------------------------------"<<std::endl;
+        std::string line;
+        while(getline(_cgi_out_file,line)){
+            std::cout<<line<<std::endl;
+        }
+        std::cout<<"---------------------------| end of cgi output |------------------------------------"<<std::endl;
+        _cgi_out_file.close();
+    }
+    //end debug
+
     //remove cgi headers and everything else the response dont need
+    clean_cgi_output();
 }
 
 
@@ -852,29 +880,44 @@ std::string Request::getFilenameExtension()const{return _filename_extension;}
 
 // print all request attributes
 void Request::print() {
-	std::cout << CYAN << "Http message class : " << std::endl;
-	std::cout << "startline : " << _StartLine << std::endl;
-	std::cout << "Headers : " << std::endl;
-	std::map<std::string, std::string>::iterator It;
-	for(It = _Headers.begin(); It != _Headers.end(); It++) {
-		std::cout << "key : " << It->first << std::endl;
-		std::cout << "value : " << It->second << std::endl;
-	}
-	std::ostringstream out;
-	out << _Body.rdbuf();
-	std::cout << "body : " << out.str() << RESET << std::endl;
-	std::cout << GREEN << "method : " << _method << std::endl;
-	std::cout << "Request URI : " << _RequestURI << std::endl;
-	std::cout << "http_v : " << _http_v << std::endl;
-	std::cout << "status code : " << _status_code << std::endl;
-	std::cout << "server index : " << _server_index << std::endl;
-	std::cout << "location index : " << _location_index << std::endl;
-	std::cout << "req host : " << _req_host << std::endl;
-	std::cout << "req port : " << _req_port << std::endl;
-	std::cout << "ressource type : " << _resource_type << std::endl;
-	std::cout << "requested ressource : " << _requested_resource << std::endl;
-	std::cout << "====== for POST METHOD ======" << std::endl; 
-	std::cout << "upload filename : " << _upload_filename << std::endl;
-	std::cout << "upload file : " << _upload_file << std::endl;
-	std::cout << "filename extension : " << _filename_extension << RESET << std::endl;
+    std::string logfilename="/Users/hassan/Desktop/request2.0/tmp/log_file";
+    std::fstream logfile;
+    logfile.open(logfilename,std::ios::out);
+    if (logfile.is_open())
+    {
+        std::cout << "__LOGFILE__DBG__ : " << std::endl;
+        //redirect output to a logfile
+        logfile << CYAN << "Http message class : " << std::endl;
+        logfile << "startline : " << _StartLine << std::endl;
+        logfile << "Headers : " << std::endl;
+        std::map<std::string, std::string>::iterator It;
+        for(It = _Headers.begin(); It != _Headers.end(); It++) {
+            logfile << "key : " << It->first << std::endl;
+            logfile << "value : " << It->second << std::endl;
+        }
+        _Body.open(_filename,std::ios::in);
+        logfile << "body : " << _Body.rdbuf() << RESET << std::endl;
+        _Body.close();
+        logfile << GREEN << "method : " << _method << std::endl;
+        logfile << "Request URI : " << _RequestURI << std::endl;
+        logfile << "http_v : " << _http_v << std::endl;
+        logfile << "status code : " << _status_code << std::endl;
+        logfile << "server index : " << _server_index << std::endl;
+        logfile << "location index : " << _location_index << std::endl;
+        logfile << "req host : " << _req_host << std::endl;
+        logfile << "req port : " << _req_port << std::endl;
+        logfile << "ressource type : " << _resource_type << std::endl;
+        logfile << "requested ressource : " << _requested_resource << std::endl;
+        logfile << "====== for POST METHOD ======" << std::endl; 
+        logfile << "upload filename : " << _upload_filename << std::endl;
+        _upload_file.open(_upload_filename,std::ios::in);
+        logfile << "upload file : " << _upload_file.rdbuf() << std::endl;
+        _upload_file.close();
+        logfile << "filename extension : " << _filename_extension << RESET << std::endl;
+        logfile.close();
+    }
+    else{
+        std::cerr<<"Request::print : error cant open logfile"<<std::endl;
+
+    }
 }

@@ -26,6 +26,8 @@ std::string HttpMessage::random_filename() {
     for (int i = 0; i < length; ++i) {
         result[i] = charset[std::rand() % charset_size];
     }
+	//debug
+	//end debug
     return result;
 }
 
@@ -34,7 +36,7 @@ void HttpMessage::parse(){
 	//skip CRLF
 	//added code
 	
-	_filename = random_filename();
+	_filename = "/Users/hassan/Desktop/request2.0/tmp/"+random_filename()+".body";
 
 	//set start_line
 	if (_sl_complete==false && _message.find("\r\n")!=std::string::npos )
@@ -75,11 +77,15 @@ void HttpMessage::parse(){
 	//set body	
 	if(_sl_complete == true && _hd_complete == true && _b_complete != true)
 	{
-		_Body.open(_filename.c_str(),std::ios::in);
+		_Body.open(_filename.c_str(),std::ios::out);
 		if (_Body.is_open())
 		{
 			_Body<<_message;
-			if ((_Headers.find("Transfer-Encoding")!=_Headers.end() && _message.find("0/r/n"))||
+			//debug
+			std::cerr<<"httpmessage: _body file open for writing.................."<<std::endl;
+			std::cerr<<"_message : "<<_message<<std::endl;
+			//end debug
+			if ((_Headers.find("Transfer-Encoding")!=_Headers.end() && _message.find("0/r/n") == _message.length()-1)||
 				(_Headers.find("Content-Length")!=_Headers.end()&& (int)_body_length >= atoi(_Headers.find("Content-Length")->second.c_str())))
 				{
 					_b_complete = true;
@@ -88,6 +94,11 @@ void HttpMessage::parse(){
 			_message = "";
 			_body_length +=  _message.length();
 			_Body.close();
+		}
+		else{
+			//debug
+			std::cerr<<"httpmessage: failed to open _Body file"<<std::endl;
+			//end debug
 		}
 	}
 }
