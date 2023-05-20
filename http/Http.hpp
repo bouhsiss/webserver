@@ -58,7 +58,6 @@ namespace Http {
 		public :
 			NetworkingErrorException(std::string msg) : Http::HttpException(msg) {}
 	};
-	
 
 	std::vector<std::string> tokenize(std::string const &str, const char* delim);
 	void trimSpaces(std::string &line);

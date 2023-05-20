@@ -41,7 +41,7 @@ void HttpMessage::parse(){
 	//set start_line
 	if (_sl_complete==false && _message.find("\r\n")!=std::string::npos )
 	{
-		_StartLine = _message.substr(0,_message.find("\r\n"));
+		_startLine = _message.substr(0,_message.find("\r\n"));
 		//remove start_line from buffer
 		_sl_complete = true;
 		_message = _message.substr(_message.find("\r\n")+2);
@@ -50,7 +50,7 @@ void HttpMessage::parse(){
 	if (_hd_complete ==false&& _message.find("\r\n\r\n")!=std::string::npos)
 	{
 		_hd_complete=true;
-		if (_StartLine.find("GET")!=std::string::npos || _StartLine.find("DELETE")!=std::string::npos)
+		if (_startLine.find("GET")!=std::string::npos || _startLine.find("DELETE")!=std::string::npos)
 			_b_complete=true;
 		std::string heads;
 		heads= _message.substr(0,_message.find("\r\n\r\n")+2);

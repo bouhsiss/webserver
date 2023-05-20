@@ -25,7 +25,7 @@ class HttpMessage {
 		void setHeaders(std::string name, std::string value);
 		std::string random_filename(); 
 
-		std::string 						_StartLine;
+		std::string 						_startLine;
 		std::map<std::string, std::string> 	_Headers;
 		std::fstream 						_Body;
 		size_t								_body_length;

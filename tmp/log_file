@@ -1,70 +1,30 @@
 [36mHttp message class : 
-startline : POST /images HTTP/1.1
+startline : GET /favicon.ico HTTP/1.1
 Headers : 
 key : Accept
-value :  */*
+value :  image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
 key : Accept-Encoding
 value :  gzip, deflate, br
+key : Accept-Language
+value :  en-US,en;q=0.9,fr;q=0.8
 key : Connection
 value :  keep-alive
-key : Content-Length
-value :  3644668
 key : Host
 value :  127.0.0.1:8080
-key : Postman-Token
-value :  686eb5ed-2c9f-4fc0-90ee-8d15b5b47fbd
-key : Transfer-Encoding
-value :  chunked
+key : Referer
+value :  http://127.0.0.1:8080/
+key : Sec-Fetch-Dest
+value :  image
+key : Sec-Fetch-Mode
+value :  no-cors
+key : Sec-Fetch-Site
+value :  same-origin
 key : User-Agent
-value :  PostmanRuntime/7.32.2
-body : 00000 n
-0000272806 00000 n
-0000272918 00000 n
-0000272942 00000 n
-0000273055 00000 n
-0000273079 00000 n
-0000273191 00000 n
-0000273215 00000 n
-0000273327 00000 n
-0000273351 00000 n
-0000273464 00000 n
-0000273488 00000 n
-0000273601 00000 n
-0000273625 00000 n
-0000275891 00000 n
-0000285337 00000 n
-0000285363 00000 n
-0000295509 00000 n
-0000295705 00000 n
-0003592951 00000 n
-0003592980 00000 n
-0003593169 00000 n
-0003593249 00000 n
-trailer
-<< /ID [ (some) (id) ]
-   /Root 2684 0 R
-   /Size 2685
->>
-startxref
-3593314
-%%EOF
-3a
-
-----------------------------138258401504125443286509--
-
-0
-
-[0m
-[1;32mmethod : 
-Request URI : 
-http_v : 
-status code : -1
-server index : -1
-location index : ÿ
-req host : 127.0.0.1
-req port : 8080
-ressource type : 
-requested ressource : 
-====== for POST METHOD ======
-upload filename : 
-upload file : 
+value :  Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36
+key : sec-ch-ua
+value :  "Google Chrome";v="113", "Chromium";v="113", "Not-A.Brand";v="24"
+key : sec-ch-ua-mobile
+value :  ?0
+key : sec-ch-ua-platform
+value :  "macOS"
+body : 

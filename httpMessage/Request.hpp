@@ -31,8 +31,8 @@ class Request : public HttpMessage {
 		int			getServerIndex()const;
 		int			getStatusCode() const;
 		std::string getLocationIndex()const;
-		std::string	getResourceType()const;
-		std::string	getRequestedResource()const;
+		std::string	getresourceType()const;
+		std::string	getRequestedresource()const;
 		std::string getUploadFilename()const;
 		std::string getUploadFile()const;
 		std::string getFilenameExtension()const;
