@@ -21,18 +21,21 @@ class Response : public HttpMessage {
 		void setHeaders();
 		void initializeStatusCodeMap();
 		void sendResponseBody(std::string filename);
-		void generateDirectoryListing(std::string filename);
+		void setContentLength(std::string filename);
+		std::string generateDirectoryListing(std::string dirPath);
 
 		Request &_request;
+		std::string _headers;
 		int _writeSocket;
 		int _statusCode;
-		// std::map<int, std::string> _statusCodeMap;
-		// std::streampos _totalBytesSent;
-		// bool _isResponseSent;
-		// size_t _contentLength;
-		// std::ifstream _file;
-		// int bytesSent;
-		// int bodySize;
+		std::map<int, std::string> _statusCodeMap;
+		std::streampos _totalBytesSent;
+		bool _isResponseSent;
+		size_t _contentLength;
+		std::ifstream _file;
+		int bytesSent;
+		int bodySize;
+		bool _headersAreSent;
 };
 
 

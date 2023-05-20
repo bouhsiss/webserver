@@ -25,6 +25,9 @@
 #include<sstream>
 #include<fcntl.h>
 #include<csignal>
+#include<dirent.h>
+#include<sys/stat.h>
+
 
 #define DEFAULT_CONFIG_FILE "./conf.d/default.conf"
 #define BACKLOG 200

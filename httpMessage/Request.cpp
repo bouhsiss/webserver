@@ -476,24 +476,44 @@ bool Request::is_uri_has_slash_in_end(){
     return false;
 }
 
+bool is_dir_path_root(std::string requestURI, std::string)
+
 //helper function
-bool search_for_indexfile(const char *dir_path){
+bool Request::search_for_indexfile(const char *dir_path){
     struct dirent* entry;
-    std::string filename = "index"; 
-    DIR* directory =opendir(dir_path);
-    if (directory == nullptr)
-    {
-        std::cout<<"search_for_filename: error cant open directory"<<std::endl;
-        return false;
-    }
-    while ((entry = readdir(directory)) != nullptr)
-    {
-        if (strncmp(entry->d_name,filename.c_str(),5)==0)
-        {
-            closedir(directory);
-            return true;
-        }
-    }
+    std::string filename ;
+	//check if the uri is the same as location index
+	std::string tmp= _location_index;
+	if (tmp[tmp.length()-1]!='/')
+		tmp.append("/");
+	if (_RequestURI==tmp)
+	{
+		if(!_sf->getServers()[_server_index]->getLocations()[_location_index]->getIndex().empty())
+			filename = _sf->getServers()[_server_index]->getLocations()[_location_index]->getIndex();
+		_resource_type = "file";
+		_requested_resource += filename;
+        return true;
+	}
+	else {
+		filename = "index";
+		DIR* directory =opendir(dir_path);
+		if (directory == nullptr)
+		{
+			std::cout<<"search_for_filename: error cant open directory"<<std::endl;
+			return false;
+		}
+		while ((entry = readdir(directory)) != nullptr)
+		{
+			if (strncmp(entry->d_name,filename.c_str(),5)==0)
+			{
+				closedir(directory);
+				_resource_type = "file";
+
+				_requested_resource += entry->d_name;
+				return true;
+			}
+		}
+	}
     closedir(directory);
     return false;
 }

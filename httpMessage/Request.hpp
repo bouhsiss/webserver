@@ -51,6 +51,7 @@ class Request : public HttpMessage {
         void DELETE();
 
         //----------- helper functions
+		bool search_for_indexfile(const char *dir_path);
 		void upload_resource();
         bool get_requested_resource();
         bool delete_all_folder_content();
