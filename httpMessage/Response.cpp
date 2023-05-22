@@ -16,7 +16,7 @@ Request& Response::getRequest() {return(_request);}
 bool Response::sendFailed(){return(_sendFailed);}
 bool Response::isResponseSent(){return(_isResponseSent);}
 
-void Response::setContentLength(std::string filename) {
+std::string Response::setContentLength(std::string filename) {
 	_file.open(filename);
 	_filename = filename;
 	if(!_file)
@@ -29,6 +29,7 @@ void Response::setContentLength(std::string filename) {
 	// should add something when the file fails to open due to permissions...
 	_contentLength = fileSize;
 	// _file.close();
+	return (std::to_string(fileSize));
 }
 
 void Response::generateDirectoryListing(std::string dirPath) {
@@ -107,14 +108,20 @@ void Response::setHeaders() {
 							"\r\n";
 }
 
-void Response::sendHeaders(std::string requestedResource) {
-	setContentLength(requestedResource);
-	setHeaders();
-	std::string initialResponse = _startLine + _headers;
+/* 
+i should store the headers in a map and set them and insert in them and in the end format them startline + headers
+*/
+
+void Response::formatHeadersAndStartLine() {
+	std::string initialResponse = _startLine;
+	std::map<std::string, std::string>::iterator It;
+	for(It = _headerss.begin(); It != _headerss.end(); It++)
+		initialResponse += It->first + It->second + "\r\n";
+	initialResponse += "\r\n";
 	size_t bytesSent = send(_writeSocket, initialResponse.c_str(), initialResponse.length(), 0);
 	if(bytesSent < 0) {
 		_sendFailed = true;
-		return ;
+		return;
 	}
 	_headersAreSent = true;
 }
@@ -123,15 +130,20 @@ void Response::responseClass200() {
 	if(_request.getMethod() == "GET") {
 		if(_request.getresourceType() == "file")
 		{
-			if(_headersAreSent == false)
-				sendHeaders(_request.getRequestedresource());
+			if(_headersAreSent == false) {
+				_headerss.insert(std::make_pair("Content-Type: ", "text/html"));
+				_headerss.insert(std::make_pair("Content-Length: ", setContentLength(_request.getRequestedresource())));
+				formatHeadersAndStartLine();
+			}
 			else
 				sendResponseBody(_request.getRequestedresource());
 		}
 		else {
 			if(_headersAreSent == false) {
 				generateDirectoryListing(_request.getRequestedresource());
-				sendHeaders(DIRECTORY_LISTING_FILENAME);
+				_headerss.insert(std::make_pair("Content-Type: ", "text/html"));
+				_headerss.insert(std::make_pair("Content-Length: ", setContentLength(DIRECTORY_LISTING_FILENAME)));
+				formatHeadersAndStartLine();
 			}
 			else
 			{
@@ -139,12 +151,25 @@ void Response::responseClass200() {
 			}
 		}
 	}
-	/*
-	if (post)
-		upload the post request body
-	if(delete) 
-		delete success 
-	*/
+	else if(_request.getMethod() == "POST") {
+		if(_headersAreSent == false) {
+			_headerss.insert(std::make_pair("Content-Type: ", "text/plain"));
+			_headerss.insert(std::make_pair("Content-Length: ", std::to_string(sizeof(POST_201_BODY))));
+			_headerss.insert(std::make_pair("Location", "location/to/the/new/resource"));
+			formatHeadersAndStartLine();
+		}
+		else
+			send(_writeSocket, POST_201_BODY, sizeof(POST_201_BODY), 0);
+	}
+	else if(_request.getMethod() == "DELETE") {
+		if(_headersAreSent == false) {
+			_headerss.insert(std::make_pair("Content-Type: ", "text/plain"));
+			_headerss.insert(std::make_pair("Content-Length: ", std::to_string(sizeof(DELETE_204_BODY))));
+			formatHeadersAndStartLine();
+		}
+		else
+			send(_writeSocket, DELETE_204_BODY, sizeof(DELETE_204_BODY), 0);
+	}
 }
 
 void Response::responseClass300(){
@@ -157,6 +182,7 @@ void Response::responseClass500(){}
 
 void Response::sendResponse() {
 	setStartLine();
+
 	if(_statusCode >= 200 && _statusCode < 300)
 		responseClass200();
 	else if(_statusCode >= 300 && _statusCode < 400)

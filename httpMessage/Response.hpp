@@ -5,6 +5,8 @@
 
 #define RESPONSE_BUFFER_SIZE 1024
 #define DIRECTORY_LISTING_FILENAME "/tmp/directory_listing.html"
+#define POST_201_BODY "created succefully !!!"
+#define DELETE_204_BODY "No content"
 
 class Request;
 
@@ -25,11 +27,13 @@ class Response : public HttpMessage {
 		void sendHeaders(std::string requestedResource);
 		void initializeStatusCodeMap();
 		void sendResponseBody(std::string filename);
-		void setContentLength(std::string filename);
+		std::string setContentLength(std::string filename);
 		void generateDirectoryListing(std::string dirPath);
+		void formatHeadersAndStartLine();
 
 		Request &_request;
 		std::string _headers;
+		std::map<std::string, std::string> _headerss;
 		int _writeSocket;
 		int _statusCode;
 		std::map<int, std::string> _statusCodeMap;
