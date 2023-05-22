@@ -64,6 +64,7 @@ class Request : public HttpMessage {
         bool has_write_acces_on_folder();
 		void unchunk_body();
 		void handle_multipart_form_data();
+		bool indexFileExists(const char* dir_path, std::string &filename);
 
 		//function to run cgi
 		void run_cgi();

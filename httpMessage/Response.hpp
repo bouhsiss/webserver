@@ -4,6 +4,7 @@
 #include "Request.hpp"
 
 #define RESPONSE_BUFFER_SIZE 1024
+#define DIRECTORY_LISTING_FILENAME "/tmp/directory_listing.html"
 
 class Request;
 
@@ -12,30 +13,33 @@ class Response : public HttpMessage {
 		Response(Request &Request, int clientSock);
 		Request& getRequest();
 		void sendResponse();
+		bool sendFailed();
+		bool isResponseSent();
 	private :
 		void responseClass200();
 		void responseClass300();
 		void responseClass400();
 		void responseClass500();
-		void setstartLine();
+		void setStartLine();
 		void setHeaders();
+		void sendHeaders(std::string requestedResource);
 		void initializeStatusCodeMap();
 		void sendResponseBody(std::string filename);
 		void setContentLength(std::string filename);
-		std::string generateDirectoryListing(std::string dirPath);
+		void generateDirectoryListing(std::string dirPath);
 
 		Request &_request;
 		std::string _headers;
 		int _writeSocket;
 		int _statusCode;
 		std::map<int, std::string> _statusCodeMap;
-		std::streampos _totalBytesSent;
+		size_t _totalBytesSent;
 		bool _isResponseSent;
 		size_t _contentLength;
 		std::ifstream _file;
-		int bytesSent;
-		int bodySize;
 		bool _headersAreSent;
+		bool _sendFailed;
+		std::string _filename;
 };
 
 

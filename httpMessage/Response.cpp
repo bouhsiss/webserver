@@ -6,30 +6,42 @@ Response::Response(Request &request, int writeSock): _request(request), _writeSo
 	_isResponseSent = -1;
 	_contentLength = 0;
 	_isResponseSent = false;
+	_headersAreSent = false;
+	_sendFailed = false;
+	_statusCode = _request.getStatusCode();
 }
 
 Request& Response::getRequest() {return(_request);}
 
+bool Response::sendFailed(){return(_sendFailed);}
+bool Response::isResponseSent(){return(_isResponseSent);}
+
 void Response::setContentLength(std::string filename) {
-	std::ifstream _file(filname);
+	_file.open(filename);
+	_filename = filename;
+	if(!_file)
+	{
+		std::cout << RED << "couldn't open body file" << RESET << std::endl;
+	}
 	_file.seekg(0, std::ios::end);
-	std::ostream fileSize = _file.tellg();
+	std::streampos fileSize = _file.tellg();
 	_file.seekg(0, std::ios::beg);
 	// should add something when the file fails to open due to permissions...
 	_contentLength = fileSize;
+	// _file.close();
 }
 
-std::string Response::generateDirectoryListing(std::string dirPath) {
+void Response::generateDirectoryListing(std::string dirPath) {
 	DIR* dir;
 	struct dirent* entry;
 
 	dir = opendir(dirPath.c_str());
 	// gotta add something when the directory fails to open
-	std::ofstream htmlFile("directory_listing.html");
+	std::ofstream htmlFile(DIRECTORY_LISTING_FILENAME);
 	// gotta add somethign when the file fails to be created
 
 	//html Header
-	htmlFile << "<html><body><ul>";
+	htmlFile << "<!DOCTYPE html><html><head><title>directory listing</title></head><body><ul>";
 	//read directory entries
 	while((entry = readdir(dir)) != NULL) {
 		std::string entryName = entry->d_name;
@@ -37,55 +49,74 @@ std::string Response::generateDirectoryListing(std::string dirPath) {
 		if(entryName == "." || entryName == "..")
 			continue ;
 		struct stat entryStat;
-		std::string entryPath  = dirPath + "/" + entry;
-		if(stat(entryPtah.c_str(), &entryStat) != 0) {
+		std::string entryPath  = dirPath + "/" + entryName;
+		if(stat(entryPath.c_str(), &entryStat) != 0) {
 			std::cerr << RED << "failed to get file info for : " << entryPath << std::endl;
 			continue;
 		}
 
-		htmlFile << "<li><a href=\"" << filePath << "\">" <<  entryName << "</a></li>";
+		htmlFile << "<li><a href=\"" << _request.getRequestURI() << entryName << "\">" <<  entryName << "</a></li>";
 	}
 	htmlFile << "</ul></body></html>";
 	closedir(dir);
 	htmlFile.close();
-	return("directory_listing.html");
 }
 
 
 void Response::sendResponseBody(std::string filename) {
-	char buffer[RESPONSE_BUFFER_SIZE];
-	file.read(buffer, RESPONSE_BUFFER_SIZE);
-	size_t bytesSent = send(_writeSocket, buffer, file.gcount());
-	if(byteSent < 0) {
-		_totalBytesSent = -1;
+	size_t chunkSize = RESPONSE_BUFFER_SIZE;
+	if((_contentLength - _totalBytesSent) < chunkSize)
+		chunkSize = _contentLength - _totalBytesSent;
+	std::vector<char> buffer(chunkSize);
+	if(!_file.is_open())
+		_file.open(filename);
+	if(!_file)
+		std::cout << RED << "couldn't open file" << RESET << std::endl;
+	_file.read(buffer.data(), chunkSize);
+	size_t bytesSent = send(_writeSocket, buffer.data(), chunkSize, 0);
+	if(bytesSent < 0) {
+		_sendFailed = true;
 		return;
 		// gotta add something to resend the response from scratch when send fails
 	}
 	_totalBytesSent += bytesSent;
+	
+	std::cout << YELLOW << " total bytes sent : " << _totalBytesSent << std::endl;
+	std::cout << "chunk size " << chunkSize << std::endl;
+	std::cout << "filename " << filename << std::endl;
+	std::cout << "content length : " << _contentLength << RESET << std::endl;
 	if(_totalBytesSent  == _contentLength)
 	{
+		_file.close();
+		std::cout << "am here" << std::endl;
 		_isResponseSent = true;
 		if(_request.getresourceType() == "directory"){
-			std::remove(filename)
+			std::remove(filename.c_str());
 		}
 	}
 }
 
 
-void Response::setstartLine() {
-	_startLine = "HTTP/1.1 " + std::to_string(_statusCode) + _statusCodeMap[_statusCode];
+void Response::setStartLine() {
+	_startLine = "HTTP/1.1 " + std::to_string(_statusCode) + _statusCodeMap[_statusCode] + "\r\n";
 }
 
 void Response::setHeaders() {
-	std::string _headers =  "Content-Type: text/html\r\n"
+	_headers =  "Content-Type: text/html\r\n"
 							"Content-Length: " + std::to_string(_contentLength) + "\r\n"
-							"\r\n"
+							"\r\n";
 }
 
-void sendHeaders(std::string requestedResource) {
+void Response::sendHeaders(std::string requestedResource) {
 	setContentLength(requestedResource);
 	setHeaders();
 	std::string initialResponse = _startLine + _headers;
+	size_t bytesSent = send(_writeSocket, initialResponse.c_str(), initialResponse.length(), 0);
+	if(bytesSent < 0) {
+		_sendFailed = true;
+		return ;
+	}
+	_headersAreSent = true;
 }
 
 void Response::responseClass200() {
@@ -93,25 +124,22 @@ void Response::responseClass200() {
 		if(_request.getresourceType() == "file")
 		{
 			if(_headersAreSent == false)
-				sendHeaders(_request.getRequestedrsource());
+				sendHeaders(_request.getRequestedresource());
 			else
-				sendResponseFile(_request.getRequestedresource());
+				sendResponseBody(_request.getRequestedresource());
 		}
 		else {
-			if(_headerAreSent == false) {
+			if(_headersAreSent == false) {
 				generateDirectoryListing(_request.getRequestedresource());
-				sendHeaders("/tmp/directory_listing.html");
+				sendHeaders(DIRECTORY_LISTING_FILENAME);
 			}
 			else
-				sendResponseFile("/tmp/directory_listing.html");
+			{
+				sendResponseBody(DIRECTORY_LISTING_FILENAME);
+			}
 		}
 	}
 	/*
-	check method
-	if(get)
-		check if requested resource is file
-			if yes return requested file
-			if no generate autoindex
 	if (post)
 		upload the post request body
 	if(delete) 
@@ -129,7 +157,6 @@ void Response::responseClass500(){}
 
 void Response::sendResponse() {
 	setStartLine();
-	_statusCode = _request.getStatusCode();
 	if(_statusCode >= 200 && _statusCode < 300)
 		responseClass200();
 	else if(_statusCode >= 300 && _statusCode < 400)

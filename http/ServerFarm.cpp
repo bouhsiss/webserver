@@ -103,18 +103,21 @@ void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
 		if(It->second->getRequest().request_is_ready() == true) {
 			It->second->getRequest().print();
 			if(FD_ISSET(writeSock, tmpWriteFds)) {
-				if(send( writeSock, defaultResponse().c_str(), defaultResponse().length(), 0 ) < 0)
-				{	FD_CLR(writeSock, &_writeFds);
+				It->second->sendResponse();
+				if(It->second->sendFailed()) {	
+					FD_CLR(writeSock, &_writeFds);
 					FD_CLR(writeSock, &_readFds);
 					close(writeSock);
 					_writeSockets.erase(writeSock);
 					_clientSockets.erase(writeSock);
 					throw(Http::NetworkingErrorException("send failed"));
 				}
-				keysToErase.push_back(writeSock);
-				FD_CLR(writeSock, &_writeFds);
-				FD_CLR(writeSock, &_readFds);
-				close(writeSock);
+				if(It->second->isResponseSent() == true) {
+					keysToErase.push_back(writeSock);
+					FD_CLR(writeSock, &_writeFds);
+					FD_CLR(writeSock, &_readFds);
+					close(writeSock);
+				}
 			}
 			std::cout << GREEN << "response sent to socket : " << writeSock << RESET << std::endl;
 		}

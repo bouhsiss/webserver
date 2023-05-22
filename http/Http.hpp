@@ -27,6 +27,7 @@
 #include<csignal>
 #include<dirent.h>
 #include<sys/stat.h>
+#include <cstdio>
 
 
 #define DEFAULT_CONFIG_FILE "./conf.d/default.conf"
