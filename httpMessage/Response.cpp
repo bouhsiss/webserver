@@ -42,7 +42,7 @@ void Response::generateDirectoryListing(std::string dirPath) {
 	// gotta add somethign when the file fails to be created
 
 	//html Header
-	htmlFile << "<!DOCTYPE html><html><head><title>directory listing</title></head><body><ul>";
+	htmlFile << "<html><head><title>directory listing</title></head><body><ul>";
 	//read directory entries
 	while((entry = readdir(dir)) != NULL) {
 		std::string entryName = entry->d_name;
@@ -64,13 +64,13 @@ void Response::generateDirectoryListing(std::string dirPath) {
 }
 
 
-void Response::sendResponseBody(std::string filename) {
+void Response::sendResponseFile(std::string filename) {
 	size_t chunkSize = RESPONSE_BUFFER_SIZE;
 	if((_contentLength - _totalBytesSent) < chunkSize)
 		chunkSize = _contentLength - _totalBytesSent;
 	std::vector<char> buffer(chunkSize);
 	if(!_file.is_open())
-		_file.open(filename);
+		_file.open(filename, std::ios::in);
 	if(!_file)
 		std::cout << RED << "couldn't open file" << RESET << std::endl;
 	_file.read(buffer.data(), chunkSize);
@@ -89,7 +89,6 @@ void Response::sendResponseBody(std::string filename) {
 	if(_totalBytesSent  == _contentLength)
 	{
 		_file.close();
-		std::cout << "am here" << std::endl;
 		_isResponseSent = true;
 		if(_request.getresourceType() == "directory"){
 			std::remove(filename.c_str());
@@ -99,18 +98,17 @@ void Response::sendResponseBody(std::string filename) {
 
 
 void Response::setStartLine() {
-	_startLine = "HTTP/1.1 " + std::to_string(_statusCode) + _statusCodeMap[_statusCode] + "\r\n";
+	_startLine = "HTTP/1.1 " + std::to_string(_statusCode) + " " + _statusCodeMap[_statusCode] + "\r\n";
 }
 
-void Response::setHeaders() {
-	_headers =  "Content-Type: text/html\r\n"
-							"Content-Length: " + std::to_string(_contentLength) + "\r\n"
-							"\r\n";
+void Response::setHeaders(std::string contentLength) {
+	_headerss.insert(std::make_pair("Content-Type: ", "text/html"));
+	_headerss.insert(std::make_pair("Content-Length: ", contentLength));
+	if( _statusCode == 301 && _request.getRequestURI()[_request.getRequestURI().size() -1] != '/')
+		_headerLocationValue = _request.getRequestURI() + "/";
+	_headerss.insert(std::make_pair("Location: ", _headerLocationValue));
 }
 
-/* 
-i should store the headers in a map and set them and insert in them and in the end format them startline + headers
-*/
 
 void Response::formatHeadersAndStartLine() {
 	std::string initialResponse = _startLine;
@@ -123,6 +121,7 @@ void Response::formatHeadersAndStartLine() {
 		_sendFailed = true;
 		return;
 	}
+	std::cout << RED << initialResponse  << RESET << std::endl;
 	_headersAreSent = true;
 }
 
@@ -131,35 +130,40 @@ void Response::responseClass200() {
 		if(_request.getresourceType() == "file")
 		{
 			if(_headersAreSent == false) {
-				_headerss.insert(std::make_pair("Content-Type: ", "text/html"));
-				_headerss.insert(std::make_pair("Content-Length: ", setContentLength(_request.getRequestedresource())));
+				setHeaders(setContentLength(_request.getRequestedresource()));
 				formatHeadersAndStartLine();
 			}
 			else
-				sendResponseBody(_request.getRequestedresource());
+				/*
+					if cgi output_filename not empty
+					send cgi response body
+				*/
+				sendResponseFile(_request.getRequestedresource());
 		}
 		else {
 			if(_headersAreSent == false) {
 				generateDirectoryListing(_request.getRequestedresource());
-				_headerss.insert(std::make_pair("Content-Type: ", "text/html"));
-				_headerss.insert(std::make_pair("Content-Length: ", setContentLength(DIRECTORY_LISTING_FILENAME)));
+				setHeaders(setContentLength(DIRECTORY_LISTING_FILENAME));
 				formatHeadersAndStartLine();
 			}
 			else
 			{
-				sendResponseBody(DIRECTORY_LISTING_FILENAME);
+				sendResponseFile(DIRECTORY_LISTING_FILENAME);
 			}
 		}
 	}
 	else if(_request.getMethod() == "POST") {
 		if(_headersAreSent == false) {
-			_headerss.insert(std::make_pair("Content-Type: ", "text/plain"));
-			_headerss.insert(std::make_pair("Content-Length: ", std::to_string(sizeof(POST_201_BODY))));
-			_headerss.insert(std::make_pair("Location", "location/to/the/new/resource"));
+			setHeaders(std::to_string(sizeof(POST_201_BODY)));
 			formatHeadersAndStartLine();
 		}
 		else
+		{
+			//if(cgi_output_filename not empty)
+			// send cgi response body
 			send(_writeSocket, POST_201_BODY, sizeof(POST_201_BODY), 0);
+			_isResponseSent = true;
+		}
 	}
 	else if(_request.getMethod() == "DELETE") {
 		if(_headersAreSent == false) {
@@ -168,12 +172,11 @@ void Response::responseClass200() {
 			formatHeadersAndStartLine();
 		}
 		else
+		{
 			send(_writeSocket, DELETE_204_BODY, sizeof(DELETE_204_BODY), 0);
+			_isResponseSent = true;
+		}
 	}
-}
-
-void Response::responseClass300(){
-
 }
 
 void Response::responseClass400(){}
@@ -182,11 +185,14 @@ void Response::responseClass500(){}
 
 void Response::sendResponse() {
 	setStartLine();
-
-	if(_statusCode >= 200 && _statusCode < 300)
+	if(_request.is_location_has_redirection() == true) {
+		_headerLocationValue = _request.getRequestedresource();
+		setHeaders("0");
+		formatHeadersAndStartLine();
+		_isResponseSent = true;
+	}
+	else if(_statusCode >= 200 && _statusCode < 302)
 		responseClass200();
-	else if(_statusCode >= 300 && _statusCode < 400)
-		responseClass300();
 	else if(_statusCode >= 400 && _statusCode < 500)
 		responseClass400();
 	else if(_statusCode >= 500)

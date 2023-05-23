@@ -78,21 +78,21 @@ void ServerFarm::areServersDuplicated() {
 	}
 }
 
-std::string defaultResponse() {
-	std::ifstream html_file("/Users/hbouhsis/Desktop/webserver/resources/var/www/default.html");
-	std::stringstream buffer;
-	buffer << html_file.rdbuf();
-	html_file.close();
-	std::string html_contents = buffer.str();
+// std::string defaultResponse() {
+// 	std::ifstream html_file("/Users/hbouhsis/Desktop/webserver/resources/var/www/default.html");
+// 	std::stringstream buffer;
+// 	buffer << html_file.rdbuf();
+// 	html_file.close();
+// 	std::string html_contents = buffer.str();
 
-	std::string response_headers = "HTTP/1.1 200 OK\r\n"
-                               "Content-Type: text/html\r\n"
-                               "Content-Length: " + std::to_string(html_contents.length()) + "\r\n"
-                               "\r\n";
+// 	std::string response_headers = "HTTP/1.1 200 OK\r\n"
+//                                "Content-Type: text/html\r\n"
+//                                "Content-Length: " + std::to_string(html_contents.length()) + "\r\n"
+//                                "\r\n";
 
-	std::string response = response_headers + html_contents;
-	return (response);
-}
+// 	std::string response = response_headers + html_contents;
+// 	return (response);
+// }
 
 
 void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
@@ -124,6 +124,7 @@ void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
 	}
 	for(size_t i = 0; i < keysToErase.size(); i++)
 	{
+		delete(_writeSockets[keysToErase[i]]);
 		_writeSockets.erase(keysToErase[i]);
 		_clientSockets.erase(keysToErase[i]);
 	}
@@ -142,7 +143,7 @@ void ServerFarm::handleNewClient(fd_set *tmpReadFds, int *fdmax) {
 			_clientSockets.insert(std::make_pair(clientSocket, It->second));
 			if(clientSocket > *fdmax)
 				*fdmax = clientSocket;
-			std::cout << CYAN << "new connection from server : " << It->second->getHost() << ":" << It->second->getPort() << RESET << std::endl;
+			std::cout << CYAN << "new connection from server : " << It->second->getHost() << ":" << It->second->getPort() << " on socket " << clientSocket << RESET << std::endl;
 		}
 	}
 }
@@ -210,9 +211,14 @@ void ServerFarm::runEventLoop() {
 	while(true) {
 		tmpReadFds = _readFds;
 		tmpWriteFds = _writeFds;
+		// for (size_t i = 0; i < FD_SETSIZE; i++)
+		// {
+		// 	if (FD_ISSET(i, &_readFds))
+		// 		std::cout << i << std::endl;
+		// }
+		
 		if(select(fdmax + 1, &tmpReadFds, &tmpWriteFds, NULL, NULL) == -1)
 			throw(Http::NetworkingErrorException(strerror(errno)));
-		
 		// priority to this loop, since the writeFds from previous iteration won't  notify until the next one
 		handleResponse(&tmpWriteFds);
 		handleNewClient(&tmpReadFds, &fdmax);

@@ -23,13 +23,16 @@ class Response : public HttpMessage {
 		void responseClass400();
 		void responseClass500();
 		void setStartLine();
-		void setHeaders();
+		void setHeaders(std::string contentLength);
 		void sendHeaders(std::string requestedResource);
 		void initializeStatusCodeMap();
-		void sendResponseBody(std::string filename);
+		void sendResponseFile(std::string filename);
 		std::string setContentLength(std::string filename);
 		void generateDirectoryListing(std::string dirPath);
 		void formatHeadersAndStartLine();
+
+		//needed for headers
+		std::string _headerLocationValue;
 
 		Request &_request;
 		std::string _headers;
@@ -64,3 +67,6 @@ Response structure :
 		-- content-length : indicates the length the size of the entity-body
 		-- content type : indicates the media type of the entity-body sent to the recipient (in the case of a get method, i should check the file extension and then search in the mime types for the mim type of that extension)
 */
+
+
+// to be added in the request parsing : not only you check if the request has "/" which will implicate that it's directory. it should also be checked of it's a directory or a file 

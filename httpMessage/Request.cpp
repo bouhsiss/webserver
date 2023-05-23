@@ -124,6 +124,7 @@ void Request::proccess_Request(std::string req_data){
             {
                 //location have redirection like :return 301 /home/index.html
                 //301 Moved Permanently
+				
                 _status_code = 301;
             }
             else
@@ -185,7 +186,10 @@ void Request::get_matched_location_for_request_uri(){
 bool Request::is_location_has_redirection(){
 	Location *location = _sf->getServers()[_server_index]->getLocations()[_location_index];
 	if(location->getRedirect() != "")
+	{
+		_requested_resource = location->getRedirect();
 		return(true);
+	}
     return false;
 }
 bool Request::is_method_allowed_in_location(){
@@ -880,14 +884,6 @@ std::string Request::getFilenameExtension()const{return _filename_extension;}
 
 // print all request attributes
 void Request::print() {
-	std::cout << CYAN << "Http message class : " << std::endl;
-	std::cout << "startLine : " << _startLine << std::endl;
-	std::cout << "Headers : " << std::endl;
-	std::map<std::string, std::string>::iterator It;
-	for(It = _Headers.begin(); It != _Headers.end(); It++) {
-		std::cout << "key : " << It->first << std::endl;
-		std::cout << "value : " << It->second << std::endl;
-	}
 	std::ostringstream out;
 	out << _Body.rdbuf();
 	std::cout << "body : " << out.str() << RESET << std::endl;
