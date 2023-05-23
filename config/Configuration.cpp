@@ -40,7 +40,6 @@ bool Configuration::_extractServerConfigLine(std::string line, Server& current_s
 		current_server.setAutoIndex(Http::tokenize(value, " "));
 	else
 		return(false);
-	// need to add the extracting of the root and index directives !!!!!
 	return(true);
 }
 

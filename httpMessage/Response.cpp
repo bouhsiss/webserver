@@ -8,7 +8,10 @@ Response::Response(Request &request, int writeSock): _request(request), _writeSo
 	_isResponseSent = false;
 	_headersAreSent = false;
 	_sendFailed = false;
+	_body = "";
 	_statusCode = _request.getStatusCode();
+	_servers = ServerFarm::getInstance()->getServers();
+	_errorPages = _servers[_request.getServerIndex()]->getErrorPage();
 }
 
 Request& Response::getRequest() {return(_request);}
@@ -63,6 +66,12 @@ void Response::generateDirectoryListing(std::string dirPath) {
 	htmlFile.close();
 }
 
+void Response::generateErrorPage() {
+	std::string errorPage = "<html><head><title>Error - "
+							 + std::to_string(_statusCode) + "</title></head><body><h1> Error - " + std::to_string(_statusCode) + "</h1><p>" + _statusCodeMap[_statusCode] + "</p></body></html>";
+	_contentLength = errorPage.size();
+	_body = errorPage;
+}
 
 void Response::sendResponseFile(std::string filename) {
 	size_t chunkSize = RESPONSE_BUFFER_SIZE;
@@ -81,11 +90,6 @@ void Response::sendResponseFile(std::string filename) {
 		// gotta add something to resend the response from scratch when send fails
 	}
 	_totalBytesSent += bytesSent;
-	
-	std::cout << YELLOW << " total bytes sent : " << _totalBytesSent << std::endl;
-	std::cout << "chunk size " << chunkSize << std::endl;
-	std::cout << "filename " << filename << std::endl;
-	std::cout << "content length : " << _contentLength << RESET << std::endl;
 	if(_totalBytesSent  == _contentLength)
 	{
 		_file.close();
@@ -106,7 +110,7 @@ void Response::setHeaders(std::string contentLength) {
 	_headerss.insert(std::make_pair("Content-Length: ", contentLength));
 	if( _statusCode == 301 && _request.getRequestURI()[_request.getRequestURI().size() -1] != '/')
 		_headerLocationValue = _request.getRequestURI() + "/";
-	_headerss.insert(std::make_pair("Location: ", _headerLocationValue));
+	// _headerss.insert(std::make_pair("Location: ", _headerLocationValue));
 }
 
 
@@ -125,7 +129,7 @@ void Response::formatHeadersAndStartLine() {
 	_headersAreSent = true;
 }
 
-void Response::responseClass200() {
+void Response::responseSuccess() {
 	if(_request.getMethod() == "GET") {
 		if(_request.getresourceType() == "file")
 		{
@@ -179,26 +183,61 @@ void Response::responseClass200() {
 	}
 }
 
-void Response::responseClass400(){}
+void Response::sendResponseBody() {
+	size_t bytesSent = send(_writeSocket, _body.c_str(), _contentLength, 0);
+	if(bytesSent < 0) {
+		_sendFailed = true;
+		return;
+	}
+	std::cout << "byteSent " << bytesSent << "content length " << _contentLength << std::endl;
+	if(bytesSent == _contentLength)
+	{
+		_isResponseSent = true;
+	}
+	else
+		_sendFailed = true;
+}
 
-void Response::responseClass500(){}
+void Response::sendDefaultErrorPage() {
+	if(_headersAreSent == false) {
+		generateErrorPage();
+		setHeaders(std::to_string(_body.size()));
+		formatHeadersAndStartLine();
+	}
+	else
+	{
+		sendResponseBody();
+	}
+}
+
+void Response::responseError(){
+	if(_errorPages.find(_statusCode) != _errorPages.end()) {
+		if(_headersAreSent == false) {
+			setHeaders(setContentLength(_errorPages[_statusCode]));
+			formatHeadersAndStartLine();
+		}
+		else
+			sendResponseFile(_errorPages[_statusCode]);
+	}
+	else
+		sendDefaultErrorPage();
+}
+
 
 void Response::sendResponse() {
 	setStartLine();
 	if(_request.is_location_has_redirection() == true) {
 		_headerLocationValue = _request.getRequestedresource();
+		// might change the above line with getting the redirection value directly from the location
 		setHeaders("0");
 		formatHeadersAndStartLine();
 		_isResponseSent = true;
 	}
 	else if(_statusCode >= 200 && _statusCode < 302)
-		responseClass200();
-	else if(_statusCode >= 400 && _statusCode < 500)
-		responseClass400();
-	else if(_statusCode >= 500)
-		responseClass500();
+		responseSuccess();
+	else if(_statusCode >= 400 && _statusCode < 600)
+		responseError();
 }
-
 	
 void Response::initializeStatusCodeMap() {
 	_statusCodeMap.insert(std::make_pair(301,  "Moved Permanently"));

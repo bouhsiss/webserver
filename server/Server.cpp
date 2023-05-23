@@ -19,7 +19,7 @@ const std::string& Server::getPort() const {return(_port);}
 const std::string& Server::getRoot() const {return(_root);}
 const std::string& Server::getIndex() const {return(_index);}
 const std::string& Server::getAutoIndex() const {return(_autoIndex);}
-const std::vector<std::string>& Server::getErrorPage() {return(_error_page);}
+const std::map<int, std::string>& Server::getErrorPage() {return(_error_page);}
 const size_t& Server::getClientBodySizeLimit() const {return(_client_body_size_limit);}
 const int& Server::getListenSocket() const {return(_listenSocket);}
 
@@ -42,11 +42,13 @@ void Server::setHost(std::vector<std::string> const &tokens) {
 }
 
 void Server::setErrorPage(std::vector<std::string> const &tokens) {
-	if(tokens.empty())
+	if(tokens.size() != 2)
+	{
 		throw(Http::ConfigFileErrorException("invalid error_page directive"));
-	if(std::find(_error_page.begin(), _error_page.end(), tokens[0]) != _error_page.end())
+	}
+	if(_error_page.find(std::stoi(tokens[0])) !=  _error_page.end())
 		throw(Http::ConfigFileErrorException("duplicated value : " + tokens[0]));
-	this->_error_page = tokens;
+	this->_error_page.insert(std::make_pair(std::stoi(tokens[0]), tokens[1]));
 }
 
 void Server::setClientBodySizeLimit(std::vector<std::string> const &tokens) {
@@ -147,11 +149,10 @@ std::ostream& operator<<(std::ostream &out, Server &c) {
 	out << "      - server port : " << c.getPort() << std::endl;
 	out << "      - server client body size limit : " << c.getClientBodySizeLimit() << std::endl;
 	out << "      - server server name : " << c.getServerName() << std::endl;
-	std::vector<std::string>::iterator It;
-	std::vector<std::string> vect = c.getErrorPage();;
-	out << "      - error pages : " << std::endl;
-	for(It = vect.begin(); It != vect.end(); It++)
-		out << "                        * " << *It << std::endl;
+	std::map<int, std::string>::iterator It;
+	std::map<int, std::string> map = c.getErrorPage();
+	for(It = map.begin(); It != map.end(); It++)
+		out << "                        * key " << It->first << " * value * " << It->second << std::endl; 
 	std::map<std::string, Location *> locations = c.getLocations();
 	std::map<std::string, Location *>::iterator Itr;
 	out << "      - locations : " << std::endl;

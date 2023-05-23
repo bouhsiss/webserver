@@ -18,9 +18,9 @@ class Response : public HttpMessage {
 		bool sendFailed();
 		bool isResponseSent();
 	private :
-		void responseClass200();
+		void responseSuccess();
 		void responseClass300();
-		void responseClass400();
+		void responseError();
 		void responseClass500();
 		void setStartLine();
 		void setHeaders(std::string contentLength);
@@ -29,12 +29,16 @@ class Response : public HttpMessage {
 		void sendResponseFile(std::string filename);
 		std::string setContentLength(std::string filename);
 		void generateDirectoryListing(std::string dirPath);
+		void generateErrorPage();
 		void formatHeadersAndStartLine();
+		void sendDefaultErrorPage();
+		void sendResponseBody();
 
 		//needed for headers
 		std::string _headerLocationValue;
 
 		Request &_request;
+		std::vector<Server *> _servers;
 		std::string _headers;
 		std::map<std::string, std::string> _headerss;
 		int _writeSocket;
@@ -47,6 +51,8 @@ class Response : public HttpMessage {
 		bool _headersAreSent;
 		bool _sendFailed;
 		std::string _filename;
+		std::map<int, std::string> _errorPages;
+		std::string _body;
 };
 
 
