@@ -19,48 +19,50 @@ class Response : public HttpMessage {
 		bool isResponseSent();
 	private :
 		void 		initializeStatusCodeMap();
-		// methods needed for headers
-		void 		setStartLine();
-		void 		setHeaders(std::string contentLength);
+		void		rebuildResponseErr(int statusCode);
+
 		std::string	setMIMEtype(std::string filename);
 		std::string	setFileContentLength(std::string filename);
-		// send the header with the startLine
+		void 		setStartLine();
+		void 		setHeaders(std::string contentLength);
+		
 		void 		formatHeadersAndStartLine();
-		// send the response
+		std::string formatAllowedMethodsVector();
+		
 		void		responseSuccess();
 		void 		responseError();
 		// send reponse body (file/string body)
-		void 		sendResponseFile(std::string filename);
+		void 		sendResponseFile();
 		void 		sendResponseBody();
 		void 		sendDefaultErrorPage();
 		// html files generators
 		void 		generateDirectoryListing(std::string dirPath);
 		void 		generateErrorPage();
 
-		// the request associated to each response instance
+		
 		Request&							_request;
-		// response main attributes
-		int 								_writeSocket;
+		
 		bool 								_isResponseSent;
-		// mainly needed to get the server error_pages
+		int 								_writeSocket;
+		
 		Server* 							_server;
 		
 		// values needed for the headers
+		std::map<std::string, std::string>	_headers;
+		std::map<int, std::string> 			_statusCodeMap;
 		std::string 						_headerLocationValue;
 		size_t 								_contentLength;
-		int 								_statusCode;
-		std::map<int, std::string> 			_statusCodeMap;
-		std::map<std::string, std::string>	_headers;
 		bool 								_headersAreSent;
+		int 								_statusCode;
 
 		// errors handling related attributes
 		bool 								_sendFailed;
 		// the body related attributes
-		size_t 								_totalBytesSent;
-		std::ifstream 						_file;
-		std::string 						_filename;
 		std::map<int, std::string> 			_errorPages;
+		std::ifstream 						_file;
 		std::string 						_body;
+		std::string							_filename;
+		size_t 								_totalBytesSent;
 };
 
 

@@ -561,7 +561,7 @@ std::string Request::get_auto_index(){
 }
 bool Request::if_location_has_cgi(){
     if (_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath().empty()
-    ||_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiExtension()!= _filename_extension)
+	|| _sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath().find(_filename_extension) == _sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath().end())
         return false;
     return true;
 }

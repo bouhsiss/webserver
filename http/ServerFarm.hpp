@@ -24,28 +24,28 @@ class Response;
 
 class ServerFarm {
 	public :
-		const std::map<int, Server *>&	getActiveServers() const;
-		const std::map<int, Server *>&	getClientSockets() const;
-		void							configure(std::string configFilePath);
-		static ServerFarm				*getInstance();
-		std::vector<Server *>&			getServers();
-		void							initServers();
-		void							runEventLoop();
-		const std::map<std::string, std::string>& getMIMEtypes();
+		const std::map<int, Server *>&				getActiveServers() const;
+		const std::map<int, Server *>&				getClientSockets() const;
+		void										configure(std::string configFilePath);
+		static ServerFarm							*getInstance();
+		std::vector<Server *>&						getServers();
+		void										initServers();
+		void										runEventLoop();
+		const std::map<std::string, std::string>&	getMIMEtypes();
 	private :
 		ServerFarm(const ServerFarm &other);
 		void operator=(const ServerFarm &other);
 		ServerFarm();
 		~ServerFarm();
 
-		bool							isServerActive(Server &server);
-		void							areServersDuplicated();
-		void							handleResponse(fd_set *tmpWriteFds);
-		void							handleNewClient(fd_set *tmpReadFds, int *fdmax);
-		void							handleRequest(fd_set *tmpReadFds);
-		void							readMIMEtypes();
+		bool								isServerActive(Server &server);
+		void								areServersDuplicated();
+		void								handleResponse(fd_set *tmpWriteFds);
+		void								handleNewClient(fd_set *tmpReadFds, int *fdmax);
+		void								handleRequest(fd_set *tmpReadFds);
+		void								readMIMEtypes();
 		//the singletone server farm class instance
-		static ServerFarm				*instancePtr;
+		static ServerFarm					*instancePtr;
 
 		Configuration						_config;
 		std::vector<Server *>				_servers;

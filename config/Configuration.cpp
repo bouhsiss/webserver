@@ -64,8 +64,6 @@ bool Configuration::_extractLocationConfigLine(std::string line, Location& curre
 		current_location.setIndex(Http::tokenize(value, " "));
 	else if(key == "upload_path")
 		current_location.setUploadPath(Http::tokenize(value, " "));
-	else if(key == "cgi_extension")
-		current_location.setCgiExtension(Http::tokenize(value, " "));
 	else if(key == "cgi_path")
 		current_location.setCgiPath(Http::tokenize(value, " "));
 	else

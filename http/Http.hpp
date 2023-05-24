@@ -43,7 +43,6 @@
 #define CYAN "\033[36m"
 
 namespace Http {
-	// custom exception for config file parsing errors.
 	class HttpException : public std::exception {
 		private : 
 			std::string _message;
@@ -67,9 +66,14 @@ namespace Http {
 		public :
 			ServerFarmErrorException(std::string msg) : Http::HttpException(msg) {}
 	};
+	
+	class ResponseErrorException : public Http::HttpException {
+		public :
+			ResponseErrorException(std::string msg) : Http::HttpException(msg) {}
+	};
 
-	std::vector<std::string> tokenize(std::string const &str, const char* delim);
-	void trimSpaces(std::string &line);
-	bool strIsNumber(const std::string &s);
-	void printAddr(struct addrinfo *peerAddress);
+	std::vector<std::string>	tokenize(std::string const &str, const char* delim);
+	void						trimSpaces(std::string &line);
+	bool						strIsNumber(const std::string &s);
+	void						printAddr(struct addrinfo *peerAddress);
 };

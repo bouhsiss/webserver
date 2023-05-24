@@ -32,5 +32,8 @@ int main(int ac, char **av) {
 		catch(Http::NetworkingErrorException& e) {
 			std::cout << YELLOW << "Networking : " << e.what() << RESET << std::endl;
 		}
+		catch(Http::ServerFarmErrorException& e){
+			std::cout << YELLOW << "ServerFarm : " << e.what() << RESET << std::endl;
+		}
 	}
 }

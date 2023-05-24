@@ -47,9 +47,6 @@ ServerFarm::ServerFarm() {
 	FD_ZERO(&_readFds);
 	FD_ZERO(&_writeFds);
 	readMIMEtypes();
-	std::map<std::string, std::string>::iterator It;
-	for(It = _MIMEtypes.begin(); It != _MIMEtypes.end(); It++)
-		std::cout << GREEN << "key " << It->first << RED << " value " << It->second << RESET << std::endl;
 }
 
 
@@ -106,22 +103,6 @@ void ServerFarm::areServersDuplicated() {
 		}
 	}
 }
-
-// std::string defaultResponse() {
-// 	std::ifstream html_file("/Users/hbouhsis/Desktop/webserver/resources/var/www/default.html");
-// 	std::stringstream buffer;
-// 	buffer << html_file.rdbuf();
-// 	html_file.close();
-// 	std::string html_contents = buffer.str();
-
-// 	std::string response_headers = "HTTP/1.1 200 OK\r\n"
-//                                "Content-Type: text/html\r\n"
-//                                "Content-Length: " + std::to_string(html_contents.length()) + "\r\n"
-//                                "\r\n";
-
-// 	std::string response = response_headers + html_contents;
-// 	return (response);
-// }
 
 
 void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
