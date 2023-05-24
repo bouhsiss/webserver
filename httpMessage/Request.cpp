@@ -1,7 +1,5 @@
 #include "Request.hpp"
 
-
-
 Request::Request() {}
 Request::Request(std::string request_host, std::string request_port):_sf(ServerFarm::getInstance()),_req_host(request_host),_req_port(request_port){
 	_method = "";
@@ -200,9 +198,6 @@ bool Request::is_method_allowed_in_location(){
     return false;
 }
 void Request::check_which_requested_method(){//check if the body arrived fully before sending response ps: call this function  manualy
-    //debug
-    std::cerr<<"Request::check_which_requested_method = [ "<<_method<<" ]"<<std::endl;
-    //end debug
     if (_method == "GET")
         GET();
     else if (_method == "POST")
@@ -365,9 +360,6 @@ void Request::POST(){
 
 
 void Request::DELETE(){
-    //debug
-    std::cerr<<"-------------enetered delete bodyyyy-----------"<<std::endl;
-    //end debug
     if (Request::get_requested_resource())//found
     {
         if (Request::get_resource_type() == "directory")//directory
@@ -440,16 +432,9 @@ bool Request::check_forbidden_path()
     std::string real_path = realpath(_requested_resource.c_str(),0);
     if (real_path.length() <_sf->getServers()[_server_index]->getLocations()[_location_index]->getRoot().length())//the path is forbidden stop processing the request and return 403 forbidden 
     {
-        //denbug
-        std::cerr<<"found forbidden path == ["<<_requested_resource<<"]"<<std::endl;
-        //end debug
         _status_code=403;
         return false;
     }
-    //        //denbug
-        std::cerr<<"found allowed path == ["<<_requested_resource<<"]"<<std::endl;
-        //end debug
-
     return true;
 }
 
@@ -581,7 +566,7 @@ int nftwfunc(const char *filename, const struct stat *statptr, int fileflags, st
 }
 bool Request::delete_all_folder_content(){
     int flags = FTW_DEPTH;
-	if (nftw(_requested_resource.c_str(), nftwfunc, 100, flags) ==0)
+	if (nftw(_requested_resource.c_str(), nftwfunc, 1000, flags) ==0)
     {
         //nftw does not remove the parent folder
         if (rmdir(_requested_resource.c_str())==-1)

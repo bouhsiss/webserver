@@ -102,13 +102,6 @@ void HttpMessage::parse(){
 			}
 			else //normal body
 			{
-				//debug
-				std::cerr<<"content-length == [ "<<_Headers["Content-Length"]<<"]"<<std::endl;
-				std::cerr<<"body_length == ["<<_body_length<<"]"<<std::endl;
-				std::cerr<<"message_length == ["<<_message.length()<<"]"<<std::endl;
-				std::cerr<<"message == ["<<_message<<"]"<<std::endl;
-
-				//end debug
 				_Body<<_message;
 				_body_length +=  _message.length();
 				_message.clear();
@@ -135,15 +128,6 @@ void 	HttpMessage::read_first_chunk(){
 		}
 		else
 			_message = _message.substr(_message.find("\r\n")+2);//skip chunk_size
-		//debugl
-		// std::cerr<<"-------------read_first_chunk------------"<<std::endl;
-		// std::cerr<<"_chunk_size1 == ["<<_chunk_size<<"]"<<std::endl;
-		// std::cerr<<"_chunk1==["<<_message<<"]"<<std::endl;
-		//end debug
-		if (_chunk_size == (int) _message.length())//last chunk
-		{
-
-		}
 	}
 }
 
@@ -152,11 +136,6 @@ void	HttpMessage::read_new_chunk(){
 	{
 		std::string line = _message.substr(0,_message.find("\r\n"));
 		_chunk_size = std::stoi(line,0,16);
-		//debug
-		// std::cerr<<"-------------read_new_chunk-----------"<<std::endl;
-		// std::cerr<<"_chunk_size2 == ["<<_chunk_size<<"]"<<std::endl;
-		// std::cerr<<"_chunk2==["<<_message<<"]"<<std::endl;
-		//end debug
 		if (_chunk_size ==0)
 		{
 			_b_complete = true;
@@ -172,64 +151,6 @@ void	HttpMessage::append_chunk(){
 	chunk_of_chunk = _message.substr(0,_chunk_size);
 	_Body<<chunk_of_chunk;
 	_message = _message.substr(_chunk_size+2);
-	//debug
-	// std::cerr<<"-------------append_chunk-----------"<<std::endl;
-	// std::cerr<<"_chunk_size3 == ["<<_chunk_size<<"]"<<std::endl;
-	// std::cerr<<"_chunk3==["<<chunk_of_chunk<<"]"<<std::endl;
-	//end debug
 	_chunk_size=0;
 }
-//old body
-// while (_message.length())
-// 					{
-// 						if (_chunk_size!=0 && (int)_message.length() <=_chunk_size )//msg contains one chunk
-// 						{
-// 							if (_chunk_size == (int)_message.length())
-// 								_flag = 2;
-// 							_Body<<_message;
-// 							_chunk_size-=_message.length();
-// 							_message.clear();
-// 						}
-// 						else if(_chunk_size != 0 && !_message.empty()) //msg contain multiple chunks
-// 						{
-// 							if ((int)_message.length() == _chunk_size +2 || (int)_message.length() == _chunk_size +1)
-// 							{
-// 								if ((int)_message.length() == _chunk_size +2)
-// 									_flag =0;
-// 								else
-// 									_flag = 1;
-// 								_chunk_size=0;
-// 								_Body<<_message;
-// 								_message.clear();
-// 							}
-// 							else
-// 							{
-// 								std::string chunk_of_chunk;
-// 								chunk_of_chunk = _message.substr(_flag,_chunk_size);
-// 								_Body<<chunk_of_chunk;
-// 								_message = _message.substr(_chunk_size+2+_flag);
-// 								_chunk_size=0;
-// 								_flag =0;
-// 							}
-// 						}
-// 						if (_chunk_size==0 && !_message.empty())
-// 						{
-// 							std::string line;
-// 							// line  = _message.substr(0,_message.find("\r\n"));//skip CRLF
-// 							line = _message.substr(_flag,_message.find("\r\n"));//get  chunk_size
-							
-// 							//debug
-// 							std::cerr<<"_chunk == ["<<_message<<"]"<<std::endl;
-// 							//end debug
-// 							_message = _message.substr(_message.find("\r\n",_flag)+2);
-// 							_flag=0;
-// 							//debugl
-// 							std::cerr<<"_chunk_size3 == ["<<line<<"]"<<std::endl;
-// 							//end debug
-// 							_chunk_size = std::stoi(line,0,16);
-// 							if (_chunk_size ==0)
-// 							{
-// 								_b_complete = true;
-// 								break;
-// 							}
-// 						}
+
