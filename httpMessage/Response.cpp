@@ -10,8 +10,8 @@ Response::Response(Request &request, int writeSock): _request(request), _writeSo
 	_sendFailed = false;
 	_body = "";
 	_statusCode = _request.getStatusCode();
-	_servers = ServerFarm::getInstance()->getServers();
-	_errorPages = _servers[_request.getServerIndex()]->getErrorPage();
+	_server = ServerFarm::getInstance()->getServers()[_request.getServerIndex()];
+	_errorPages = _server->getErrorPage();
 }
 
 Request& Response::getRequest() {return(_request);}
@@ -19,7 +19,7 @@ Request& Response::getRequest() {return(_request);}
 bool Response::sendFailed(){return(_sendFailed);}
 bool Response::isResponseSent(){return(_isResponseSent);}
 
-std::string Response::setContentLength(std::string filename) {
+std::string Response::setFileContentLength(std::string filename) {
 	_file.open(filename);
 	_filename = filename;
 	if(!_file)
@@ -29,9 +29,9 @@ std::string Response::setContentLength(std::string filename) {
 	_file.seekg(0, std::ios::end);
 	std::streampos fileSize = _file.tellg();
 	_file.seekg(0, std::ios::beg);
-	// should add something when the file fails to open due to permissions...
+	// should add something when the file fails to open due to permissions... (403 forbidden)
 	_contentLength = fileSize;
-	// _file.close();
+	_file.close();
 	return (std::to_string(fileSize));
 }
 
@@ -40,9 +40,9 @@ void Response::generateDirectoryListing(std::string dirPath) {
 	struct dirent* entry;
 
 	dir = opendir(dirPath.c_str());
-	// gotta add something when the directory fails to open
+	// gotta add something when the directory fails to open (403 forbidden)
 	std::ofstream htmlFile(DIRECTORY_LISTING_FILENAME);
-	// gotta add somethign when the file fails to be created
+	// gotta add somethign when the file fails to be created (403 forbidden)
 
 	//html Header
 	htmlFile << "<html><head><title>directory listing</title></head><body><ul>";
@@ -52,12 +52,7 @@ void Response::generateDirectoryListing(std::string dirPath) {
 		//exclude current and parent directories
 		if(entryName == "." || entryName == "..")
 			continue ;
-		struct stat entryStat;
 		std::string entryPath  = dirPath + "/" + entryName;
-		if(stat(entryPath.c_str(), &entryStat) != 0) {
-			std::cerr << RED << "failed to get file info for : " << entryPath << std::endl;
-			continue;
-		}
 
 		htmlFile << "<li><a href=\"" << _request.getRequestURI() << entryName << "\">" <<  entryName << "</a></li>";
 	}
@@ -105,19 +100,41 @@ void Response::setStartLine() {
 	_startLine = "HTTP/1.1 " + std::to_string(_statusCode) + " " + _statusCodeMap[_statusCode] + "\r\n";
 }
 
+std::string Response::setMIMEtype(std::string filename) {
+	std::string mimeType = "text/plain";
+	size_t pos = filename.find_last_of('.');
+	std::string extension = "";
+	if(pos != std::string::npos && pos != (filename.size() - 1))
+		extension = filename.substr(pos + 1);
+	std::map<std::string, std::string> MIMEmap = ServerFarm::getInstance()->getMIMEtypes();
+	std::cout << CYAN << extension << std::endl;
+	if(MIMEmap.find(extension) != MIMEmap.end())
+	{
+		std::cout << CYAN << MIMEmap[extension] << std::endl;
+		mimeType = MIMEmap[extension];
+	}
+	return(mimeType);
+}
+
 void Response::setHeaders(std::string contentLength) {
-	_headerss.insert(std::make_pair("Content-Type: ", "text/html"));
-	_headerss.insert(std::make_pair("Content-Length: ", contentLength));
-	if( _statusCode == 301 && _request.getRequestURI()[_request.getRequestURI().size() -1] != '/')
-		_headerLocationValue = _request.getRequestURI() + "/";
-	// _headerss.insert(std::make_pair("Location: ", _headerLocationValue));
+	setStartLine();
+	_headers.insert(std::make_pair("Content-Type: ", setMIMEtype(_filename)));
+	_headers.insert(std::make_pair("Content-Length: ", contentLength));
+	if(_statusCode == 301)
+	{
+		if(_request.getRequestURI()[_request.getRequestURI().size() -1] != '/')
+			_headerLocationValue = _request.getRequestURI() + "/";
+		else
+			_headerLocationValue = _request.getRequestURI();
+	}
+	_headers.insert(std::make_pair("Location: ", _headerLocationValue));
 }
 
 
 void Response::formatHeadersAndStartLine() {
 	std::string initialResponse = _startLine;
 	std::map<std::string, std::string>::iterator It;
-	for(It = _headerss.begin(); It != _headerss.end(); It++)
+	for(It = _headers.begin(); It != _headers.end(); It++)
 		initialResponse += It->first + It->second + "\r\n";
 	initialResponse += "\r\n";
 	size_t bytesSent = send(_writeSocket, initialResponse.c_str(), initialResponse.length(), 0);
@@ -134,7 +151,7 @@ void Response::responseSuccess() {
 		if(_request.getresourceType() == "file")
 		{
 			if(_headersAreSent == false) {
-				setHeaders(setContentLength(_request.getRequestedresource()));
+				setHeaders(setFileContentLength(_request.getRequestedresource()));
 				formatHeadersAndStartLine();
 			}
 			else
@@ -147,7 +164,7 @@ void Response::responseSuccess() {
 		else {
 			if(_headersAreSent == false) {
 				generateDirectoryListing(_request.getRequestedresource());
-				setHeaders(setContentLength(DIRECTORY_LISTING_FILENAME));
+				setHeaders(setFileContentLength(DIRECTORY_LISTING_FILENAME));
 				formatHeadersAndStartLine();
 			}
 			else
@@ -171,8 +188,8 @@ void Response::responseSuccess() {
 	}
 	else if(_request.getMethod() == "DELETE") {
 		if(_headersAreSent == false) {
-			_headerss.insert(std::make_pair("Content-Type: ", "text/plain"));
-			_headerss.insert(std::make_pair("Content-Length: ", std::to_string(sizeof(DELETE_204_BODY))));
+			_headers.insert(std::make_pair("Content-Type: ", "text/plain"));
+			_headers.insert(std::make_pair("Content-Length: ", std::to_string(sizeof(DELETE_204_BODY))));
 			formatHeadersAndStartLine();
 		}
 		else
@@ -213,7 +230,7 @@ void Response::sendDefaultErrorPage() {
 void Response::responseError(){
 	if(_errorPages.find(_statusCode) != _errorPages.end()) {
 		if(_headersAreSent == false) {
-			setHeaders(setContentLength(_errorPages[_statusCode]));
+			setHeaders(setFileContentLength(_errorPages[_statusCode]));
 			formatHeadersAndStartLine();
 		}
 		else
@@ -225,10 +242,8 @@ void Response::responseError(){
 
 
 void Response::sendResponse() {
-	setStartLine();
 	if(_request.is_location_has_redirection() == true) {
-		_headerLocationValue = _request.getRequestedresource();
-		// might change the above line with getting the redirection value directly from the location
+		_headerLocationValue = _server->getLocations()[_request.getLocationIndex()]->getRedirect();
 		setHeaders("0");
 		formatHeadersAndStartLine();
 		_isResponseSent = true;

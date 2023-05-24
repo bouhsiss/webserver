@@ -474,7 +474,6 @@ std::string Request::get_resource_type(){return _resource_type;}
 
 bool Request::is_uri_has_slash_in_end(){
     if (_RequestURI[_RequestURI.length()-1] == '/')
-
         return true;
     return false;
 }

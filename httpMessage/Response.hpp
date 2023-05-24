@@ -18,41 +18,49 @@ class Response : public HttpMessage {
 		bool sendFailed();
 		bool isResponseSent();
 	private :
-		void responseSuccess();
-		void responseClass300();
-		void responseError();
-		void responseClass500();
-		void setStartLine();
-		void setHeaders(std::string contentLength);
-		void sendHeaders(std::string requestedResource);
-		void initializeStatusCodeMap();
-		void sendResponseFile(std::string filename);
-		std::string setContentLength(std::string filename);
-		void generateDirectoryListing(std::string dirPath);
-		void generateErrorPage();
-		void formatHeadersAndStartLine();
-		void sendDefaultErrorPage();
-		void sendResponseBody();
+		void 		initializeStatusCodeMap();
+		// methods needed for headers
+		void 		setStartLine();
+		void 		setHeaders(std::string contentLength);
+		std::string	setMIMEtype(std::string filename);
+		std::string	setFileContentLength(std::string filename);
+		// send the header with the startLine
+		void 		formatHeadersAndStartLine();
+		// send the response
+		void		responseSuccess();
+		void 		responseError();
+		// send reponse body (file/string body)
+		void 		sendResponseFile(std::string filename);
+		void 		sendResponseBody();
+		void 		sendDefaultErrorPage();
+		// html files generators
+		void 		generateDirectoryListing(std::string dirPath);
+		void 		generateErrorPage();
 
-		//needed for headers
-		std::string _headerLocationValue;
+		// the request associated to each response instance
+		Request&							_request;
+		// response main attributes
+		int 								_writeSocket;
+		bool 								_isResponseSent;
+		// mainly needed to get the server error_pages
+		Server* 							_server;
+		
+		// values needed for the headers
+		std::string 						_headerLocationValue;
+		size_t 								_contentLength;
+		int 								_statusCode;
+		std::map<int, std::string> 			_statusCodeMap;
+		std::map<std::string, std::string>	_headers;
+		bool 								_headersAreSent;
 
-		Request &_request;
-		std::vector<Server *> _servers;
-		std::string _headers;
-		std::map<std::string, std::string> _headerss;
-		int _writeSocket;
-		int _statusCode;
-		std::map<int, std::string> _statusCodeMap;
-		size_t _totalBytesSent;
-		bool _isResponseSent;
-		size_t _contentLength;
-		std::ifstream _file;
-		bool _headersAreSent;
-		bool _sendFailed;
-		std::string _filename;
-		std::map<int, std::string> _errorPages;
-		std::string _body;
+		// errors handling related attributes
+		bool 								_sendFailed;
+		// the body related attributes
+		size_t 								_totalBytesSent;
+		std::ifstream 						_file;
+		std::string 						_filename;
+		std::map<int, std::string> 			_errorPages;
+		std::string 						_body;
 };
 
 

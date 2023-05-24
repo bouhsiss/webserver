@@ -15,12 +15,41 @@
 std::vector<Server*>& ServerFarm::getServers() {return(_servers);}
 const std::map<int, Server *>& ServerFarm::getActiveServers() const {return(_activeServers);}
 const std::map<int, Server *>& ServerFarm::getClientSockets() const {return(_clientSockets);}
+const std::map<std::string, std::string>& ServerFarm::getMIMEtypes() {return(_MIMEtypes);}
 
 ServerFarm* ServerFarm::instancePtr = NULL;
+
+void ServerFarm::readMIMEtypes() {
+	std::ifstream MIME_file(MIME_TYPES_FILE_PATH);
+	if(!MIME_file)
+		throw(Http::ServerFarmErrorException("failed to open mime.types file"));
+	std::string line;
+	while(std::getline(MIME_file, line)) {
+		if(line.find("types {") != std::string::npos ||
+			line.find("}") != std::string::npos ||
+			line.empty() || line[0] == '#')
+				continue ;
+		std::istringstream iss(line);
+		std::string mimeType;
+		iss >> mimeType;
+
+		std::string extension;
+		while(iss >> extension){
+			if(_ReverseMIMEtypes[mimeType].empty())
+				_ReverseMIMEtypes[mimeType] = extension;
+			_MIMEtypes[extension] = mimeType;
+		}
+	}
+	MIME_file.close();
+}
 
 ServerFarm::ServerFarm() {
 	FD_ZERO(&_readFds);
 	FD_ZERO(&_writeFds);
+	readMIMEtypes();
+	std::map<std::string, std::string>::iterator It;
+	for(It = _MIMEtypes.begin(); It != _MIMEtypes.end(); It++)
+		std::cout << GREEN << "key " << It->first << RED << " value " << It->second << RESET << std::endl;
 }
 
 
@@ -179,6 +208,7 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 				else {
 					Request *request = new  Request(It->second->getHost(), It->second->getPort());
 					request->proccess_Request(reqData);
+					request->print();
 					Response *response = new Response(*request, clientSock);
 					if(request->request_is_ready())
 					{
@@ -186,9 +216,7 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 					}
 					_writeSockets.insert(std::make_pair(clientSock, response));
 				}
-				// call the request parser and insert the client socket as key and the request object as value
 			}
-
 		}
 	}
 	for(size_t i = 0 ; i < keysToErase.size(); i++)
