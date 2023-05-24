@@ -6,7 +6,7 @@
 /*   By: hassan <hassan@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/10 09:42:24 by hbouhsis          #+#    #+#             */
-/*   Updated: 2023/05/20 17:45:12 by hassan           ###   ########.fr       */
+/*   Updated: 2023/05/22 23:42:15 by hassan           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,7 +79,7 @@ void ServerFarm::areServersDuplicated() {
 }
 
 std::string defaultResponse() {
-	std::ifstream html_file("/Users/hbouhsis/Desktop/webserver/resources/var/www/default.html");
+	std::ifstream html_file("/Users/hassan/Desktop/request2.0/resources/var/www/default.html");
 	std::stringstream buffer;
 	buffer << html_file.rdbuf();
 	html_file.close();
@@ -164,7 +164,7 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 			else {
 				std::string reqData(read, bytesReceived);
 				std::cout << "==================== REQUEST ========================= " << std::endl << std::endl;
-				std::cout << MAGENTA << reqData << RESET << std::endl;
+				//std::cout << MAGENTA << reqData << RESET << std::endl;
 				std::cout << "=======================================================" << std::endl;
 				if(_writeSockets.find(clientSock) != _writeSockets.end()) {
 					_writeSockets[clientSock]->getRequest().proccess_Request(reqData);

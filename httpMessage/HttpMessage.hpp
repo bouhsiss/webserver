@@ -24,6 +24,9 @@ class HttpMessage {
 		void parse();
 		void setHeaders(std::string name, std::string value);
 		std::string random_filename(); 
+		void 	read_first_chunk();
+		void	read_new_chunk();
+		void	append_chunk();
 
 		std::string 						_startLine;
 		std::map<std::string, std::string> 	_Headers;
@@ -34,4 +37,7 @@ class HttpMessage {
 		bool								_sl_complete;
 		bool								_hd_complete;
 		bool								_b_complete;
+		int									_chunk_size;
+		int									_flag;
+		int 								_bytes_read;
 };

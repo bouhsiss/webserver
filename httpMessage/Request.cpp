@@ -29,12 +29,16 @@ Request::~Request() {}
 
 
 void Request::proccess_Request(std::string req_data){
+    _bytes_read = req_data.length();
     _message+=req_data;
     parse();
     //initial status code (if status code remain -1 that means no errors found at this stage)
     //if its not a valid httpmessage stop here
     if (request_is_ready())
     {
+            //debug
+            //print();
+            //end debug
         _status_code=-1;
         _server_index =-1;
         //check if host header field
@@ -76,6 +80,9 @@ void Request::proccess_Request(std::string req_data){
         iss>>_method;
         iss>>_RequestURI;
         iss>>_http_v;
+        //debug
+        // std::cerr<<"Request: _method= "<<_method<<" _uri= "<<_RequestURI<<" http= "<<_http_v<<std::endl;
+        //end debug
         if (_method != "GET" && _method != "DELETE" && _method != "POST")
         {
             //RETURN 501 (Not Implemented)
@@ -139,7 +146,6 @@ void Request::proccess_Request(std::string req_data){
             _status_code = 404;
         }  
     }
-    print();
 }
 
 std::string Request::getMethod()const{return _method;}
@@ -195,6 +201,9 @@ bool Request::is_method_allowed_in_location(){
     return false;
 }
 void Request::check_which_requested_method(){//check if the body arrived fully before sending response ps: call this function  manualy
+    //debug
+    std::cerr<<"Request::check_which_requested_method = [ "<<_method<<" ]"<<std::endl;
+    //end debug
     if (_method == "GET")
         GET();
     else if (_method == "POST")
@@ -214,7 +223,7 @@ void Request::GET(){
             {
                 if (Request::is_dir_has_index_file())//this directory has an index file
                 {
-					std::cout << RED << "am hr" << RESET << std::endl;
+					// std::cout << RED << "am hr" << RESET << std::endl;
                     if (Request::if_location_has_cgi())//location has cgi
                     {
                         //run cgi on requested file with GET REQUEST_METHOD
@@ -279,10 +288,7 @@ void Request::POST(){
     //dont forget chunked request
     if (Request::if_location_support_upload())//location support upload
     {
-        //debug
-        std::cerr<<"Request: location support upload"<<std::endl;
-        //end debug
-       upload_resource();
+        upload_resource();
         //201 created
         _status_code = 201;
     }
@@ -448,6 +454,10 @@ bool Request::get_requested_resource(){
             tmp.append("/");
         rsc = tmp+ new_rsc;
     }
+    _requested_resource = rsc;
+    //debug
+    std::cerr<<"Request::get_requested_resource = ["<<_requested_resource<<"]"<<std::endl;
+    //end debug
     //check if the requested resource is a file
     struct stat fileInfo;
     if (stat(rsc.c_str(),&fileInfo)!=0)
@@ -564,125 +574,97 @@ bool Request::delete_all_folder_content(){
 }
 
 bool Request::request_is_ready(){
+    //debug
+    if (_b_complete)
+        std::cerr<<"Request;;request_is_ready"<<std::endl;
+    //end debug
     return _b_complete;
 }
 
 void Request::upload_resource(){
-    _filename = "";
-    if (_Headers.find("Transfer-Encoding")!=_Headers.end())//transfer_encoding header exist
-        Request::unchunk_body();
     //check content-type exist and = "multipart/form-data"
-    if (_Headers.find("Content-Type")!= _Headers.end() && _Headers["Content-Type"]=="multipart/form-data")
-        Request::handle_multipart_form_data();
-    //get filename
-    if (_upload_filename == "")// is the search for filename done here?????
-        _upload_filename = random_filename();
-    //uploading file
-    _upload_filename = _sf->getServers()[_server_index]->getLocations()[_location_index]->getUploadPath() + _upload_filename;
-    _Body.open(_filename,std::ios::in);
-    _upload_file.open(_upload_filename,std::ios::out);
-    if (_Body.is_open() && _upload_file.is_open())
+    if (_Headers.find("Content-Type")!= _Headers.end())
     {
-        _upload_file<<_Body.rdbuf();
-        _Body.close();
-        _upload_file.close();
+        //debug
+        std::cerr<<"Request::upload_resource: about to upload"<<std::endl;
+        //end debug
+        std::string line  = _Headers["Content-Type"];
+        if (line.find("multipart/form-data")!=std::string::npos)
+            Request::handle_multipart_form_data();
+    }
+    else{
+        _upload_filename = random_filename();
+        //uploading file
+        _upload_filename = _sf->getServers()[_server_index]->getLocations()[_location_index]->getUploadPath() + _upload_filename;
+        _Body.open(_filename,std::ios::in);
+        _upload_file.open(_upload_filename,std::ios::out|std::ios::app);
+        if (_Body.is_open() && _upload_file.is_open())
+        {
+            std::string line;
+            while(getline(_Body,line))
+                _upload_file<<line.append("/");
+            _Body.close();
+            _upload_file.close();
+        }
     }
 }
 
-void Request::unchunk_body(){
-    std::string buffer;
-    std::string line;
-    std::string chunk;
-    _Body.open(_filename,std::ios::in);
-    std::string _unchunked_filename = "/Users/hassan/Desktop/request2.0/tmp/"+random_filename();
-    std::fstream _body_unchunked(_unchunked_filename,std::ios::out);
-    if (_Body.is_open() && _body_unchunked.is_open()) 
-    {
-        //read chunk size
-        std::getline(_Body, line);
-        //convert chunk_size into decimal
-        size_t chunk_size = stoi(line,0,16);
-        while(chunk_size != 0)
-        {
-            //read chunk
-            while(buffer.length()< chunk_size)
-            {
-                std::getline(_Body, line);
-                buffer+=line.append("\n");
-            }
-            //read the exact chunk size
-            chunk = buffer.substr(0,chunk_size);
-            buffer = "";
-            _body_unchunked<<chunk;
-            //read chunk size
-            std::getline(_Body, line);
-            //convert chunk_size into decimal
-            chunk_size = stoi(line,0,16);
-        }
-        _Body.close();
-        _body_unchunked.close();
-    }
-    _Body.open(_filename,std::ios::out|std::ios::trunc);
-    _body_unchunked.open(_unchunked_filename,std::ios::in);
-    if (_Body.is_open() && _body_unchunked.is_open())
-    {
-        _Body<<_body_unchunked.rdbuf();
-        _Body.close();
-        _body_unchunked.close();
-    }
-}
 
 void Request::handle_multipart_form_data(){
-    //extract the boundary from content-type header
+    //debug     
+    std::cerr<<"Request::handling multipart inside the function"<<std::endl;
+    //end debug
+    //create tmp fstream with tmp filename
+    std::string tmp_filename = "/Users/hassan/Desktop/request2.0/tmp/"+random_filename()+".mulipart";
+    std::fstream tmp;
     std::string buffer = _Headers["Content-Type"];
+    //get boundary
     std::string boundary = buffer.substr(buffer.find("boundary=")+9);
-    std::string line;
-    std::string content;
-    std::string field;
-    if (_Headers.find("Transfer-Encoding")!=_Headers.end())
+    _Body.open(_filename,std::ios::in);
+    tmp.open(tmp_filename,std::ios::out| std::ios::app);
+    if (_Body.is_open() && tmp.is_open())
     {
-        //work with _body_unchunked attribute
-        _Body.open(_filename,std::ios::in);
-        if (_Body.is_open())
-        {
-            //read file content into content string
-            while(std::getline(_Body,line))
-                content+=line.append("\n");
-            char *token = strtok(&content[0],boundary.c_str());
-            while (token!=NULL)
+        std::string line;
+        int count =0;
+        while(getline(_Body,line))
+        {   
+            if (line.find(boundary) !=std::string::npos)//skip boundary
             {
-                //process token
-                field = token;
-                std::string content_disposition = field.substr(0,field.find("\r\n"));
-                if (content_disposition.find("filename")!= std::string::npos)
-                {
-                    //found the file field
-                    std::string name = content_disposition.substr(content_disposition.find("filename=")+9);
-                    //remove parenthesis from filename
-                    if (name.length() >2)
-                    {
-                        _upload_filename = "/Users/hassan/Desktop/request2.0/tmp/"+name.substr(1,_upload_filename.length()-1);
-                        _filename_extension = name.substr(_upload_filename.find_last_of(".")+1);
-                    }
-                    //remove content-disposition header
-                    field = field.substr(field.find("\r\n")+2);
-                    //remove content-type header
-                    field = field.substr(field.find("\r\n")+2);
-                    //put field in _body
-                    break;
-                }
+                if (count==0)
+                    count++;
                 else
-                    token = std::strtok(nullptr,boundary.c_str());
-                //if token isnt a file go to next token 
+                    getline(_Body,line);
             }
-            _Body.close();
-            _Body.open(_filename,std::ios::out|std::ios::trunc);
-            if (_Body.is_open())
+            else if (line.find("Content-Disposition:")!=std::string::npos)//get filename from header
             {
-                _Body<<field;
-                _Body.close();
+                    //extract filename
+                    _upload_filename = line.substr(line.find("filename=")+10);
+                    _upload_filename = _sf->getServers()[_server_index]->getLocations()[_location_index]->getUploadPath()+_upload_filename.substr(0,_upload_filename.find_last_of("\""));
+                    //debug
+                    std::cerr<<"upload_filename = ["<<_upload_filename<<"]"<<std::endl;
+                    //end debug
             }
+            else if (line.find("Content-Type")!= std::string::npos)//skip header
+                getline(_Body,line);
+            else
+                tmp<<line.append("\n");
         }
+        _Body.close();
+        tmp.close();
+    }
+    //upload
+    tmp.open(tmp_filename,std::ios::in);
+    _upload_file.open(_upload_filename,std::ios::out| std::ios::app);
+    if (tmp.is_open() && _upload_file.is_open())
+    {
+        //debug
+        std::cerr<<"----------------uploadfile is open for appending-----------"<<std::endl;
+        //end debug
+        std::string line;
+        while(getline(tmp,line))
+            _upload_file<<line.append("\n");
+        tmp.close();
+        _upload_file.close();
     }
 }
 
@@ -887,6 +869,7 @@ void Request::print() {
     logfile.open(logfilename,std::ios::out);
     if (logfile.is_open())
     {
+        
         std::cout << "__LOGFILE__DBG__ : " << std::endl;
         //redirect output to a logfile
         logfile << CYAN << "Http message class : " << std::endl;
@@ -898,8 +881,10 @@ void Request::print() {
             logfile << "value : " << It->second << std::endl;
         }
         _Body.open(_filename,std::ios::in);
-        logfile << "body : " << _Body.rdbuf() << RESET << std::endl;
-        _Body.close();
+        logfile << "body : ";
+        std::string line;
+        while(getline(_Body,line))
+            logfile<<line.append("/n");
         logfile << GREEN << "method : " << _method << std::endl;
         logfile << "Request URI : " << _RequestURI << std::endl;
         logfile << "http_v : " << _http_v << std::endl;
@@ -912,10 +897,15 @@ void Request::print() {
         logfile << "requested ressource : " << _requested_resource << std::endl;
         logfile << "====== for POST METHOD ======" << std::endl; 
         logfile << "upload filename : " << _upload_filename << std::endl;
+        logfile << "upload file : "; 
         _upload_file.open(_upload_filename,std::ios::in);
-        logfile << "upload file : " << _upload_file.rdbuf() << std::endl;
-        _upload_file.close();
+        line.clear();
+        while(getline(_upload_file,line))
+            logfile <<line.append("/");
         logfile << "filename extension : " << _filename_extension << RESET << std::endl;
+        logfile<<"-------------------------------------------------------------------------"<<std::endl;
+        _Body.close();
+        _upload_file.close();
         logfile.close();
     }
     else{
