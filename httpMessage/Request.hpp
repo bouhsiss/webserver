@@ -64,6 +64,7 @@ class Request : public HttpMessage {
         bool has_write_acces_on_folder();
 		void unchunk_body();
 		void handle_multipart_form_data();
+		bool check_forbidden_path();
 
 		//function to run cgi
 		void run_cgi();

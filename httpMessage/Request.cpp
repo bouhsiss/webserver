@@ -278,8 +278,15 @@ void Request::GET(){
     }
     else //requested resource not found in root
     {
-        //404 Not Found
-        _status_code = 404;
+        if (_status_code == 403)
+        {
+            //403 forbidden
+        }
+        else
+        {
+            //404 not found
+            _status_code = 404;
+        }
     }
 }
 
@@ -344,8 +351,15 @@ void Request::POST(){
         }
         else//not found
         {
-            //return 404 Not Found
-            _status_code = 404;
+            if (_status_code == 403)
+            {
+                //403 forbidden
+            }
+            else
+            {
+                //404 not found
+                _status_code = 404;
+            }
         }
     }
 }
@@ -358,39 +372,22 @@ void Request::DELETE(){
         {
             if(Request::is_uri_has_slash_in_end())
             {
-                if (Request::if_location_has_cgi())
+                if (Request::delete_all_folder_content())//success
                 {
-                    if (Request::is_dir_has_index_file())
+                    //204 no content
+                    _status_code = 204;
+                }
+                else //failure
+                {
+                    if (Request::has_write_acces_on_folder())//
                     {
-                        //run cgi on requested file with DELETE REQUEST_METHOD
-                        //return code depend on cgi
-                        // Request::run_cgi();
+                        //500 internal server error
+                        _status_code = 500;
                     }
                     else
                     {
                         //403 forbidden
                         _status_code = 403;
-                    }
-                }
-                else //location doesnt have cgi
-                {
-                    if (Request::delete_all_folder_content())//success
-                    {
-                        //204 no content
-                        _status_code = 204;
-                    }
-                    else //failure
-                    {
-                        if (Request::has_write_acces_on_folder())//
-                        {
-                            //500 internal server error
-                            _status_code = 500;
-                        }
-                        else
-                        {
-                            //403 forbidden
-                            _status_code = 403;
-                        }
                     }
                 }
             }
@@ -402,13 +399,6 @@ void Request::DELETE(){
         }
         else //file
         {
-            if (Request::if_location_has_cgi())
-            {
-                //return code depend on cgi
-                // Request::run_cgi();
-            }
-            else
-            {
                 if (remove(_requested_resource.c_str())==0)//success
                 {
                     //204 no content
@@ -427,14 +417,31 @@ void Request::DELETE(){
                         _status_code = 403;
                     }
                 }
-            }
         }
     }
     else //not found
     {
-        //404 not found
-        _status_code = 404;
+        if (_status_code == 403)
+        {
+            //403 forbidden
+        }
+        else
+        {
+            //404 not found
+            _status_code = 404;
+        }
     }
+}
+
+bool Request::check_forbidden_path()
+{
+    //pass _requested_resource to  real_path function
+    // if() //the path is forbidden stop processing the request and return 403 forbidden 
+    // {
+    //     _status_code=403;
+    //     return false;
+    // }
+    return true;
 }
 
 
@@ -458,6 +465,8 @@ bool Request::get_requested_resource(){
     //debug
     std::cerr<<"Request::get_requested_resource = ["<<_requested_resource<<"]"<<std::endl;
     //end debug
+    if (!check_forbidden_path())
+        return false;
     //check if the requested resource is a file
     struct stat fileInfo;
     if (stat(rsc.c_str(),&fileInfo)!=0)
