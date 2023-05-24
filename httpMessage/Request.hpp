@@ -12,6 +12,8 @@
 #include <fcntl.h>
 #include <algorithm>
 #include "ServerFarm.hpp"
+#include <limits.h>
+#include <stdlib.h>
 class ServerFarm;
 
 class Request : public HttpMessage {

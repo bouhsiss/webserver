@@ -435,12 +435,19 @@ void Request::DELETE(){
 
 bool Request::check_forbidden_path()
 {
-    //pass _requested_resource to  real_path function
-    // if() //the path is forbidden stop processing the request and return 403 forbidden 
-    // {
-    //     _status_code=403;
-    //     return false;
-    // }
+    std::string real_path = realpath(_requested_resource.c_str(),0);
+    if (real_path.length() <_sf->getServers()[_server_index]->getLocations()[_location_index]->getRoot().length())//the path is forbidden stop processing the request and return 403 forbidden 
+    {
+        //denbug
+        std::cerr<<"found forbidden path == ["<<_requested_resource<<"]"<<std::endl;
+        //end debug
+        _status_code=403;
+        return false;
+    }
+    //        //denbug
+        std::cerr<<"found allowed path == ["<<_requested_resource<<"]"<<std::endl;
+        //end debug
+
     return true;
 }
 
@@ -465,7 +472,7 @@ bool Request::get_requested_resource(){
     //debug
     std::cerr<<"Request::get_requested_resource = ["<<_requested_resource<<"]"<<std::endl;
     //end debug
-    if (!check_forbidden_path())
+    if (check_forbidden_path()== false)
         return false;
     //check if the requested resource is a file
     struct stat fileInfo;
