@@ -9,7 +9,7 @@ Request::Request(std::string request_host, std::string request_port):_sf(ServerF
 	_http_v = "";
 	_status_code = -1;
 	_server_index = -1;
-	_location_index = -1;
+	_location_index = "";
 	_resource_type = "";
 	_requested_resource = "";
 	_upload_filename = "";
@@ -31,16 +31,15 @@ Request::~Request() {}
 void Request::proccess_Request(std::string req_data){
     _bytes_read = req_data.length();
     _message+=req_data;
-    parse();
+    if (!request_is_ready())
+        parse();
     //initial status code (if status code remain -1 that means no errors found at this stage)
     //if its not a valid httpmessage stop here
     if (request_is_ready())
     {
-            //debug
-            //print();
-            //end debug
-        _status_code=-1;
-        _server_index =-1;
+        //debug
+        std::cerr<<"request is ready for processing"<<std::endl;
+        //end debug
         //check if host header field
         if (_Headers.find("Host")==_Headers.end())//there is not a host header
         {
@@ -81,7 +80,7 @@ void Request::proccess_Request(std::string req_data){
         iss>>_RequestURI;
         iss>>_http_v;
         //debug
-        // std::cerr<<"Request: _method= "<<_method<<" _uri= "<<_RequestURI<<" http= "<<_http_v<<std::endl;
+        std::cerr<<"Request: _method= "<<_method<<" _uri= "<<_RequestURI<<" http= "<<_http_v<<std::endl;
         //end debug
         if (_method != "GET" && _method != "DELETE" && _method != "POST")
         {
@@ -366,6 +365,9 @@ void Request::POST(){
 
 
 void Request::DELETE(){
+    //debug
+    std::cerr<<"-------------enetered delete bodyyyy-----------"<<std::endl;
+    //end debug
     if (Request::get_requested_resource())//found
     {
         if (Request::get_resource_type() == "directory")//directory
@@ -590,10 +592,6 @@ bool Request::delete_all_folder_content(){
 }
 
 bool Request::request_is_ready(){
-    //debug
-    if (_b_complete)
-        std::cerr<<"Request;;request_is_ready"<<std::endl;
-    //end debug
     return _b_complete;
 }
 

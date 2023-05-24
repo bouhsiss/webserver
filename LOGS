@@ -1,3 +1,6 @@
-Request;;request_is_ready
-Request;;request_is_ready
-Request;;request_is_ready
+request is ready for processing
+Request: _method= DELETE _uri= /test/log_file http= HTTP/1.1
+Request::check_which_requested_method = [ DELETE ]
+-------------enetered delete bodyyyy-----------
+Request::get_requested_resource = [/Users/hassan/Desktop/request2.0/tmp/log_file]
+found allowed path == [/Users/hassan/Desktop/request2.0/tmp/log_file]
