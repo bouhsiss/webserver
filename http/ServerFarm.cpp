@@ -178,7 +178,7 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 			else {
 				std::string reqData(read, bytesReceived);
 				std::cout << "==================== REQUEST ========================= " << std::endl << std::endl;
-				//std::cout << MAGENTA << reqData << RESET << std::endl;
+				std::cout << MAGENTA << reqData << RESET << std::endl;
 				std::cout << "=======================================================" << std::endl;
 				if(_writeSockets.find(clientSock) != _writeSockets.end()) {
 					_writeSockets[clientSock]->getRequest().proccess_Request(reqData);

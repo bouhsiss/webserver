@@ -10,8 +10,11 @@ Response::Response(Request &request, int writeSock): _request(request), _writeSo
 	_sendFailed = false;
 	_body = "";
 	_statusCode = _request.getStatusCode();
-	_server = ServerFarm::getInstance()->getServers()[_request.getServerIndex()];
-	_errorPages = _server->getErrorPage();
+	if(_request.getServerIndex() !=  -1)
+	{
+		_server = ServerFarm::getInstance()->getServers()[_request.getServerIndex()];
+		_errorPages = _server->getErrorPage();
+	}
 }
 
 Request& Response::getRequest() {return(_request);}
@@ -246,7 +249,7 @@ void Response::sendDefaultErrorPage() {
 }
 
 void Response::responseError(){
-	if(_errorPages.find(_statusCode) != _errorPages.end()) {
+	if(_request.getServerIndex() != -1 &&  _errorPages.find(_statusCode) != _errorPages.end()) {
 		if(_headersAreSent == false) {
 			setHeaders(setFileContentLength(_errorPages[_statusCode]));
 			formatHeadersAndStartLine();
@@ -261,7 +264,7 @@ void Response::responseError(){
 
 void Response::sendResponse() {
 	try {
-		if(_request.is_location_has_redirection() == true) {
+		if(_request.getServerIndex() != -1 &&_request.is_location_has_redirection() == true) {
 			_headerLocationValue = _server->getLocations()[_request.getLocationIndex()]->getRedirect();
 			setHeaders("0");
 			formatHeadersAndStartLine();
