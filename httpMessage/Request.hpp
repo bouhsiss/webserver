@@ -9,8 +9,12 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <ftw.h>
+#include <fcntl.h>
 #include <algorithm>
 #include "ServerFarm.hpp"
+#include <limits.h>
+#include <stdlib.h>
+
 class ServerFarm;
 
 class Request : public HttpMessage {
@@ -64,11 +68,14 @@ class Request : public HttpMessage {
         bool has_write_acces_on_folder();
 		void unchunk_body();
 		void handle_multipart_form_data();
+		bool check_forbidden_path();
 
 		//function to run cgi
 		void run_cgi();
 		void set_cgi_env();
 		void prepare_env();
+    	void clean_cgi_output();
+
 
 
 		std::string 	_method;
@@ -97,4 +104,6 @@ class Request : public HttpMessage {
 		std::string		_auth_type;
 		std::string		_remote_user;
 		std::string		_remote_ident;
+		std::string		_cgi_out_filename;
+		std::fstream 	_cgi_out_file;
 };

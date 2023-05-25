@@ -1,28 +1,20 @@
 --->dont forget to pass the tester given with the subject
---->read rfc
 --check rfc for mandatory headers(general/request/response)
 
 
 POST............................
-upload to a file or filestream????
-check transer-encoding ->yes ->check if content-type exist and ="mulripart/form-data"->yes 
-add a filestream to hold the uploaded data
-boundaryyyyy???????
-where you should upload the resource?????(config)
-if the server uploaded the file with a different name how the user will get his file back with get method?????????????
 what part of multipart/form-data i will post(is it just the file)
 -----dont forget the file extension???????
 ------
-chunked request...........
 
 ...MIME-TYPE?????
 
 CGI...........
 --environ??
 --tmpfile
------read cgi part RFC
 ---run cgi if you find the cgi extension in request uri
-----cgi script has infinite loop??????????
+--cgi script has infinite loop??????????(catch signals from cgi proccess )
+------add cgi script and debug  cgi and everything else
 
 
 DELETE.......
@@ -30,13 +22,31 @@ DELETE.......
 
 <!-- https://github.com/f0lio/webserv -->
 
---dont forget to add "/n" to every getline result body
-
-//later remove the _body unchunked and copy data back to _body
-
-//when the file_name doent have an extension should i give it one ????????
-is_dir_has_index_file()-------->look for the index of the dir not the location you souldnt check the server root 
-
 
 --pay attention to case-sensitive shiit.........
 ----for chunked request in case it didnt work check recv return value....
+-----should we handle url decoding???????????????? 
+---should i consider a coded forbidden char forbidden also???????
+    //dont forget decoding the uri???????????????????????????????????????????
+    //remove headers you dont need>???????????????????????????????????
+--change webserv program to accept config as an argument
+
+
+TESTING..................................
+........write unit tests for http/request methods 
+........test request parsing(http/request/chunked-request/multipart) create log_files
+........test methods (get/post/delete)
+........test cgi
+........get should work with image video ....try serving  static website wait until response is done
+........test post and delete tomorrow and cgi...
+.......fix config file structure(server/location/path.......)
+........fix upload paths
+........where do you store the proccessing files ????????(tmp)
+
+
+SEPERATE THE PROCESSING FILES
+//////////////////////////////////////////////////////////
+
+DELETE................
+dont remove the files beyond the root scope (also same thing for get and post)
+fix mime types in POST method

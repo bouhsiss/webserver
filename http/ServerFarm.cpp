@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerFarm.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: hbouhsis <marvin@42.fr>                    +#+  +:+       +#+        */
+/*   By: hassan <hassan@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/10 09:42:24 by hbouhsis          #+#    #+#             */
-/*   Updated: 2023/05/10 09:42:26 by hbouhsis         ###   ########.fr       */
+/*   Updated: 2023/05/22 23:42:15 by hassan           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,7 +79,7 @@ void ServerFarm::areServersDuplicated() {
 }
 
 std::string defaultResponse() {
-	std::ifstream html_file("/Users/hbouhsis/Desktop/webserver/resources/var/www/default.html");
+	std::ifstream html_file("/Users/hassan/Desktop/request2.0/resources/var/www/default.html");
 	std::stringstream buffer;
 	buffer << html_file.rdbuf();
 	html_file.close();
@@ -101,7 +101,7 @@ void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
 	for(It = _writeSockets.begin(); It != _writeSockets.end(); ++It) {
 		int writeSock = It->first;
 		if(It->second->getRequest().request_is_ready() == true) {
-			It->second->getRequest().print();
+			// It->second->getRequest().print();
 			if(FD_ISSET(writeSock, tmpWriteFds)) {
 				if(send( writeSock, defaultResponse().c_str(), defaultResponse().length(), 0 ) < 0)
 				{	FD_CLR(writeSock, &_writeFds);
@@ -164,7 +164,7 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 			else {
 				std::string reqData(read, bytesReceived);
 				std::cout << "==================== REQUEST ========================= " << std::endl << std::endl;
-				std::cout << MAGENTA << reqData << RESET << std::endl;
+				//std::cout << MAGENTA << reqData << RESET << std::endl;
 				std::cout << "=======================================================" << std::endl;
 				if(_writeSockets.find(clientSock) != _writeSockets.end()) {
 					_writeSockets[clientSock]->getRequest().proccess_Request(reqData);

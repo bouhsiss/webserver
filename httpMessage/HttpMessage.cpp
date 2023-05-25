@@ -1,6 +1,11 @@
 #include"HttpMessage.hpp"
 
-HttpMessage::HttpMessage(): _body_length(0),_sl_complete(false),_hd_complete(false),_b_complete(false){}
+HttpMessage::HttpMessage(): _body_length(0),_sl_complete(false),_hd_complete(false),_b_complete(false){
+	_filename = TMP_PATH+random_filename()+"._Body";
+	_chunk_size = -1;
+	_bytes_read=0;
+	_body_length=0;
+}
 
 HttpMessage::HttpMessage(HttpMessage const& other) {
 	(void)other;
@@ -31,11 +36,6 @@ std::string HttpMessage::random_filename() {
 
 
 void HttpMessage::parse(){
-	//skip CRLF
-	//added code
-	
-	_filename = random_filename();
-
 	//set start_line
 	if (_sl_complete==false && _message.find("\r\n")!=std::string::npos )
 	{
@@ -45,7 +45,7 @@ void HttpMessage::parse(){
 		_message = _message.substr(_message.find("\r\n")+2);
 	}
 	//put all headers in one string
-	if (_hd_complete ==false&& _message.find("\r\n\r\n")!=std::string::npos)
+	if (_sl_complete==true&& _hd_complete ==false&& _message.find("\r\n\r\n")!=std::string::npos)
 	{
 		_hd_complete=true;
 		if (_startLine.find("GET")!=std::string::npos || _startLine.find("DELETE")!=std::string::npos)
@@ -54,7 +54,7 @@ void HttpMessage::parse(){
 		heads= _message.substr(0,_message.find("\r\n\r\n")+2);
 		//remove headers from  message
 		_message = _message.substr(_message.find("\r\n\r\n")+4);
-			//add headers in map
+		//add headers in map
 		std::string name,value;
 		while (heads.length() > 0)
 		{
@@ -63,31 +63,94 @@ void HttpMessage::parse(){
 			value = heads.substr(0,heads.find("\r\n"));
 			heads = heads.substr(heads.find("\r\n")+2);
 			setHeaders(name,value);
-			// if the header occupies more than one line append the rest of the header value  
-			while (heads[0] && (heads[0]==' ' || heads[0]==9))//SP or HT
-			{
-				value = heads.substr(0,heads.find("\r\n"));
-				_Headers[name].append(value);
-				heads = heads.substr(heads.find("\r\n")+2);
-			}
 		}
 	}
 	//set body	
-	if(_sl_complete == true && _hd_complete == true && _b_complete != true)
+	if(_sl_complete == true && _hd_complete == true && _b_complete == false)
 	{
-		_Body.open(_filename.c_str(),std::ios::in);
+		if (_message.empty())
+		{
+			_b_complete=true;
+			return ;
+		}
+		_Body.open(_filename.c_str(),std::ios::out|std::ios::app);
 		if (_Body.is_open())
 		{
-			_Body<<_message;
-			if ((_Headers.find("Transfer-Encoding")!=_Headers.end() && _message.find("0/r/n"))||
-				(_Headers.find("Content-Length")!=_Headers.end()&& (int)_body_length >= atoi(_Headers.find("Content-Length")->second.c_str())))
-				{
+			if (_Headers.find("Transfer-Encoding")!=_Headers.end())//chunked body
+			{
+					if (_chunk_size!=-1 && _bytes_read != 1024)//last chunk
+					{
+						while (_message.length())
+						{
+							if (_chunk_size!=0)
+								append_chunk();
+							// else
+							read_new_chunk();
+						}
+					}
+					else
+					{
+						read_first_chunk();
+						while ((int)_message.length() >=_chunk_size+10)
+						{
+							if (_chunk_size!=0)
+								append_chunk();
+							// else
+							read_new_chunk();
+						}
+					}
+			}
+			else //normal body
+			{
+				_Body<<_message;
+				_body_length +=  _message.length();
+				_message.clear();
+				if ((_Headers.find("Content-Length")!=_Headers.end()&& (int)_body_length >= atoi(_Headers.find("Content-Length")->second.c_str())))
 					_b_complete = true;
-				}
-
-			_message = "";
-			_body_length +=  _message.length();
+			}
 			_Body.close();
 		}
 	}
 }
+
+
+
+//hepler functions
+void 	HttpMessage::read_first_chunk(){
+	if (_chunk_size == -1)//first chunk
+	{
+		//read chunk
+		_chunk_size = std::stoi(_message.substr(0,_message.find("\r\n")),0,16);
+		if (_chunk_size == 0)
+		{
+			_b_complete=true;
+			_message.clear();
+		}
+		else
+			_message = _message.substr(_message.find("\r\n")+2);//skip chunk_size
+	}
+}
+
+void	HttpMessage::read_new_chunk(){
+	if (!_message.empty())
+	{
+		std::string line = _message.substr(0,_message.find("\r\n"));
+		_chunk_size = std::stoi(line,0,16);
+		if (_chunk_size ==0)
+		{
+			_b_complete = true;
+			_message.clear();
+		}
+		else
+			_message = _message.substr(_message.find("\r\n")+2);
+	}
+}
+
+void	HttpMessage::append_chunk(){
+	std::string chunk_of_chunk;
+	chunk_of_chunk = _message.substr(0,_chunk_size);
+	_Body<<chunk_of_chunk;
+	_message = _message.substr(_chunk_size+2);
+	_chunk_size=0;
+}
+
