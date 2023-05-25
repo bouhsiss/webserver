@@ -1,0 +1,8 @@
+============= THINGS WE SHOULD TEST BEFORE PUSHING =============
+	* test server_name
+	* test a file without an extension
+	* remove leaks
+=============== to not forget =============== 
+	* delete the tmp files
+
+	* root/../../../..//. forbidden for all methods

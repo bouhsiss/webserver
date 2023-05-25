@@ -124,6 +124,7 @@ void Request::proccess_Request(std::string req_data){
             {
                 //location have redirection like :return 301 /home/index.html
                 //301 Moved Permanently
+				
                 _status_code = 301;
             }
             else
@@ -185,7 +186,10 @@ void Request::get_matched_location_for_request_uri(){
 bool Request::is_location_has_redirection(){
 	Location *location = _sf->getServers()[_server_index]->getLocations()[_location_index];
 	if(location->getRedirect() != "")
+	{
+		_requested_resource = location->getRedirect();
 		return(true);
+	}
     return false;
 }
 bool Request::is_method_allowed_in_location(){
@@ -217,7 +221,6 @@ void Request::GET(){
             {
                 if (Request::is_dir_has_index_file())//this directory has an index file
                 {
-					// std::cout << RED << "am hr" << RESET << std::endl;
                     if (Request::if_location_has_cgi())//location has cgi
                     {
                         //run cgi on requested file with GET REQUEST_METHOD
@@ -484,51 +487,83 @@ std::string Request::get_resource_type(){return _resource_type;}
 
 bool Request::is_uri_has_slash_in_end(){
     if (_RequestURI[_RequestURI.length()-1] == '/')
-
         return true;
     return false;
 }
 
-bool is_dir_path_root(std::string requestURI, std::string)
-
-//helper function
-bool Request::search_for_indexfile(const char *dir_path){
-    struct dirent* entry;
-    std::string filename ;
-	//check if the uri is the same as location index
-	std::string tmp= _location_index;
-	if (tmp[tmp.length()-1]!='/')
-		tmp.append("/");
-	if (_RequestURI==tmp)
+bool Request::indexFileExists(const char *dir_path, std::string &filename) {
+	std::string locationName = _location_index;
+	if(locationName[locationName.length()-1]!= '/')
+		locationName.append("/");
+	if(_RequestURI == locationName)
 	{
 		if(!_sf->getServers()[_server_index]->getLocations()[_location_index]->getIndex().empty())
+		{
 			filename = _sf->getServers()[_server_index]->getLocations()[_location_index]->getIndex();
-		_resource_type = "file";
-		_requested_resource += filename;
-        return true;
+			return(true);
+		}
 	}
 	else {
-		filename = "index";
-		DIR* directory =opendir(dir_path);
-		if (directory == nullptr)
-		{
-			std::cout<<"search_for_filename: error cant open directory"<<std::endl;
-			return false;
+		struct dirent* entry;
+		DIR* directory = opendir(dir_path);
+		if(directory == nullptr) {
+			std::cout << "search_for_filename : cannot open directory" << std::endl;
+			return false ;
 		}
-		while ((entry = readdir(directory)) != nullptr)
-		{
-			if (strncmp(entry->d_name,filename.c_str(),5)==0)
-			{
+		while((entry = readdir(directory)) != nullptr) {
+			if(strncmp(entry->d_name, "index", 5) == 0) {
 				closedir(directory);
-				_resource_type = "file";
-
-				_requested_resource += entry->d_name;
-				return true;
+				filename = std::string(entry->d_name);
+				return(true);
 			}
 		}
 	}
-    closedir(directory);
-    return false;
+	return(false);
+}
+
+bool Request::search_for_indexfile(const char *dir_path){
+    std::string filename ;
+    // struct dirent* entry;
+	// //check if the uri is the same as location index
+	// std::string tmp= _location_index;
+	// if (tmp[tmp.length()-1]!='/')
+	// 	tmp.append("/");
+	// if (_RequestURI==tmp)
+	// {
+	// 	if(!_sf->getServers()[_server_index]->getLocations()[_location_index]->getIndex().empty())
+	// 		filename = _sf->getServers()[_server_index]->getLocations()[_location_index]->getIndex();
+	// 	_resource_type = "file";
+	// 	_requested_resource += filename;
+    //     return true;
+	// }
+	// else {
+	// 	filename = "index";
+	// 	DIR* directory = opendir(dir_path);
+	// 	if (directory == nullptr)
+	// 	{
+	// 		std::cout<<"search_for_filename: error cant open directory"<<std::endl;
+	// 		return false;
+	// 	}
+	// 	while ((entry = readdir(directory)) != nullptr)
+	// 	{
+	// 		if (strncmp(entry->d_name,filename.c_str(),5)==0)
+	// 		{
+	// 			closedir(directory);
+	// 			_resource_type = "file";
+
+	// 			_requested_resource += entry->d_name;
+	// 			return true;
+	// 		}
+	// 	}
+	// }
+	if(indexFileExists(dir_path, filename) == true)
+	{
+		_resource_type = "file";
+		_requested_resource += filename;
+		return (true);
+	}
+	else
+    	return false;
 }
 
 bool Request::is_dir_has_index_file(){
@@ -881,51 +916,21 @@ std::string Request::getFilenameExtension()const{return _filename_extension;}
 
 // print all request attributes
 void Request::print() {
-  std::string logfilename="/Users/hassan/Desktop/request2.0/tmp/log_file";
-    std::fstream logfile;
-    logfile.open(logfilename,std::ios::out);
-    if (logfile.is_open())
-    {
-        
-        std::cout << "__LOGFILE__DBG__ : " << std::endl;
-        //redirect output to a logfile
-        logfile << CYAN << "Http message class : " << std::endl;
-        logfile << "startline : " << _startLine << std::endl;
-        logfile << "Headers : " << std::endl;
-        std::map<std::string, std::string>::iterator It;
-        for(It = _Headers.begin(); It != _Headers.end(); It++) {
-            logfile << "key : " << It->first << std::endl;
-            logfile << "value : " << It->second << std::endl;
-        }
-        _Body.open(_filename,std::ios::in);
-        logfile << "body : ";
-        std::string line;
-        while(getline(_Body,line))
-            logfile<<line.append("/n");
-        logfile << GREEN << "method : " << _method << std::endl;
-        logfile << "Request URI : " << _RequestURI << std::endl;
-        logfile << "http_v : " << _http_v << std::endl;
-        logfile << "status code : " << _status_code << std::endl;
-        logfile << "server index : " << _server_index << std::endl;
-        logfile << "location index : " << _location_index << std::endl;
-        logfile << "req host : " << _req_host << std::endl;
-        logfile << "req port : " << _req_port << std::endl;
-        logfile << "ressource type : " << _resource_type << std::endl;
-        logfile << "requested ressource : " << _requested_resource << std::endl;
-        logfile << "====== for POST METHOD ======" << std::endl; 
-        logfile << "upload filename : " << _upload_filename << std::endl;
-        logfile << "upload file : "; 
-        _upload_file.open(_upload_filename,std::ios::in);
-        line.clear();
-        while(getline(_upload_file,line))
-            logfile <<line.append("/");
-        logfile << "filename extension : " << _filename_extension << RESET << std::endl;
-        logfile<<"-------------------------------------------------------------------------"<<std::endl;
-        _Body.close();
-        _upload_file.close();
-        logfile.close();
-    }
-    else{
-        std::cerr<<"Request::print : error cant open logfile"<<std::endl;
-    }
+	std::ostringstream out;
+	out << _Body.rdbuf();
+	std::cout << "body : " << out.str() << RESET << std::endl;
+	std::cout << GREEN << "method : " << _method << std::endl;
+	std::cout << "Request URI : " << _RequestURI << std::endl;
+	std::cout << "http_v : " << _http_v << std::endl;
+	std::cout << "status code : " << _status_code << std::endl;
+	std::cout << "server index : " << _server_index << std::endl;
+	std::cout << "location index : " << _location_index << std::endl;
+	std::cout << "req host : " << _req_host << std::endl;
+	std::cout << "req port : " << _req_port << std::endl;
+	std::cout << "resource type : " << _resource_type << std::endl;
+	std::cout << "requested resource : " << _requested_resource << std::endl;
+	std::cout << "====== for POST METHOD ======" << std::endl; 
+	std::cout << "upload filename : " << _upload_filename << std::endl;
+	std::cout << "upload file : " << _upload_file << std::endl;
+	std::cout << "filename extension : " << _filename_extension << RESET << std::endl;
 }

@@ -40,13 +40,13 @@ class Request : public HttpMessage {
 		std::string getUploadFile()const;
 		std::string getFilenameExtension()const;
 		void print();
+        bool is_location_has_redirection();
 
 
 	private :
 
 		bool check_for_forbidden_chars(std::string)const;
 		void get_matched_location_for_request_uri();
-        bool is_location_has_redirection();
         bool is_method_allowed_in_location();
         void check_which_requested_method();
 		//----------- supported methods
@@ -69,6 +69,7 @@ class Request : public HttpMessage {
 		void unchunk_body();
 		void handle_multipart_form_data();
 		bool check_forbidden_path();
+		bool indexFileExists(const char* dir_path, std::string &filename);
 
 		//function to run cgi
 		void run_cgi();
@@ -104,6 +105,7 @@ class Request : public HttpMessage {
 		std::string		_auth_type;
 		std::string		_remote_user;
 		std::string		_remote_ident;
-		std::string		_cgi_out_filename;
-		std::fstream 	_cgi_out_file;
+		//for cgi out file /check them for get/post
+		std::fstream	_cgi_output;
+		std::string		_cgi_output_filename;
 };

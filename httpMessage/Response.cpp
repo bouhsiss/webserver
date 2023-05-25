@@ -6,140 +6,276 @@ Response::Response(Request &request, int writeSock): _request(request), _writeSo
 	_isResponseSent = -1;
 	_contentLength = 0;
 	_isResponseSent = false;
+	_headersAreSent = false;
+	_sendFailed = false;
+	_body = "";
+	_statusCode = _request.getStatusCode();
+	_server = ServerFarm::getInstance()->getServers()[_request.getServerIndex()];
+	_errorPages = _server->getErrorPage();
 }
 
 Request& Response::getRequest() {return(_request);}
 
-void Response::setContentLength(std::string filename) {
-	std::ifstream _file(filname);
-	_file.seekg(0, std::ios::end);
-	std::ostream fileSize = _file.tellg();
-	_file.seekg(0, std::ios::beg);
-	// should add something when the file fails to open due to permissions...
-	_contentLength = fileSize;
+bool Response::sendFailed(){return(_sendFailed);}
+bool Response::isResponseSent(){return(_isResponseSent);}
+
+
+void Response::rebuildResponseErr(int statusCode) {
+	_statusCode = statusCode;
+	_headersAreSent = false;
+	throw(Http::ResponseErrorException("hehe"));
 }
 
-std::string Response::generateDirectoryListing(std::string dirPath) {
+void Response::generateDirectoryListing(std::string dirPath) {
 	DIR* dir;
 	struct dirent* entry;
 
 	dir = opendir(dirPath.c_str());
-	// gotta add something when the directory fails to open
-	std::ofstream htmlFile("directory_listing.html");
-	// gotta add somethign when the file fails to be created
+	if(!dir)
+		rebuildResponseErr(403);
+	std::ofstream htmlFile(DIRECTORY_LISTING_FILENAME);
+	if(!htmlFile)
+		rebuildResponseErr(500);
 
 	//html Header
-	htmlFile << "<html><body><ul>";
+	htmlFile << "<html><head><title>directory listing</title></head><body><ul>";
 	//read directory entries
 	while((entry = readdir(dir)) != NULL) {
 		std::string entryName = entry->d_name;
 		//exclude current and parent directories
 		if(entryName == "." || entryName == "..")
 			continue ;
-		struct stat entryStat;
-		std::string entryPath  = dirPath + "/" + entry;
-		if(stat(entryPtah.c_str(), &entryStat) != 0) {
-			std::cerr << RED << "failed to get file info for : " << entryPath << std::endl;
-			continue;
-		}
+		std::string entryPath  = dirPath + "/" + entryName;
 
-		htmlFile << "<li><a href=\"" << filePath << "\">" <<  entryName << "</a></li>";
+		htmlFile << "<li><a href=\"" << _request.getRequestURI() << entryName << "\">" <<  entryName << "</a></li>";
 	}
 	htmlFile << "</ul></body></html>";
 	closedir(dir);
 	htmlFile.close();
-	return("directory_listing.html");
 }
 
+void Response::generateErrorPage() {
+	std::string errorPage = "<html><head><title>Error - "
+							 + std::to_string(_statusCode) + "</title></head><body><h1> Error - " + std::to_string(_statusCode) + "</h1><p>" + _statusCodeMap[_statusCode] + "</p></body></html>";
+	_contentLength = errorPage.size();
+	_body = errorPage;
+}
 
-void Response::sendResponseBody(std::string filename) {
-	char buffer[RESPONSE_BUFFER_SIZE];
-	file.read(buffer, RESPONSE_BUFFER_SIZE);
-	size_t bytesSent = send(_writeSocket, buffer, file.gcount());
-	if(byteSent < 0) {
-		_totalBytesSent = -1;
+void Response::sendResponseFile() {
+	size_t chunkSize = RESPONSE_BUFFER_SIZE;
+	if((_contentLength - _totalBytesSent) < chunkSize)
+		chunkSize = _contentLength - _totalBytesSent;
+	std::vector<char> buffer(chunkSize);
+	if(!_file.is_open())
+		_file.open(_filename, std::ios::in);
+	if(!_file)
+		rebuildResponseErr(403);
+	_file.read(buffer.data(), chunkSize);
+	size_t bytesSent = send(_writeSocket, buffer.data(), chunkSize, 0);
+	if(bytesSent < 0) {
+		rebuildResponseErr(500);
+		_sendFailed = true;
 		return;
-		// gotta add something to resend the response from scratch when send fails
 	}
 	_totalBytesSent += bytesSent;
 	if(_totalBytesSent  == _contentLength)
 	{
+		_file.close();
 		_isResponseSent = true;
 		if(_request.getresourceType() == "directory"){
-			std::remove(filename)
+			std::remove(_filename.c_str());
 		}
 	}
 }
 
 
-void Response::setstartLine() {
-	_startLine = "HTTP/1.1 " + std::to_string(_statusCode) + _statusCodeMap[_statusCode];
+void Response::setStartLine() {
+	_startLine = "HTTP/1.1 " + std::to_string(_statusCode) + " " + _statusCodeMap[_statusCode] + "\r\n";
 }
 
-void Response::setHeaders() {
-	std::string _headers =  "Content-Type: text/html\r\n"
-							"Content-Length: " + std::to_string(_contentLength) + "\r\n"
-							"\r\n"
+std::string Response::setMIMEtype(std::string filename) {
+	std::string mimeType = "text/plain";
+	size_t pos = filename.find_last_of('.');
+	std::string extension = "";
+	if(pos != std::string::npos && pos != (filename.size() - 1))
+		extension = filename.substr(pos + 1);
+	std::map<std::string, std::string> MIMEmap = ServerFarm::getInstance()->getMIMEtypes();
+	if(MIMEmap.find(extension) != MIMEmap.end())
+	{
+		mimeType = MIMEmap[extension];
+	}
+	return(mimeType);
 }
 
-void sendHeaders(std::string requestedResource) {
-	setContentLength(requestedResource);
-	setHeaders();
-	std::string initialResponse = _startLine + _headers;
+std::string Response::setFileContentLength(std::string filename) {
+	_file.open(filename);
+	_filename = filename;
+	if(!_file)
+		rebuildResponseErr(403);
+	_file.seekg(0, std::ios::end);
+	std::streampos fileSize = _file.tellg();
+	_file.seekg(0, std::ios::beg);
+	// should add something when the file fails to open due to permissions... (403 forbidden)
+	_contentLength = fileSize;
+	_file.close();
+	return (std::to_string(fileSize));
 }
 
-void Response::responseClass200() {
+std::string Response::formatAllowedMethodsVector() {
+	std::string ret;
+	std::vector<std::string> vect = _server->getLocations()[_request.getLocationIndex()]->getAllowedMethods();
+	for(size_t i = 0; i < vect.size(); i++)
+		ret += vect[i] + " ";
+	return(ret);
+}
+
+void Response::setHeaders(std::string contentLength) {
+	setStartLine();
+	_headers.insert(std::make_pair("Content-Type: ", setMIMEtype(_filename)));
+	_headers.insert(std::make_pair("Content-Length: ", contentLength));
+	if (_statusCode == 201)
+		_headerLocationValue = _request.getUploadFilename();
+	if(_statusCode == 301)
+	{
+		if(_request.getRequestURI()[_request.getRequestURI().size() -1] != '/')
+			_headerLocationValue = _request.getRequestURI() + "/";
+		else
+			_headerLocationValue = _request.getRequestURI();
+	}
+	if(_statusCode == 405)
+	{
+		_headers.insert(std::make_pair("Allow: ", formatAllowedMethodsVector()));
+	}
+	_headers.insert(std::make_pair("Location: ", _headerLocationValue));
+}
+
+
+void Response::formatHeadersAndStartLine() {
+	std::string initialResponse = _startLine;
+	std::map<std::string, std::string>::iterator It;
+	for(It = _headers.begin(); It != _headers.end(); It++)
+		initialResponse += It->first + It->second + "\r\n";
+	initialResponse += "\r\n";
+	size_t bytesSent = send(_writeSocket, initialResponse.c_str(), initialResponse.length(), 0);
+	if(bytesSent < 0) {
+		rebuildResponseErr(500);
+		_sendFailed = true;
+	}
+	std::cout << RED << initialResponse << RESET << std::endl;
+	_headersAreSent = true;
+}
+
+void Response::responseSuccess() {
 	if(_request.getMethod() == "GET") {
 		if(_request.getresourceType() == "file")
 		{
-			if(_headersAreSent == false)
-				sendHeaders(_request.getRequestedrsource());
-			else
-				sendResponseFile(_request.getRequestedresource());
-		}
-		else {
-			if(_headerAreSent == false) {
-				generateDirectoryListing(_request.getRequestedresource());
-				sendHeaders("/tmp/directory_listing.html");
+			if(_headersAreSent == false) {
+				setHeaders(setFileContentLength(_request.getRequestedresource()));
+				formatHeadersAndStartLine();
 			}
 			else
-				sendResponseFile("/tmp/directory_listing.html");
+				/*
+					if cgi output_filename not empty
+					send cgi response body
+				*/
+				sendResponseFile();
+		}
+		else {
+			if(_headersAreSent == false) {
+				generateDirectoryListing(_request.getRequestedresource());
+				setHeaders(setFileContentLength(DIRECTORY_LISTING_FILENAME));
+				formatHeadersAndStartLine();
+			}
+			else
+				sendResponseFile();
 		}
 	}
-	/*
-	check method
-	if(get)
-		check if requested resource is file
-			if yes return requested file
-			if no generate autoindex
-	if (post)
-		upload the post request body
-	if(delete) 
-		delete success 
-	*/
+	else if(_request.getMethod() == "POST") {
+		if(_headersAreSent == false) {
+			_body = POST_201_BODY;
+			setHeaders(std::to_string(_body.size()));
+			formatHeadersAndStartLine();
+		}
+		else
+		{
+			//if(cgi_output_filename not empty)
+			// send cgi response body
+			sendResponseBody();
+		}
+	}
+	else if(_request.getMethod() == "DELETE") {
+		if(_headersAreSent == false) {
+			_body = DELETE_204_BODY;
+			setHeaders(std::to_string(_body.size()));
+			formatHeadersAndStartLine();
+		}
+		else
+		{
+			sendResponseBody();
+		}
+	}
 }
 
-void Response::responseClass300(){
-
+void Response::sendResponseBody() {
+	size_t bytesSent = send(_writeSocket, _body.c_str(), _contentLength, 0);
+	if(bytesSent < 0) {
+		rebuildResponseErr(500);
+		_sendFailed = true;
+		return;
+	}
+	if(bytesSent == _contentLength)
+	{
+		_isResponseSent = true;
+	}
+	else
+	{
+		rebuildResponseErr(500);
+		_sendFailed = true;
+	}
 }
 
-void Response::responseClass400(){}
+void Response::sendDefaultErrorPage() {
+	if(_headersAreSent == false) {
+		generateErrorPage();
+		_filename = "file.html";
+		setHeaders(std::to_string(_body.size()));
+		formatHeadersAndStartLine();
+	}
+	else
+		sendResponseBody();
+}
 
-void Response::responseClass500(){}
+void Response::responseError(){
+	if(_errorPages.find(_statusCode) != _errorPages.end()) {
+		if(_headersAreSent == false) {
+			setHeaders(setFileContentLength(_errorPages[_statusCode]));
+			formatHeadersAndStartLine();
+		}
+		else
+			sendResponseFile();
+	}
+	else
+		sendDefaultErrorPage();
+}
+
 
 void Response::sendResponse() {
-	setStartLine();
-	_statusCode = _request.getStatusCode();
-	if(_statusCode >= 200 && _statusCode < 300)
-		responseClass200();
-	else if(_statusCode >= 300 && _statusCode < 400)
-		responseClass300();
-	else if(_statusCode >= 400 && _statusCode < 500)
-		responseClass400();
-	else if(_statusCode >= 500)
-		responseClass500();
+	try {
+		if(_request.is_location_has_redirection() == true) {
+			_headerLocationValue = _server->getLocations()[_request.getLocationIndex()]->getRedirect();
+			setHeaders("0");
+			formatHeadersAndStartLine();
+			_isResponseSent = true;
+		}
+		else if(_statusCode >= 200 && _statusCode < 302)
+			responseSuccess();
+		else if(_statusCode >= 400 && _statusCode < 600)
+			responseError();
+	}
+	catch(Http::ResponseErrorException& e) {
+		responseError();
+	}
 }
-
 	
 void Response::initializeStatusCodeMap() {
 	_statusCodeMap.insert(std::make_pair(301,  "Moved Permanently"));

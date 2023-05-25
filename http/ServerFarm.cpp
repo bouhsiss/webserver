@@ -15,12 +15,38 @@
 std::vector<Server*>& ServerFarm::getServers() {return(_servers);}
 const std::map<int, Server *>& ServerFarm::getActiveServers() const {return(_activeServers);}
 const std::map<int, Server *>& ServerFarm::getClientSockets() const {return(_clientSockets);}
+const std::map<std::string, std::string>& ServerFarm::getMIMEtypes() {return(_MIMEtypes);}
 
 ServerFarm* ServerFarm::instancePtr = NULL;
+
+void ServerFarm::readMIMEtypes() {
+	std::ifstream MIME_file(MIME_TYPES_FILE_PATH);
+	if(!MIME_file)
+		throw(Http::ServerFarmErrorException("failed to open mime.types file"));
+	std::string line;
+	while(std::getline(MIME_file, line)) {
+		if(line.find("types {") != std::string::npos ||
+			line.find("}") != std::string::npos ||
+			line.empty() || line[0] == '#')
+				continue ;
+		std::istringstream iss(line);
+		std::string mimeType;
+		iss >> mimeType;
+
+		std::string extension;
+		while(iss >> extension){
+			if(_ReverseMIMEtypes[mimeType].empty())
+				_ReverseMIMEtypes[mimeType] = extension;
+			_MIMEtypes[extension] = mimeType;
+		}
+	}
+	MIME_file.close();
+}
 
 ServerFarm::ServerFarm() {
 	FD_ZERO(&_readFds);
 	FD_ZERO(&_writeFds);
+	readMIMEtypes();
 }
 
 
@@ -78,22 +104,6 @@ void ServerFarm::areServersDuplicated() {
 	}
 }
 
-std::string defaultResponse() {
-	std::ifstream html_file("/Users/hassan/Desktop/request2.0/resources/var/www/default.html");
-	std::stringstream buffer;
-	buffer << html_file.rdbuf();
-	html_file.close();
-	std::string html_contents = buffer.str();
-
-	std::string response_headers = "HTTP/1.1 200 OK\r\n"
-                               "Content-Type: text/html\r\n"
-                               "Content-Length: " + std::to_string(html_contents.length()) + "\r\n"
-                               "\r\n";
-
-	std::string response = response_headers + html_contents;
-	return (response);
-}
-
 
 void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
 	std::map<int, Response *>::iterator It;
@@ -103,24 +113,28 @@ void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
 		if(It->second->getRequest().request_is_ready() == true) {
 			// It->second->getRequest().print();
 			if(FD_ISSET(writeSock, tmpWriteFds)) {
-				if(send( writeSock, defaultResponse().c_str(), defaultResponse().length(), 0 ) < 0)
-				{	FD_CLR(writeSock, &_writeFds);
+				It->second->sendResponse();
+				if(It->second->sendFailed()) {	
+					FD_CLR(writeSock, &_writeFds);
 					FD_CLR(writeSock, &_readFds);
 					close(writeSock);
 					_writeSockets.erase(writeSock);
 					_clientSockets.erase(writeSock);
 					throw(Http::NetworkingErrorException("send failed"));
 				}
-				keysToErase.push_back(writeSock);
-				FD_CLR(writeSock, &_writeFds);
-				FD_CLR(writeSock, &_readFds);
-				close(writeSock);
+				if(It->second->isResponseSent() == true) {
+					keysToErase.push_back(writeSock);
+					FD_CLR(writeSock, &_writeFds);
+					FD_CLR(writeSock, &_readFds);
+					close(writeSock);
+				}
 			}
 			std::cout << GREEN << "response sent to socket : " << writeSock << RESET << std::endl;
 		}
 	}
 	for(size_t i = 0; i < keysToErase.size(); i++)
 	{
+		delete(_writeSockets[keysToErase[i]]);
 		_writeSockets.erase(keysToErase[i]);
 		_clientSockets.erase(keysToErase[i]);
 	}
@@ -139,7 +153,7 @@ void ServerFarm::handleNewClient(fd_set *tmpReadFds, int *fdmax) {
 			_clientSockets.insert(std::make_pair(clientSocket, It->second));
 			if(clientSocket > *fdmax)
 				*fdmax = clientSocket;
-			std::cout << CYAN << "new connection from server : " << It->second->getHost() << ":" << It->second->getPort() << RESET << std::endl;
+			std::cout << CYAN << "new connection from server : " << It->second->getHost() << ":" << It->second->getPort() << " on socket " << clientSocket << RESET << std::endl;
 		}
 	}
 }
@@ -175,6 +189,7 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 				else {
 					Request *request = new  Request(It->second->getHost(), It->second->getPort());
 					request->proccess_Request(reqData);
+					request->print();
 					Response *response = new Response(*request, clientSock);
 					if(request->request_is_ready())
 					{
@@ -182,9 +197,7 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 					}
 					_writeSockets.insert(std::make_pair(clientSock, response));
 				}
-				// call the request parser and insert the client socket as key and the request object as value
 			}
-
 		}
 	}
 	for(size_t i = 0 ; i < keysToErase.size(); i++)
@@ -207,9 +220,14 @@ void ServerFarm::runEventLoop() {
 	while(true) {
 		tmpReadFds = _readFds;
 		tmpWriteFds = _writeFds;
+		// for (size_t i = 0; i < FD_SETSIZE; i++)
+		// {
+		// 	if (FD_ISSET(i, &_readFds))
+		// 		std::cout << i << std::endl;
+		// }
+		
 		if(select(fdmax + 1, &tmpReadFds, &tmpWriteFds, NULL, NULL) == -1)
 			throw(Http::NetworkingErrorException(strerror(errno)));
-		
 		// priority to this loop, since the writeFds from previous iteration won't  notify until the next one
 		handleResponse(&tmpWriteFds);
 		handleNewClient(&tmpReadFds, &fdmax);
