@@ -34,6 +34,7 @@ void Response::generateDirectoryListing(std::string dirPath) {
 	if(!dir)
 		rebuildResponseErr(403);
 	std::ofstream htmlFile(DIRECTORY_LISTING_FILENAME);
+	if(!htmlFile)
 		rebuildResponseErr(500);
 
 	//html Header
@@ -160,6 +161,7 @@ void Response::formatHeadersAndStartLine() {
 		rebuildResponseErr(500);
 		_sendFailed = true;
 	}
+	std::cout << RED << initialResponse << RESET << std::endl;
 	_headersAreSent = true;
 }
 
