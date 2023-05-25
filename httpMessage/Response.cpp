@@ -264,7 +264,7 @@ void Response::responseError(){
 
 void Response::sendResponse() {
 	try {
-		if(_request.getServerIndex() != -1 &&_request.is_location_has_redirection() == true) {
+		if(_request.getServerIndex() != -1 && _request.getLocationIndex() != "" && _request.is_location_has_redirection() == true) {
 			_headerLocationValue = _server->getLocations()[_request.getLocationIndex()]->getRedirect();
 			setHeaders("0");
 			formatHeadersAndStartLine();
