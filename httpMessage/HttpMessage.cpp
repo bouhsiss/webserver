@@ -1,7 +1,7 @@
 #include"HttpMessage.hpp"
 
 HttpMessage::HttpMessage(): _body_length(0),_sl_complete(false),_hd_complete(false),_b_complete(false){
-	_filename = "/Users/hassan/Desktop/request2.0/tmp/"+random_filename()+"._Body";
+	_filename = TMP_PATH+random_filename()+"._Body";
 	_chunk_size = -1;
 	_bytes_read=0;
 	_body_length=0;

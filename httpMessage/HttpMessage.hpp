@@ -9,6 +9,8 @@
 #include <cstring>
 #include <cstdio>
 #include "Http.hpp"
+#define TMP_PATH "/Users/hassan/Desktop/request2.0/tmp/"
+
 
 // #include "Server.hpp"
 

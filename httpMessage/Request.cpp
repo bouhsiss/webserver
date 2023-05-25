@@ -36,7 +36,7 @@ void Request::proccess_Request(std::string req_data){
     if (request_is_ready())
     {
         //debug
-        std::cerr<<"request is ready for processing"<<std::endl;
+        // std::cerr<<"request is ready for processing"<<std::endl;
         //end debug
         //check if host header field
         if (_Headers.find("Host")==_Headers.end())//there is not a host header
@@ -71,7 +71,7 @@ void Request::proccess_Request(std::string req_data){
                 _server_index = valid_listen_directive.begin()->first;
             }
             else
-                std::cout<<"error: no server found to handle the request"<<std::endl;
+                std::cerr<<"error: no server found to handle the request"<<std::endl;
         }
         std::istringstream iss(_startLine);
         iss>>_method;
@@ -366,24 +366,24 @@ void Request::DELETE(){
         {
             if(Request::is_uri_has_slash_in_end())
             {
-                if (Request::delete_all_folder_content())//success
-                {
-                    //204 no content
-                    _status_code = 204;
-                }
-                else //failure
-                {
                     if (Request::has_write_acces_on_folder())//
                     {
-                        //500 internal server error
-                        _status_code = 500;
+                        if (Request::delete_all_folder_content())//success
+                        {
+                            //204 no content
+                            _status_code = 204;
+                        }
+                        else//failure
+                        {
+                            //500 internal server error
+                            _status_code = 500;
+                        }
                     }
                     else
                     {
                         //403 forbidden
                         _status_code = 403;
                     }
-                }
             }
             else //request doesnt have "/" at the end 
             {
@@ -393,23 +393,23 @@ void Request::DELETE(){
         }
         else //file
         {
-                if (remove(_requested_resource.c_str())==0)//success
+                if (access(_requested_resource.c_str(),W_OK) ==0)
                 {
-                    //204 no content
-                    _status_code = 204;
-                }
-                else//remove failed
-                {
-                    if (access(_requested_resource.c_str(),W_OK) ==0)
+                    if (remove(_requested_resource.c_str())==0)//success
                     {
-                        // //500 internal server error
-                        _status_code = 500;
+                        //204 no content
+                        _status_code = 204;
                     }
                     else
                     {
-                        //403 forbidden
-                        _status_code = 403;
+                        //500 internal server error
+                        _status_code = 500;
                     }
+                }
+                else//remove failed
+                {
+                    //403 forbidden
+                    _status_code = 403;
                 }
         }
     }
@@ -528,12 +528,23 @@ bool Request::if_location_support_upload(){
         return false;
     return true;
 }
+
+int nftwcheck(const char *filename, const struct stat *statptr, int fileflags, struct FTW *pfwt){
+    (void)pfwt;   
+    if ((fileflags == FTW_DP || fileflags == FTW_DNR)&& !(statptr->st_mode & S_IWOTH))//directory 
+            return -1;
+    else if (access(filename,W_OK)!=0)//file or other type
+            return -1;
+    return 0;
+}
 bool Request::has_write_acces_on_folder(){
+    //walk the folder tree with nft and check write access
+    int flags = FTW_DEPTH;
     struct stat folderStats;
-    if (stat(_requested_resource.c_str(),&folderStats) ==-1)
+    if (stat(_requested_resource.c_str(),&folderStats) ==-1 || !(folderStats.st_mode & S_IWOTH))
         return false;
-    if (S_ISDIR(folderStats.st_mode) && (folderStats.st_mode & S_IWOTH))
-        return true; 
+	if (nftw(_requested_resource.c_str(), nftwcheck, 1000, flags) ==0)
+            return true; 
     return false;
 }
 
@@ -543,25 +554,12 @@ int nftwfunc(const char *filename, const struct stat *statptr, int fileflags, st
     (void)pfwt;
     (void)statptr;
     //delete here
-    if (fileflags == FTW_SL)//symbolik link
-    {
-        if (unlink(filename)==-1)
+    if (fileflags == FTW_SL && unlink(filename)==-1)//symbolik link
             return -1;
-    }
-    else if (fileflags == FTW_DP|| fileflags == FTW_DNR)//directory 
-    {
-        //FTW_DNR
-        // The object is a directory that cannot be read. The fn function shall not be called for any of its descendants.
-        //FTW_DP
-        // The object is a directory and subdirectories have been visited. (This condition shall only occur if the FTW_DEPTH flag is included in flags.)
-        if (rmdir(filename)==-1)
+    else if ((fileflags == FTW_DP || fileflags == FTW_DNR) && rmdir(filename)==-1)//directory 
             return -1;
-    }
-    else//file or other type
-    {
-        if (remove(filename) == -1)
+    else if (remove(filename) == -1)//file or other type
             return -1;
-    }
     return 0;
 }
 bool Request::delete_all_folder_content(){
@@ -611,10 +609,10 @@ void Request::upload_resource(){
 
 void Request::handle_multipart_form_data(){
     //debug     
-    std::cerr<<"Request::handling multipart inside the function"<<std::endl;
+    // std::cerr<<"Request::handling multipart inside the function"<<std::endl;
     //end debug
     //create tmp fstream with tmp filename
-    std::string tmp_filename = "/Users/hassan/Desktop/request2.0/tmp/"+random_filename()+".mulipart";
+    std::string tmp_filename = TMP_PATH+random_filename()+".mulipart";
     std::fstream tmp;
     std::string buffer = _Headers["Content-Type"];
     //get boundary
@@ -657,7 +655,7 @@ void Request::handle_multipart_form_data(){
     if (tmp.is_open() && _upload_file.is_open())
     {
         //debug
-        std::cerr<<"----------------uploadfile is open for appending-----------"<<std::endl;
+        // std::cerr<<"----------------uploadfile is open for appending-----------"<<std::endl;
         //end debug
         std::string line;
         while(getline(tmp,line))
