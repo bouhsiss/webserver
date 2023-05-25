@@ -497,7 +497,7 @@ bool Request::indexFileExists(const char *dir_path, std::string &filename) {
 	std::string locationName = _location_index;
 	if(locationName[locationName.length()-1]!= '/')
 		locationName.append("/");
-	if(_RequestURI == locationName)
+	if(_RequestURI == locationName  && _sf->getServers()[_server_index]->getLocations()[_location_index]->getIndex() != "")
 	{
 		if(!_sf->getServers()[_server_index]->getLocations()[_location_index]->getIndex().empty())
 		{
@@ -514,8 +514,8 @@ bool Request::indexFileExists(const char *dir_path, std::string &filename) {
 		}
 		while((entry = readdir(directory)) != nullptr) {
 			if(strncmp(entry->d_name, "index", 5) == 0) {
-				closedir(directory);
 				filename = std::string(entry->d_name);
+				closedir(directory);
 				return(true);
 			}
 		}
@@ -530,7 +530,10 @@ bool Request::search_for_indexfile(const char *dir_path){
 	// std::string tmp= _location_index;
 	// if (tmp[tmp.length()-1]!='/')
 	// 	tmp.append("/");
-	// if (_RequestURI==tmp)
+	// std::string locationName = _location_index;
+	// if(locationName[locationName.length()-1]!= '/')
+	// 	locationName.append("/");
+	// if (_RequestURI == locationName  && _sf->getServers()[_server_index]->getLocations()[_location_index]->getIndex() != "")
 	// {
 	// 	if(!_sf->getServers()[_server_index]->getLocations()[_location_index]->getIndex().empty())
 	// 		filename = _sf->getServers()[_server_index]->getLocations()[_location_index]->getIndex();
