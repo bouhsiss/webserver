@@ -843,7 +843,7 @@ void Request::clean_cgi_output(){
 
 extern char** environ;//user env
 void Request::run_cgi(){
-    _cgi_out_filename = random_filename();
+    _cgi_output_filename = random_filename();
     prepare_env();
     set_cgi_env();
     //what check should i perform on cgi scritp ????????? ex:for infinite loop.....
@@ -852,7 +852,7 @@ void Request::run_cgi(){
         std::cout<<"run_cgi:failed to open the request body file for reading"<<std::endl;
     dup2(0,in_fd);
     close(0);
-    int out_fd = open(&_cgi_out_filename[0],O_WRONLY);
+    int out_fd = open(&_cgi_output_filename[0],O_WRONLY);
     if (out_fd==-1)
         std::cout<<"run_cgi:failed to open the cgi out file for writing"<<std::endl;
     dup2(1,out_fd);
@@ -883,16 +883,16 @@ void Request::run_cgi(){
 
     //print the cgi output and debugg
     //debug
-    _cgi_out_file.open(_cgi_out_filename,std::ios::in);
-    if (_cgi_out_file.is_open())
+    _cgi_output.open(_cgi_output_filename,std::ios::in);
+    if (_cgi_output.is_open())
     {
         std::cout<<"---------------------------| this is cgi output |------------------------------------"<<std::endl;
         std::string line;
-        while(getline(_cgi_out_file,line)){
+        while(getline(_cgi_output,line)){
             std::cout<<line<<std::endl;
         }
         std::cout<<"---------------------------| end of cgi output |------------------------------------"<<std::endl;
-        _cgi_out_file.close();
+        _cgi_output.close();
     }
     //end debug
 
