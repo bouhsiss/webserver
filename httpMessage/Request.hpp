@@ -41,6 +41,7 @@ class Request : public HttpMessage {
 		std::string getUploadFilename()const;
 		std::string getUploadFile()const;
 		std::string getFilenameExtension()const;
+		void setStatusCode(int statusCode);
 		void print();
         bool is_location_has_redirection();
 

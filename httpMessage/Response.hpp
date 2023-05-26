@@ -18,6 +18,7 @@ class Response : public HttpMessage {
 		bool sendFailed();
 		bool isResponseSent();
 	private :
+		void 		initResponse();
 		void 		initializeStatusCodeMap();
 		void		rebuildResponseErr(int statusCode);
 

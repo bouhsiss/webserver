@@ -13,6 +13,7 @@ Request::Request(std::string request_host, std::string request_port):_sf(ServerF
 	_upload_filename = "";
 	_filename_extension = "";
 	_upload_done=false;
+	_b_complete = false;
 }
 
 Request::Request(const Request& other) {
@@ -921,6 +922,7 @@ std::string	Request::getRequestedresource()const{return _requested_resource;}
 std::string Request::getUploadFilename()const{return _upload_filename;}
 std::string Request::getUploadFile()const{return _upload_filename;}
 std::string Request::getFilenameExtension()const{return _filename_extension;}
+void		Request::setStatusCode(int statusCode ) {_status_code = statusCode;} 
 
 
 // print all request attributes

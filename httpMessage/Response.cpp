@@ -9,6 +9,9 @@ Response::Response(Request &request, int writeSock): _request(request), _writeSo
 	_headersAreSent = false;
 	_sendFailed = false;
 	_body = "";
+}
+
+void Response::initResponse(){ 
 	_statusCode = _request.getStatusCode();
 	if(_request.getServerIndex() !=  -1)
 	{
@@ -24,9 +27,9 @@ bool Response::isResponseSent(){return(_isResponseSent);}
 
 
 void Response::rebuildResponseErr(int statusCode) {
-	_statusCode = statusCode;
+	_request.setStatusCode(statusCode);
 	_headersAreSent = false;
-	throw(Http::ResponseErrorException("hehe"));
+	throw(std::exception());
 }
 
 void Response::generateDirectoryListing(std::string dirPath) {
@@ -71,6 +74,7 @@ void Response::sendResponseFile() {
 	std::vector<char> buffer(chunkSize);
 	if(!_file.is_open())
 		_file.open(_filename, std::ios::in);
+	std::cout << "i might be here" << std::endl;
 	if(!_file)
 		rebuildResponseErr(403);
 	_file.read(buffer.data(), chunkSize);
@@ -199,7 +203,6 @@ void Response::responseSuccess() {
 			setHeaders(std::to_string(_body.size()));
 			formatHeadersAndStartLine();
 			_isResponseSent = true;
-
 		}
 	}
 	else if(_request.getMethod() == "DELETE") {
@@ -220,7 +223,6 @@ void Response::sendResponseBody() {
 	if(bytesSent == _contentLength)
 	{
 		_isResponseSent = true;
-		std::cout << "am here " << _body << std::endl;
 	}
 	else
 	{
@@ -254,21 +256,19 @@ void Response::responseError(){
 
 
 void Response::sendResponse() {
-	try {
-		if(_request.getServerIndex() != -1 && _request.getLocationIndex() != "" && _request.is_location_has_redirection() == true) {
-			_headerLocationValue = _server->getLocations()[_request.getLocationIndex()]->getRedirect();
-			setHeaders("0");
-			formatHeadersAndStartLine();
-			_isResponseSent = true;
-		}
-		else if(_statusCode >= 200 && _statusCode < 302)
-			responseSuccess();
-		else if(_statusCode >= 400 && _statusCode < 600)
-			responseError();
+	initResponse();
+	if(_request.getServerIndex() != -1 && _request.getLocationIndex() != "" && _request.is_location_has_redirection() == true) {
+		_headerLocationValue = _server->getLocations()[_request.getLocationIndex()]->getRedirect();
+		setHeaders("0");
+		formatHeadersAndStartLine();
+		_isResponseSent = true;
 	}
-	catch(Http::ResponseErrorException& e) {
+	else if(_statusCode >= 200 && _statusCode < 302)
+	{
+		responseSuccess();
+	}
+	else if(_statusCode >= 400 && _statusCode < 600)
 		responseError();
-	}
 }
 	
 void Response::initializeStatusCodeMap() {

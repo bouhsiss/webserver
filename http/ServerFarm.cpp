@@ -113,7 +113,13 @@ void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
 		if(It->second->getRequest().request_is_ready() == true) {
 			It->second->getRequest().print();
 			if(FD_ISSET(writeSock, tmpWriteFds)) {
-				It->second->sendResponse();
+				try {
+					It->second->sendResponse();
+				}
+				catch(const std::exception& e) {
+					Response* response = new Response(It->second->getRequest(), writeSock);
+					_writeSockets[writeSock] = response;
+				}
 				if(It->second->sendFailed()) {
 					keysToErase.push_back(writeSock);
 					FD_CLR(writeSock, &_writeFds);
