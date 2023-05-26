@@ -16,6 +16,7 @@ std::vector<Server*>& ServerFarm::getServers() {return(_servers);}
 const std::map<int, Server *>& ServerFarm::getActiveServers() const {return(_activeServers);}
 const std::map<int, Server *>& ServerFarm::getClientSockets() const {return(_clientSockets);}
 const std::map<std::string, std::string>& ServerFarm::getMIMEtypes() {return(_MIMEtypes);}
+std::map<std::string, std::string>&	ServerFarm::getReverseMIMEtypes(){return _ReverseMIMEtypes;}
 
 ServerFarm* ServerFarm::instancePtr = NULL;
 

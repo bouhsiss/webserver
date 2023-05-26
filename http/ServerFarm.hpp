@@ -32,6 +32,7 @@ class ServerFarm {
 		void										initServers();
 		void										runEventLoop();
 		const std::map<std::string, std::string>&	getMIMEtypes();
+		std::map<std::string, std::string>&	getReverseMIMEtypes();
 	private :
 		ServerFarm(const ServerFarm &other);
 		void operator=(const ServerFarm &other);

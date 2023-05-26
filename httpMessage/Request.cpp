@@ -530,42 +530,6 @@ bool Request::indexFileExists(const char *dir_path, std::string &filename) {
 
 bool Request::search_for_indexfile(const char *dir_path){
     std::string filename ;
-    // struct dirent* entry;
-	// //check if the uri is the same as location index
-	// std::string tmp= _location_index;
-	// if (tmp[tmp.length()-1]!='/')
-	// 	tmp.append("/");
-	// std::string locationName = _location_index;
-	// if(locationName[locationName.length()-1]!= '/')
-	// 	locationName.append("/");
-	// if (_RequestURI == locationName  && _sf->getServers()[_server_index]->getLocations()[_location_index]->getIndex() != "")
-	// {
-	// 	if(!_sf->getServers()[_server_index]->getLocations()[_location_index]->getIndex().empty())
-	// 		filename = _sf->getServers()[_server_index]->getLocations()[_location_index]->getIndex();
-	// 	_resource_type = "file";
-	// 	_requested_resource += filename;
-    //     return true;
-	// }
-	// else {
-	// 	filename = "index";
-	// 	DIR* directory = opendir(dir_path);
-	// 	if (directory == nullptr)
-	// 	{
-	// 		std::cout<<"search_for_filename: error cant open directory"<<std::endl;
-	// 		return false;
-	// 	}
-	// 	while ((entry = readdir(directory)) != nullptr)
-	// 	{
-	// 		if (strncmp(entry->d_name,filename.c_str(),5)==0)
-	// 		{
-	// 			closedir(directory);
-	// 			_resource_type = "file";
-
-	// 			_requested_resource += entry->d_name;
-	// 			return true;
-	// 		}
-	// 	}
-	// }
 	if(indexFileExists(dir_path, filename) == true)
 	{
 		_resource_type = "file";
@@ -645,19 +609,15 @@ bool Request::request_is_ready(){
 
 void Request::upload_resource(){
     //check content-type exist and = "multipart/form-data"
-    if (_Headers.find("Content-Type")!= _Headers.end())
-    {
-        //debug
-        std::cerr<<"Request::upload_resource: about to upload"<<std::endl;
-        //end debug
-        std::string line  = _Headers["Content-Type"];
-        if (line.find("multipart/form-data")!=std::string::npos)
-            Request::handle_multipart_form_data();
-    }
+    if (_Headers.find("Content-Type")!= _Headers.end()&&_Headers["Content-Type"].find("multipart/form-data")!=std::string::npos)
+        Request::handle_multipart_form_data();
     else{
+		std::string tmp0 = _Headers["Content-Type"];
+		Http::trimSpaces(tmp0);
+		std::string ext  =_sf->getReverseMIMEtypes()[tmp0];
         _upload_filename =random_filename();
         //uploading file
-        _upload_filename = _sf->getServers()[_server_index]->getLocations()[_location_index]->getUploadPath() + _upload_filename;
+        _upload_filename = _sf->getServers()[_server_index]->getLocations()[_location_index]->getUploadPath() + random_filename()+"."+ext;
         _Body.open(_filename,std::ios::in);
         _upload_file.open(_upload_filename,std::ios::out|std::ios::app);
         if (_Body.is_open() && _upload_file.is_open())
@@ -668,7 +628,9 @@ void Request::upload_resource(){
             _Body.close();
             _upload_file.close();
         }
+		remove(_filename.c_str());
     }
+
 }
 
 
@@ -713,6 +675,7 @@ void Request::handle_multipart_form_data(){
         }
         _Body.close();
         tmp.close();
+		remove(_filename.c_str());
     }
     //upload
     tmp.open(tmp_filename,std::ios::in);
@@ -726,6 +689,7 @@ void Request::handle_multipart_form_data(){
         while(getline(tmp,line))
             _upload_file<<line.append("\n");
         tmp.close();
+		remove(tmp_filename.c_str());
         _upload_file.close();
     }
 }
