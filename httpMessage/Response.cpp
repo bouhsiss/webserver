@@ -74,7 +74,6 @@ void Response::sendResponseFile() {
 	std::vector<char> buffer(chunkSize);
 	if(!_file.is_open())
 		_file.open(_filename, std::ios::in);
-	std::cout << "i might be here" << std::endl;
 	if(!_file)
 		rebuildResponseErr(403);
 	_file.read(buffer.data(), chunkSize);
@@ -142,8 +141,6 @@ void Response::setHeaders(std::string contentLength) {
 	setStartLine();
 	_headers.insert(std::make_pair("Content-Type: ", setMIMEtype(_filename)));
 	_headers.insert(std::make_pair("Content-Length: ", contentLength));
-	if (_statusCode == 201)
-		_headerLocationValue = _request.getUploadFilename().substr(_server->getLocations()[_request.getLocationIndex()]->getRoot().size());
 	if(_statusCode == 301)
 	{
 		if(_request.getRequestURI()[_request.getRequestURI().size() -1] != '/')
