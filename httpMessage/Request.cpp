@@ -474,7 +474,7 @@ bool Request::get_requested_resource(){
     //check if the requested resource is a file
     struct stat fileInfo;
     if (stat(rsc.c_str(),&fileInfo)!=0)
-        std::cout<<"stat function: failed to get information " << rsc <<std::endl;
+        std::cout<<"stat function: failed to get information  " << rsc  <<std::endl;
     else if (S_ISREG(fileInfo.st_mode))//regular file found
     {
         _resource_type = "file";
