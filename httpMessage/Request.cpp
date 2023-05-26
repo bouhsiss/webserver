@@ -12,6 +12,7 @@ Request::Request(std::string request_host, std::string request_port):_sf(ServerF
 	_requested_resource = "";
 	_upload_filename = "";
 	_filename_extension = "";
+	_upload_done=false;
 }
 
 Request::Request(const Request& other) {
@@ -29,11 +30,11 @@ Request::~Request() {}
 void Request::proccess_Request(std::string req_data){
     _bytes_read = req_data.length();
     _message+=req_data;
-    if (!request_is_ready())
+    if (_b_complete==false)
         parse();
     //initial status code (if status code remain -1 that means no errors found at this stage)
     //if its not a valid httpmessage stop here
-    if (request_is_ready())
+    if (_b_complete==true)
     {
         //debug
         // std::cerr<<"request is ready for processing"<<std::endl;
@@ -107,7 +108,7 @@ void Request::proccess_Request(std::string req_data){
 				//400 Bad Request
 				_status_code = 400;
 			}
-			else if (_RequestURI.length() > 2097152)//chrome max uri size
+			else if (_RequestURI.length() > MAX_URI_SIZE)//chrome max uri size
 			{
 				//414 Request-URI Too Long
 				_status_code = 414;
@@ -145,6 +146,7 @@ void Request::proccess_Request(std::string req_data){
 				_status_code = 404;
 			} 
         }
+	_upload_done=true;
     }
 }
 
@@ -434,7 +436,9 @@ void Request::DELETE(){
 
 bool Request::check_forbidden_path()
 {
-    std::string real_path = realpath(_requested_resource.c_str(),0);
+	char path[MAX_URI_SIZE];
+	realpath(_requested_resource.c_str() ,path);
+	std::string real_path = std::string(path);
     if (real_path.length() <_sf->getServers()[_server_index]->getLocations()[_location_index]->getRoot().length())//the path is forbidden stop processing the request and return 403 forbidden 
     {
         _status_code=403;
@@ -469,7 +473,7 @@ bool Request::get_requested_resource(){
     //check if the requested resource is a file
     struct stat fileInfo;
     if (stat(rsc.c_str(),&fileInfo)!=0)
-        std::cout<<"stat function: failed to get information"<<std::endl;
+        std::cout<<"stat function: failed to get information " << rsc <<std::endl;
     else if (S_ISREG(fileInfo.st_mode))//regular file found
     {
         _resource_type = "file";
@@ -635,7 +639,7 @@ bool Request::delete_all_folder_content(){
 }
 
 bool Request::request_is_ready(){
-    return _b_complete;
+    return _b_complete && _upload_done;
 }
 
 void Request::upload_resource(){
@@ -650,7 +654,7 @@ void Request::upload_resource(){
             Request::handle_multipart_form_data();
     }
     else{
-        _upload_filename = random_filename();
+        _upload_filename =random_filename();
         //uploading file
         _upload_filename = _sf->getServers()[_server_index]->getLocations()[_location_index]->getUploadPath() + _upload_filename;
         _Body.open(_filename,std::ios::in);
@@ -936,6 +940,5 @@ void Request::print() {
 	std::cout << "requested resource : " << _requested_resource << std::endl;
 	std::cout << "====== for POST METHOD ======" << std::endl; 
 	std::cout << "upload filename : " << _upload_filename << std::endl;
-	std::cout << "upload file : " << _upload_file << std::endl;
 	std::cout << "filename extension : " << _filename_extension << RESET << std::endl;
 }

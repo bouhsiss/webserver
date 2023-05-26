@@ -79,7 +79,10 @@ void Location::setIndex(std::vector<std::string> const &tokens) {
 void Location::setUploadPath(std::vector<std::string> const &tokens) {
 	if(tokens.size() != 1 || !_upload_path.empty())
 		throw(Http::ConfigFileErrorException("Invalid Upload path directive"));
-	this->_upload_path = tokens[0];
+	std::string uplaod_path = tokens[0];
+	if(uplaod_path[uplaod_path.length()-1] != '/')
+		uplaod_path.append("/");
+	this->_upload_path = uplaod_path;
 }
 
 

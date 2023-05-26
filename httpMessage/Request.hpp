@@ -1,4 +1,4 @@
-#pragma once
+ #pragma once
 #include "HttpMessage.hpp"
 #include <iostream>
 #include <string>
@@ -14,6 +14,8 @@
 #include "ServerFarm.hpp"
 #include <limits.h>
 #include <stdlib.h>
+
+#define MAX_URI_SIZE 2097152
 
 class ServerFarm;
 
@@ -90,6 +92,7 @@ class Request : public HttpMessage {
 		std::string 	_req_port;
 		std::string 	_resource_type;
 		std::string 	_requested_resource;
+		bool			_upload_done;
 		//for POST method
 		std::string		_upload_filename;
 		std::fstream	_upload_file;

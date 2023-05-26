@@ -76,11 +76,13 @@ void Response::sendResponseFile() {
 	_file.read(buffer.data(), chunkSize);
 	size_t bytesSent = send(_writeSocket, buffer.data(), chunkSize, 0);
 	if(bytesSent < 0) {
-		rebuildResponseErr(500);
 		_sendFailed = true;
 		return;
 	}
 	_totalBytesSent += bytesSent;
+	std::cout << YELLOW << "bytes Sent " << bytesSent << std::endl;
+	std::cout << "totalBytesSent " << _totalBytesSent << std::endl;
+	std::cout << " content length " << _contentLength << RESET <<  std::endl;
 	if(_totalBytesSent  == _contentLength)
 	{
 		_file.close();
@@ -137,7 +139,7 @@ void Response::setHeaders(std::string contentLength) {
 	_headers.insert(std::make_pair("Content-Type: ", setMIMEtype(_filename)));
 	_headers.insert(std::make_pair("Content-Length: ", contentLength));
 	if (_statusCode == 201)
-		_headerLocationValue = _request.getUploadFilename();
+		_headerLocationValue = _request.getUploadFilename().substr(_server->getLocations()[_request.getLocationIndex()]->getRoot().size());
 	if(_statusCode == 301)
 	{
 		if(_request.getRequestURI()[_request.getRequestURI().size() -1] != '/')
@@ -159,9 +161,8 @@ void Response::formatHeadersAndStartLine() {
 	for(It = _headers.begin(); It != _headers.end(); It++)
 		initialResponse += It->first + It->second + "\r\n";
 	initialResponse += "\r\n";
-	size_t bytesSent = send(_writeSocket, initialResponse.c_str(), initialResponse.length(), 0);
+	int bytesSent = send(_writeSocket, initialResponse.c_str(), initialResponse.length(), 0);
 	if(bytesSent < 0) {
-		rebuildResponseErr(500);
 		_sendFailed = true;
 	}
 	std::cout << RED << initialResponse << RESET << std::endl;
@@ -195,26 +196,17 @@ void Response::responseSuccess() {
 	}
 	else if(_request.getMethod() == "POST") {
 		if(_headersAreSent == false) {
-			_body = POST_201_BODY;
 			setHeaders(std::to_string(_body.size()));
 			formatHeadersAndStartLine();
-		}
-		else
-		{
-			//if(cgi_output_filename not empty)
-			// send cgi response body
-			sendResponseBody();
+			_isResponseSent = true;
+
 		}
 	}
 	else if(_request.getMethod() == "DELETE") {
 		if(_headersAreSent == false) {
-			_body = DELETE_204_BODY;
 			setHeaders(std::to_string(_body.size()));
 			formatHeadersAndStartLine();
-		}
-		else
-		{
-			sendResponseBody();
+			_isResponseSent = true;
 		}
 	}
 }
@@ -222,17 +214,16 @@ void Response::responseSuccess() {
 void Response::sendResponseBody() {
 	size_t bytesSent = send(_writeSocket, _body.c_str(), _contentLength, 0);
 	if(bytesSent < 0) {
-		rebuildResponseErr(500);
 		_sendFailed = true;
 		return;
 	}
 	if(bytesSent == _contentLength)
 	{
 		_isResponseSent = true;
+		std::cout << "am here " << _body << std::endl;
 	}
 	else
 	{
-		rebuildResponseErr(500);
 		_sendFailed = true;
 	}
 }

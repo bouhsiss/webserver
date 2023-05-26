@@ -114,18 +114,18 @@ void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
 			It->second->getRequest().print();
 			if(FD_ISSET(writeSock, tmpWriteFds)) {
 				It->second->sendResponse();
-				if(It->second->sendFailed()) {	
+				if(It->second->sendFailed()) {
+					keysToErase.push_back(writeSock);
 					FD_CLR(writeSock, &_writeFds);
-					FD_CLR(writeSock, &_readFds);
 					close(writeSock);
-					_writeSockets.erase(writeSock);
-					_clientSockets.erase(writeSock);
-					throw(Http::NetworkingErrorException("send failed"));
+					std::cout << RED << "send() failed" << RESET << std::endl;
+					// _writeSockets.erase(writeSock);
+					// _clientSockets.erase(writeSock);
+					// throw(Http::NetworkingErrorException("send failed"));
 				}
 				if(It->second->isResponseSent() == true) {
 					keysToErase.push_back(writeSock);
 					FD_CLR(writeSock, &_writeFds);
-					FD_CLR(writeSock, &_readFds);
 					close(writeSock);
 				}
 			}
@@ -167,13 +167,17 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 			char read[1024];
 			int bytesReceived = recv(clientSock, read, 1024, 0);
 			if(bytesReceived < 0)
-				throw(Http::NetworkingErrorException("recv() failed"));
+			{
+				keysToErase.push_back(clientSock);
+				FD_CLR(clientSock, &_readFds);
+				std::cout << RED << "recv() failed" << RESET << std::endl;
+				close(clientSock);
+			}
 			else if(!bytesReceived) {
 				keysToErase.push_back(clientSock);
 				FD_CLR(clientSock, &_readFds);
 				std::cout << RED << "client closed connection" << RESET << std::endl;
 				close(clientSock);
-
 			}
 			else {
 				std::string reqData(read, bytesReceived);
@@ -183,6 +187,7 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 				if(_writeSockets.find(clientSock) != _writeSockets.end()) {
 					_writeSockets[clientSock]->getRequest().proccess_Request(reqData);
 					if(_writeSockets[clientSock]->getRequest().request_is_ready()) {
+						FD_CLR(clientSock, &_readFds);
 						FD_SET(clientSock, &_writeFds); 
 					}
 				}
@@ -193,6 +198,7 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 					Response *response = new Response(*request, clientSock);
 					if(request->request_is_ready())
 					{
+						FD_CLR(clientSock, &_readFds);
 						FD_SET(clientSock, &_writeFds);
 					}
 					_writeSockets.insert(std::make_pair(clientSock, response));
@@ -227,7 +233,10 @@ void ServerFarm::runEventLoop() {
 		// }
 		
 		if(select(fdmax + 1, &tmpReadFds, &tmpWriteFds, NULL, NULL) == -1)
+		{
+			std::cout << "select failed" << std::endl;
 			throw(Http::NetworkingErrorException(strerror(errno)));
+		}
 		// priority to this loop, since the writeFds from previous iteration won't  notify until the next one
 		handleResponse(&tmpWriteFds);
 		handleNewClient(&tmpReadFds, &fdmax);
