@@ -664,7 +664,7 @@ void Request::upload_resource(){
         {
             std::string line;
             while(getline(_Body,line))
-                _upload_file<<line.append("/");
+                _upload_file<<line.append("\n");
             _Body.close();
             _upload_file.close();
         }
