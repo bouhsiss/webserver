@@ -560,7 +560,7 @@ bool Request::if_location_support_upload(){
 
 int nftwcheck(const char *filename, const struct stat *statptr, int fileflags, struct FTW *pfwt){
     (void)pfwt;   
-    if ((fileflags == FTW_DP || fileflags == FTW_DNR)&& !(statptr->st_mode & S_IWOTH))//directory 
+    if ((fileflags == FTW_DP || fileflags == FTW_DNR)&& (statptr->st_mode & !S_IWOTH))//directory 
             return -1;
     else if (access(filename,W_OK)!=0)//file or other type
             return -1;
@@ -570,10 +570,14 @@ bool Request::has_write_acces_on_folder(){
     //walk the folder tree with nft and check write access
     int flags = FTW_DEPTH;
     struct stat folderStats;
-    if (stat(_requested_resource.c_str(),&folderStats) ==-1 || !(folderStats.st_mode & S_IWOTH))
+    if (stat(_requested_resource.c_str(),&folderStats) ==-1 || (folderStats.st_mode & !S_IWOTH))
+	{
         return false;
+	}
 	if (nftw(_requested_resource.c_str(), nftwcheck, 1000, flags) ==0)
+	{
             return true; 
+	}
     return false;
 }
 
@@ -583,12 +587,17 @@ int nftwfunc(const char *filename, const struct stat *statptr, int fileflags, st
     (void)pfwt;
     (void)statptr;
     //delete here
-    if (fileflags == FTW_SL && unlink(filename)==-1)//symbolik link
-            return -1;
-    else if ((fileflags == FTW_DP || fileflags == FTW_DNR) && rmdir(filename)==-1)//directory 
-            return -1;
+
+    if (fileflags == FTW_DP || fileflags == FTW_DNR)//directory 
+	{
+		if (rmdir(filename)==-1)
+        	return -1;
+
+	}
     else if (remove(filename) == -1)//file or other type
+	{
             return -1;
+	}
     return 0;
 }
 bool Request::delete_all_folder_content(){
@@ -596,8 +605,8 @@ bool Request::delete_all_folder_content(){
 	if (nftw(_requested_resource.c_str(), nftwfunc, 1000, flags) ==0)
     {
         //nftw does not remove the parent folder
-        if (rmdir(_requested_resource.c_str())==-1)
-            return false;
+        // if (rmdir(_requested_resource.c_str())==-1)
+            // return false;
         return true;
     }
     return false;

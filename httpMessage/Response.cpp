@@ -90,7 +90,7 @@ void Response::sendResponseFile() {
 	{
 		_file.close();
 		_isResponseSent = true;
-		if(_request.getresourceType() == "directory"){
+		if(_request.getresourceType() == "directory" && _statusCode < 400){
 			std::remove(_filename.c_str());
 		}
 	}
@@ -116,10 +116,11 @@ std::string Response::setMIMEtype(std::string filename) {
 }
 
 std::string Response::setFileContentLength(std::string filename) {
-	_file.open(filename);
 	_filename = filename;
+	_file.open(_filename);
+
 	if(!_file)
-		rebuildResponseErr(403);
+		rebuildResponseErr(404);
 	_file.seekg(0, std::ios::end);
 	std::streampos fileSize = _file.tellg();
 	_file.seekg(0, std::ios::beg);
@@ -239,7 +240,7 @@ void Response::sendDefaultErrorPage() {
 }
 
 void Response::responseError(){
-	if(_request.getServerIndex() != -1 &&  _errorPages.find(_statusCode) != _errorPages.end()) {
+	if(_request.getServerIndex() != -1 &&  _errorPages.find(_statusCode) != _errorPages.end() && std::fstream(_errorPages[_statusCode])) {
 		if(_headersAreSent == false) {
 			setHeaders(setFileContentLength(_errorPages[_statusCode]));
 			formatHeadersAndStartLine();
@@ -265,7 +266,9 @@ void Response::sendResponse() {
 		responseSuccess();
 	}
 	else if(_statusCode >= 400 && _statusCode < 600)
+	{
 		responseError();
+	}
 }
 	
 void Response::initializeStatusCodeMap() {
