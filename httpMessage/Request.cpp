@@ -37,6 +37,7 @@ void Request::proccess_Request(std::string req_data){
     //if its not a valid httpmessage stop here
     if (_b_complete==true)
     {
+
         //debug
         // std::cerr<<"request is ready for processing"<<std::endl;
         //end debug
@@ -44,7 +45,6 @@ void Request::proccess_Request(std::string req_data){
         if (_Headers.find("Host")==_Headers.end())//there is not a host header
         {
             //400 bad request
-			std::cerr<<"host not found----------"<<std::endl;
             _status_code = 400;
         }
         else //choosing the right server to handle the request
@@ -80,7 +80,10 @@ void Request::proccess_Request(std::string req_data){
 			iss>>_RequestURI;
 			iss>>_http_v;
 			//debug
-			std::cerr<<"Request: _method= "<<_method<<" _uri= "<<_RequestURI<<" http= "<<_http_v<<std::endl;
+			std::cerr<<"Request: _method = "<<_method<<" _uri = "<<_RequestURI<<" http = "<<_http_v<<std::endl;
+			std::cout << "_request URI : " << _RequestURI << std::endl;
+			std::cout << "_request URI length : " << _RequestURI.length() << std::endl;
+			std::cout << " MAX URI SIZE : " << MAX_URI_SIZE << std::endl;
 			//end debug
 			if (_method != "GET" && _method != "DELETE" && _method != "POST")
 			{
@@ -119,6 +122,7 @@ void Request::proccess_Request(std::string req_data){
 				//413 Request Entity Too Large
 				_status_code  = 413;
 			}
+			// there's a problem here
 			Request::get_matched_location_for_request_uri();
 			if (_location_index != "")//location found
 			{

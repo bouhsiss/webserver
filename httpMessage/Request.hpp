@@ -15,7 +15,10 @@
 #include <limits.h>
 #include <stdlib.h>
 
-#define MAX_URI_SIZE 2097152
+// #define MAX_URI_SIZE 2097152
+#define MAX_URI_SIZE 40
+
+// LoreipsudolosiametconsectetuadipiscinelitsedeiusmotempoincididunulaboredolormagnaliquaUeniaminiveniam
 
 class ServerFarm;
 
