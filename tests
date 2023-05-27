@@ -5,6 +5,6 @@
 	* : curl --resolve example.com:80:127.0.0.1 http://example.com/ (http://example.com/)	
 	* remove cerr ...
 =============== to not forget =============== 
-	* delete the tmp files
+	* delete the tmp files // still not deleted
 	* not terminate the server when recv()/read() fail 
-	* root/../../../..//. forbidden for all methods
+	* root/../../../..//. forbidden for all methods // still not working on post method

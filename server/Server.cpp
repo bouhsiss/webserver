@@ -107,7 +107,7 @@ void Server::setServerDefaultValues() {
 	if(_port.empty())
 		_port = 80;
 	if(_client_body_size_limit == (size_t)-1)
-		_client_body_size_limit = 100000;
+		_client_body_size_limit = 1000000;
 	if(_Locations.empty() && !_root.empty())
 		setDefaultLocation();
 	std::map<std::string, Location *>::iterator It;

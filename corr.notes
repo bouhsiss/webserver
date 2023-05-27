@@ -1,0 +1,17 @@
+- ask explanations of the basics of an HTTP server
+	* is a software program that accept and response to requests made over the http. http is the underlying protocol used for transfering data on the www. 
+	* when a user requests a web page, their browser sends a request to the HTTP server, that itself retreives the requsted ressource from its storage and sends it back.
+	* accepting and responding / storing resources / processing requests and generating reponses
+
+- a socket is a software object that represents an endpoint of a bidirectional communication channel between two programms running on the same machine or on different machines connected by a network. a socker is bound to a specific IP and port , which allows other programs to connect to it. when a socket is created an ip and port are bound to it. 
+
+- select i commonly used for monitoring multiple fds and wait until on of them become ready, 
+	* select takes the fd_set with the fds that we want to monitor
+	* the OS suspends the program and the select() function takes over
+	* the OS examines the fd_sets and monitors the specified fd
+	* the OS waits until one or more fds become ready and updates the sets
+		-- how the OS knows an FD is ready ?
+			. it depends on the underlying I/O model, and the most 3 common approaches are :
+				- polling : the OS periodically checks the status of each registred fd
+				- interrupt-driven : the OS sets up interrupts or callbacks for each registered fd. 
+				- event-driven : this model allows a program to register fds with the OS and wait for events to occur

@@ -122,36 +122,38 @@ void Request::proccess_Request(std::string req_data){
 				//413 Request Entity Too Large
 				_status_code  = 413;
 			}
-			// there's a problem here
-			Request::get_matched_location_for_request_uri();
-			if (_location_index != "")//location found
-			{
-				if (Request::is_location_has_redirection())
+			else {
+				// there's a problem here
+				Request::get_matched_location_for_request_uri();
+				if (_location_index != "")//location found
 				{
-					//location have redirection like :return 301 /home/index.html
-					//301 Moved Permanently
-					
-					_status_code = 301;
-				}
-				else
-				{
-					if (Request::is_method_allowed_in_location()) {
-						check_which_requested_method();
+					if (Request::is_location_has_redirection())
+					{
+						//location have redirection like :return 301 /home/index.html
+						//301 Moved Permanently
+						
+						_status_code = 301;
 					}
 					else
 					{
-						//405 Method Not Allowed
-						_status_code = 405;
+						if (Request::is_method_allowed_in_location()) {
+							check_which_requested_method();
+						}
+						else
+						{
+							//405 Method Not Allowed
+							_status_code = 405;
+						}
 					}
 				}
+				else//if no location match the request uri
+				{
+					//404 Not found
+					_status_code = 404;
+				}
 			}
-			else//if no location match the request uri
-			{
-				//404 Not found
-				_status_code = 404;
-			} 
         }
-	_upload_done=true;
+		_upload_done=true;
     }
 }
 
@@ -441,7 +443,7 @@ void Request::DELETE(){
 
 bool Request::check_forbidden_path()
 {
-	char path[MAX_URI_SIZE];
+	char path[_requested_resource.length() + 1];
 	realpath(_requested_resource.c_str() ,path);
 	std::string real_path = std::string(path);
     if (real_path.length() <_sf->getServers()[_server_index]->getLocations()[_location_index]->getRoot().length())//the path is forbidden stop processing the request and return 403 forbidden 
