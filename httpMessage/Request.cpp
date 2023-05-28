@@ -880,7 +880,7 @@ void Request::clean_cgi_output(std::string tmp_file){
 			//debug
 			std::cerr<<"---------------start of clean_cgi_output------------"<<std::endl;
 			///end debug
-		_cgi_output_filename = "/goinfre/hbouhsis/webserver/" + random_filename()+".cgi"; 
+		_cgi_output_filename = "/goinfre/hbouhsis/webserver/" + random_filename()+".html"; 
 	
 		_cgi_output.open(_cgi_output_filename,std::ios::out|std::ios::app);
 
@@ -892,13 +892,16 @@ void Request::clean_cgi_output(std::string tmp_file){
 		tmp.open(tmp_file,std::ios::in);
 		if (_cgi_output.is_open() && tmp.is_open() )
 		{
-
-	
 		std::string line;
 		std::string	buffer;
 		std::string heads;
 		while(getline(tmp,line))
+		{
+			//debug
+			std::cerr<<"line = ["<<line<<"]"<<std::endl;
+			//end debug
 			buffer+=line.append("\r\n");
+		}
 		heads = buffer.substr(0,buffer.find("\r\n\r\n"));
 		if (buffer.find("\r\n\r\n")!=std::string::npos)
 			buffer = buffer.substr(buffer.find("\r\n\r\n")+4);
@@ -913,7 +916,10 @@ void Request::clean_cgi_output(std::string tmp_file){
 		line.clear();
 			while(heads.length())
 			{
-				_cgi_headers.insert(std::make_pair(heads.substr(0,heads.find(":")),heads.substr(heads.find(":")+1)));
+				line  = heads.substr(0,heads.find("\r\n"));
+				if (line.find(":")!=std::string::npos)
+					_cgi_headers.insert(std::make_pair(line.substr(0,line.find(":")),line.substr(line.find(":")+1)));
+
 				heads = heads.substr(heads.find("\r\n"));
 			}
 			tmp.close();
@@ -978,9 +984,10 @@ void Request::run_cgi(){
     std::cerr<<"------------------------------starting cgi-----------------------------"<<std::endl;
     //end debug
     ////after debugging remove cgi_file to tmp folder
-    _cgi_output_filename = "/goinfre/hbouhsis/webserver/tmp/"+ random_filename()+".html";
+	std::fstream tmp;
+    std::string tmp_file = TMP_PATH+ random_filename();
     //debug
-    std::cerr<<"cgi_filename = ["<<_cgi_output_filename<<"]"<<std::endl;
+    std::cerr<<"tmp_filename = ["<<tmp_file<<"]"<<std::endl;
     //end debug
     set_cgi_env();
     //debug
@@ -1007,7 +1014,7 @@ void Request::run_cgi(){
             dup2(in_fd,0);
             close(in_fd);
         }
-        int out_fd = open(&_cgi_output_filename[0], O_RDWR|O_CREAT|O_APPEND, 0644);
+        int out_fd = open(&tmp_file[0], O_RDWR|O_CREAT|O_APPEND, 0644);
         if (out_fd==-1)
             std::cout<<"run_cgi: failed to open the cgi out file for writing"<<std::endl;
         dup2(out_fd,1);
@@ -1075,7 +1082,7 @@ void Request::run_cgi(){
     //end debug
 
     //remove cgi headers and everything else the response dont need
-    // clean_cgi_output(tmp_file);
+    clean_cgi_output(tmp_file);
     std::cerr<<"------------------------------end of cgi-----------------------------"<<std::endl;
 
 }
