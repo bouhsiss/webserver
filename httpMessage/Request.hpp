@@ -1,6 +1,7 @@
  #pragma once
 #include "HttpMessage.hpp"
 #include <iostream>
+#include <string.h>
 #include <string>
 #include <sstream>
 #include <iterator>
@@ -78,8 +79,8 @@ class Request : public HttpMessage {
 		//function to run cgi
 		void run_cgi();
 		void set_cgi_env();
-		void prepare_env();
     	void clean_cgi_output();
+		void debug_cgi();
 
 
 

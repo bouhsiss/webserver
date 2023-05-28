@@ -84,6 +84,7 @@ void Request::proccess_Request(std::string req_data){
         if (_Headers.find("Host")==_Headers.end())//there is not a host header
         {
             //400 bad request
+			std::cerr<<"host not found----------"<<std::endl;
             _status_code = 400;
         }
         else //choosing the right server to handle the request
@@ -276,7 +277,7 @@ void Request::GET(){
                     {
                         //run cgi on requested file with GET REQUEST_METHOD
                         //return code Depend on cgi 
-                        //Request::run_cgi();
+                        Request::run_cgi();
                     }
                     else //location doensnt have cgi
                     {
@@ -313,7 +314,7 @@ void Request::GET(){
             {
                 //run cgi on requested file with GET REQUEST_METHOD
                 //return code depend on cgi
-                // Request::run_cgi();
+                Request::run_cgi();
             }
             else// location doesnt has cgi
             {
@@ -361,7 +362,7 @@ void Request::POST(){
                         {
                             //run cgi on requested file with POST REQUEST_METHOD
                             //return code depend on cgi
-                            // Request::run_cgi();
+                            Request::run_cgi();
                         }
                         else//location doesnt have cgi
                         {
@@ -388,7 +389,7 @@ void Request::POST(){
                 {
                     //run cgi on requested file with POST REQUEST_METHOD
                     //return code depend on cgi
-                    // Request::run_cgi();
+                    Request::run_cgi();
                 }
                 else //location doesnt have cgi
                 {
@@ -526,6 +527,9 @@ bool Request::get_requested_resource(){
     {
         _resource_type = "file";
         _requested_resource = rsc;
+        //get filename_extension for cgi
+        if (_requested_resource.find(".")!=std::string::npos)
+            _filename_extension= _requested_resource.substr(_requested_resource.find_last_of('.')+1);
         return true;
     }
     else if (S_ISDIR(fileInfo.st_mode))//directory found
@@ -671,7 +675,6 @@ void Request::upload_resource(){
 		std::string tmp0 = _Headers["Content-Type"];
 		Http::trimSpaces(tmp0);
 		std::string ext  =_sf->getReverseMIMEtypes()[tmp0];
-        _upload_filename =random_filename();
         //uploading file
         _upload_filename = _sf->getServers()[_server_index]->getLocations()[_location_index]->getUploadPath() + random_filename()+"."+ext;
         _Body.open(_filename,std::ios::in);
@@ -691,9 +694,6 @@ void Request::upload_resource(){
 
 
 void Request::handle_multipart_form_data(){
-    //debug     
-    // std::cerr<<"Request::handling multipart inside the function"<<std::endl;
-    //end debug
     //create tmp fstream with tmp filename
     std::string tmp_filename = TMP_PATH+random_filename()+".mulipart";
     std::fstream tmp;
@@ -720,9 +720,6 @@ void Request::handle_multipart_form_data(){
                     //extract filename
                     _upload_filename = line.substr(line.find("filename=")+10);
                     _upload_filename = _sf->getServers()[_server_index]->getLocations()[_location_index]->getUploadPath()+_upload_filename.substr(0,_upload_filename.find_last_of("\""));
-                    //debug
-                    std::cerr<<"upload_filename = ["<<_upload_filename<<"]"<<std::endl;
-                    //end debug
             }
             else if (line.find("Content-Type")!= std::string::npos)//skip header
                 getline(_Body,line);
@@ -738,9 +735,6 @@ void Request::handle_multipart_form_data(){
     _upload_file.open(_upload_filename,std::ios::out| std::ios::app);
     if (tmp.is_open() && _upload_file.is_open())
     {
-        //debug
-        // std::cerr<<"----------------uploadfile is open for appending-----------"<<std::endl;
-        //end debug
         std::string line;
         while(getline(tmp,line))
             _upload_file<<line.append("\n");
@@ -753,115 +747,125 @@ void Request::handle_multipart_form_data(){
 
 
 
-//this the code below is for cgi
-void Request::prepare_env(){
-
-    //prepare the env vars that you dont have already
-    //PATH_INFO
-    _path_info = _RequestURI.substr(0,_RequestURI.find("?"));
-    if (!_path_info.empty())
-    {
-        //PATH_TRANSLATED
-        //if PATH_INFO is not set you should set the var too
-    }
-    //SCRIPT_NAME
-    _script_name = _RequestURI.substr(0,_RequestURI.find("?"));
-    //QUERY_STRING
-    if (_RequestURI.find("?")!=std::string::npos)
-        _query_string = _RequestURI.substr(_RequestURI.find("?")+1);
-    //REMOTE_HOST
-    //REMOTE_ADDR
-    //AUTH_TYPE
-    //REMOTE_USER
-    //REMOTE_IDENT
-}
-
+//CGI
 //use putenv() to add env vars
 void Request::set_cgi_env()
 {
     std::string head;
-    //SERVER_SOFTWARE???
+    _script_name=_RequestURI.substr(_RequestURI.find_last_of('/')+1,_RequestURI.find("?"));
+    _path_info = _RequestURI.substr(0,_RequestURI.find_last_of('/'));
+    _path_translated = _script_name;
+    //SERVER_SOFTWARE
+    head = "SERVER_SOFTWARE=webserv";
+    putenv(strdup(head.c_str()));
+    head.clear();
     //SERVER_NAME
     head = "SERVER_NAME="+ _sf->getServers()[_server_index]->getServerName();
-    putenv(&head[0]);
+    putenv(strdup(head.c_str()));
     head.clear();
-    //GATEWAY-INTERFACE???
-   
+    //GATEWAY-INTERFACE
+    head = "GATEWAY_INTERFACE=CGI/1.1";
+    putenv(strdup(head.c_str()));
+    head.clear();
     //SERVER_PROTOCOL
     head = "SERVER_PROTOCOL="+_http_v;
-    putenv(&head[0]);
+    putenv(strdup(head.c_str()));
     head.clear();
     //SERVER_PORT
     head ="SERVER_PORT="+ _req_port;
-    putenv(&head[0]);
+    putenv(strdup(head.c_str()));
     head.clear();
     //REQUEST_METHOD
     head = "REQUEST_METHOD="+_method;
-    putenv(&head[0]);
+    putenv(strdup(head.c_str()));
     head.clear();
     //PATH_INFO
     head = "PATH_INFO="+_path_info;
-    putenv(&head[0]);
+    putenv(strdup(head.c_str()));
     head.clear();
     //PATH_TRANSLATED
     head = "PATH_TRANSLATED="+_path_translated;
-    putenv(&head[0]);
+    putenv(strdup(head.c_str()));
     head.clear();    
     //SCRIPT_NAME
     head = "SCRIPT_NAME="+_script_name;
-    putenv(&head[0]);
-    head.clear();    
+    putenv(strdup(head.c_str()));
+    head.clear();  
+    //SCRIPT_FILENAME
+    head = "SCRIPT_FILENAME="+ _requested_resource;
+    putenv(strdup(head.c_str()));
+    head.clear();  
+    //
+    //DOCUMENT_URI
+    head = "DOCUMENT_URI="+ _RequestURI;
+    putenv(strdup(head.c_str()));
+    head.clear();  
+
+    //PATH
+    head = "PATH="+ std::string(std::getenv("PATH"));  
+    putenv(strdup(head.c_str()));
+    head.clear(); 
     //QUERY_STRING
+    if (_RequestURI.find("?")!=std::string::npos)
+        _query_string = _RequestURI.substr(_RequestURI.find("?")+1);
+    else 
+        _query_string = "";
     head = "QUERY_STRING="+_query_string;
-    putenv(&head[0]);
-    head.clear();    
-    //REMOTE_HOST
-    head = "REMOTE_HOST="+_remote_host;
-    putenv(&head[0]);
+    putenv(strdup(head.c_str()));
     head.clear();    
     //REMOTE_ADDR
-    head = "REMOTE_ADDR="+_remote_addr;
-    putenv(&head[0]);
-    head.clear();    
-    //AUTH_TYPE
-    head = "AUTH_TYPE="+_auth_type;
-    putenv(&head[0]);
-    head.clear();    
-    //REMOTE_USER
-    head = "REMOTE_USER="+_remote_user;
-    putenv(&head[0]);
-    head.clear();    
-    //REMOTE_IDENT
-    head = "REMOTE_IDENT="+_remote_ident;
-    putenv(&head[0]);
-    head.clear();    
+    head = "REMOTE_ADDR="+_req_host;
+    putenv(strdup(head.c_str()));
+    head.clear();  
     //CONTENT-TYPE
     if (_Headers.find("Content-Type")!= _Headers.end())
-        head = "CONTENT_TYPE="+_Headers["Content-type"];
+    {
+        std::string tmp = _Headers["Content-Type"];
+        Http::trimSpaces(tmp);
+        head = "CONTENT_TYPE="+tmp;
+        std::cerr<<"content_type = ["<<head<<"]"<<std::endl;
+    }
     else 
         head = "CONTENT_TYPE=";
-    putenv(&head[0]);
+    putenv(strdup(head.c_str()));
     head.clear();
     //CONTENT-LENGTH
     if (_Headers.find("Content-Length")!= _Headers.end())
-        head = "CONTENT_LENGTH="+_Headers["Content-Length"];
+    {
+        std::string tmp = _Headers["Content-Length"];
+        Http::trimSpaces(tmp);
+        head = "CONTENT_LENGTH="+tmp;
+    std::cerr<<"content_length = ["<<head<<"]"<<std::endl;
+    }
     else 
         head = "CONTENT_LENGTH=";
-    putenv(&head[0]);
+    putenv(strdup(head.c_str()));
+
+    head.clear();
+    head = "REDIRECT_STATUS=200";
+    putenv(strdup(head.c_str()));
     head.clear();    
     // HTTP_ + "to_upper<header-name>" (replace any '-' with '_')
+    //debug
+    std::cerr<<"-------------------start of http headers---------------"<<std::endl;
+    //end debug
     for (std::map<std::string,std::string>::iterator it = _Headers.begin(); it != _Headers.end();it++)
     {
         std::string head_name= it->first;
+        std::string head_value = it->second;
+        Http::trimSpaces(head_value);
         for (size_t i=0;i<head_name.length();i++)
         {
             if (head_name[i] == '-')
-                head_name = '_';
+                head_name[i] = '_';
+            head_name[i] = toupper(head_name[i]);
         }
-        std::transform(head_name.begin(), head_name.end(), head_name.begin(), ::toupper);//transform every char in head_name to upper case
-        head = "HTTP_" + head_name + "=" + it->second;
+        head = "HTTP_" + head_name + "=" + head_value;
+        //debug
+        std::cerr<<"http result head = ["<<strdup(head.c_str())<<"]"<<std::endl;
+        //end debug
         //add env var
-        putenv(&head[0]);
+        putenv(strdup(head.c_str()));
         head.clear();
     }
 }
@@ -870,64 +874,148 @@ void Request::clean_cgi_output(){
         //clean cgi output extract just the body and put back to cgi_out_file
 }
 
+//
+
+//print
+void debug_print_env(char** environ)
+{
+    //
+    std::cerr<<"-----------------------------env passed to cgi----------"<<std::endl;
+    int i=0;
+    while(environ[i])
+    {
+        std::cerr<<"env = ["<<environ[i]<<"]"<<std::endl;
+        i++;
+    }
+    std::cerr<<"----------------------------------------------------------"<<std::endl;
+
+}
+
+void Request::debug_cgi()
+{
+    std::cerr<<"-----------------------------debugging cgii start---------------------"<<std::endl;
+    std::cerr<<"server_name = ["<<_sf->getServers()[_server_index]->getServerName()<<"]"<<std::endl;
+    std::cerr<<"server_protocol = ["<<_http_v<<"]"<<std::endl;
+    std::cerr<<"server_port = ["<<_req_port<<"]"<<std::endl;
+    std::cerr<<"server_method = ["<<_method<<"]"<<std::endl;
+    std::cerr<<"path_info = ["<<_path_info<<"]"<<std::endl;
+    std::cerr<<"path_translated = ["<<_path_translated<<"]"<<std::endl;
+    std::cerr<<"script_name = ["<<_script_name<<"]"<<std::endl;
+    std::cerr<<"query_string = ["<<_query_string<<"]"<<std::endl;
+    std::cerr<<"remote_host = ["<<_remote_host<<"]"<<std::endl;
+    std::cerr<<"remote_addr = ["<<_remote_addr<<"]"<<std::endl;
+    std::cerr<<"auth_type = ["<<_auth_type<<"]"<<std::endl;
+    std::cerr<<"remote_user = ["<<_remote_user<<"]"<<std::endl;
+    
+    std::cerr<<"remote_ident = ["<<_remote_ident<<"]"<<std::endl;
+    std::cerr<<"content_type = ["<<_Headers["Content-Type"]<<"]"<<std::endl;
+    std::cerr<<"-----------------------------------------------------------------------"<<std::endl;
+
+}
+
 
 extern char** environ;//user env
 void Request::run_cgi(){
-    _cgi_output_filename = random_filename();
-    prepare_env();
+    //debug
+    std::cerr<<"------------------------------starting cgi-----------------------------"<<std::endl;
+    //end debug
+    ////after debugging remove cgi_file to tmp folder
+    _cgi_output_filename = "/Users/hassan/Desktop/request2.0/" + random_filename()+"._cgi_output_filename";
+    //debug
+    std::cerr<<"cgi_filename = ["<<_cgi_output_filename<<"]"<<std::endl;
+    //end debug
     set_cgi_env();
-    //what check should i perform on cgi scritp ????????? ex:for infinite loop.....
-    int in_fd = open(&_filename[0],O_RDONLY);
-    if (in_fd==-1)
-        std::cout<<"run_cgi:failed to open the request body file for reading"<<std::endl;
-    dup2(0,in_fd);
-    close(0);
-    int out_fd = open(&_cgi_output_filename[0],O_WRONLY);
-    if (out_fd==-1)
-        std::cout<<"run_cgi:failed to open the cgi out file for writing"<<std::endl;
-    dup2(1,out_fd);
-    close(1);
+    //debug
+    debug_cgi();
+
+    //end debug
     //fork
     pid_t child_pid = fork();
     if (child_pid == -1)
         std::cout<<"run_cgi: fork function failed"<<std::endl;
-    else if (child_pid ==0)
+    //debug
+    std::cerr<<"debug_cgi : fork"<<std::endl;
+    //end debug
+
+    if (child_pid ==0)
     {
+        //debug
+        debug_print_env(environ);
+        //end debug
+        if (_method=="POST"){
+            int in_fd = open(&_filename[0],O_RDONLY);
+            if (in_fd==-1)
+                std::cout<<"run_cgi: failed to open the request body file for reading"<<std::endl;
+            dup2(in_fd,0);
+            close(in_fd);
+        }
+        int out_fd = open(&_cgi_output_filename[0], O_RDWR|O_CREAT|O_APPEND);
+        if (out_fd==-1)
+            std::cout<<"run_cgi: failed to open the cgi out file for writing"<<std::endl;
+        dup2(out_fd,1);
+        close(out_fd);
+                //debug
+                std::cerr<<"debug_cgi : child proccess"<<std::endl;
+                //end debug
+
             //cgi arguments (script name +file name)
             char **args = new char*[3];
-            args[0] = &_script_name[0];
-            args[1] = &_filename[0];
-            args[3] =NULL;
-            //add signals to kill the cgi proccess if it takes too long for cgi to finish
-            execve(&(_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath()[_filename_extension][0]),args,environ);
+            //debug
+            std::cerr<<"file_name extension = ["<<_filename_extension<<"]"<<std::endl;
+            //end ddebug
+
+            std::string cgi_bin = _sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath()[_filename_extension];
+            //debug
+            std::cerr<<"cgi_bin == ["<<cgi_bin<<"]"<<std::endl;
+            //end debug
+            args[0] = strdup(cgi_bin.c_str());
+                //debug
+                std::cerr<<"debug_cgi : arg[0] == ["<<args[0]<<"]"<<std::endl;
+                //end debug
+            args[1] = strdup(_requested_resource.c_str());
+                //debug
+                std::cerr<<"debug_cgi : arg[1] == ["<<args[1]<<"]"<<std::endl;
+                //end debug
+            args[2] =NULL;
+            execve(args[0],args,environ);
+            //free the alocated memory
+            //debug
+            std::cerr<<"execve : failed to execute cgi"<<std::endl;
+            perror("error == ");
+            //end debug
+            //cgi failed
     }
     else
     {
         //wait for cgi to finish
-        //check if any flags are needed
-        waitpid(child_pid,NULL,0);
-        close(in_fd);
-        close(out_fd);
+        waitpid(child_pid,NULL,WNOHANG);
+        _status_code = 200;
+        //debug
+        std::cerr<<"debug_cgi : parent proccess after waitpid"<<std::endl;
+        //end debug
+
     }
     //AFTER CGI EXECUTION
 
     //print the cgi output and debugg
     //debug
-    _cgi_output.open(_cgi_output_filename,std::ios::in);
-    if (_cgi_output.is_open())
-    {
-        std::cout<<"---------------------------| this is cgi output |------------------------------------"<<std::endl;
-        std::string line;
-        while(getline(_cgi_output,line)){
-            std::cout<<line<<std::endl;
-        }
-        std::cout<<"---------------------------| end of cgi output |------------------------------------"<<std::endl;
-        _cgi_output.close();
-    }
+    // _cgi_output.open(_cgi_output_filename,std::ios::in);
+    // if (_cgi_output.is_open())
+    // {
+    //     std::cout<<"---------------------------| this is cgi output |------------------------------------"<<std::endl;
+    //     std::string line;
+    //     while(getline(_cgi_output,line)){
+    //         std::cout<<line<<std::endl;
+    //     }
+    //     std::cout<<"---------------------------| end of cgi output |------------------------------------"<<std::endl;
+    //     _cgi_output.close();
+    // }
     //end debug
 
     //remove cgi headers and everything else the response dont need
-    clean_cgi_output();
+    // clean_cgi_output();
+    std::cerr<<"------------------------------end of cgi-----------------------------"<<std::endl;
+
 }
 
 
