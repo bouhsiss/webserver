@@ -82,7 +82,7 @@ class Request : public HttpMessage {
 		//function to run cgi
 		void run_cgi();
 		void set_cgi_env();
-    	void clean_cgi_output();
+    	void clean_cgi_output(std::string tmp_file);
 		void debug_cgi();
 
 

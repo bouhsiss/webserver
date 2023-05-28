@@ -29,6 +29,7 @@ bool Response::isResponseSent(){return(_isResponseSent);}
 void Response::rebuildResponseErr(int statusCode) {
 	_request.setStatusCode(statusCode);
 	_headersAreSent = false;
+
 	throw(std::exception());
 }
 
@@ -142,10 +143,12 @@ void Response::setHeaders(std::string contentLength) {
 	setStartLine();
 	_headers.insert(std::make_pair("Content-Type: ", setMIMEtype(_filename)));
 	_headers.insert(std::make_pair("Content-Length: ", contentLength));
-	/*
-		if(_cgi_flag == true)
-			insert cgi headers
-	*/
+	if(_request.getCgiFlag() == true) {
+		std::map<std::string, std::string> _cgiHeaders = _request.getCgiHeaders();
+		std::map<std::string, std::string>::iterator It;
+		for(It = _cgiHeaders.begin(); It != _cgiHeaders.end(); It++)
+			_headers.insert(std::make_pair(It->first, It->second));
+	}
 	if(_statusCode == 301)
 	{
 		if(_request.getRequestURI()[_request.getRequestURI().size() -1] != '/')
@@ -180,14 +183,13 @@ void Response::responseSuccess() {
 		if(_request.getresourceType() == "file")
 		{
 			if(_headersAreSent == false) {
-				setHeaders(setFileContentLength(_request.getRequestedresource()));
+				if(_request.getCgiFlag() == true)
+					setHeaders(setFileContentLength(_request.getCgiOutputFilename()));
+				else
+					setHeaders(setFileContentLength(_request.getRequestedresource()));
 				formatHeadersAndStartLine();
 			}
 			else
-				/*
-					if cgi_flag == true
-					send cgi response body
-				*/
 				sendResponseFile();
 		}
 		else {

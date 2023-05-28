@@ -14,6 +14,7 @@ Request::Request(std::string request_host, std::string request_port):_sf(ServerF
 	_filename_extension = "";
 	_upload_done=false;
 	_b_complete = false;
+	_cgi_flag=false;
 }
 
 Request::Request(const Request& other) {
@@ -189,6 +190,9 @@ void Request::proccess_Request(std::string req_data){
 				else//if no location match the request uri
 				{
 					//404 Not found
+					//debug
+					std::cerr<<"location not found"<<std::endl;
+					//end debug
 					_status_code = 404;
 				}
 			}
@@ -327,13 +331,10 @@ void Request::GET(){
     }
     else //requested resource not found in root
     {
-        if (_status_code == 403)
+        if (_status_code != 403)
         {
-            //403 forbidden
-        }
-        else
-        {
-            //404 not found
+                 //404 not found
+			std::cerr<<"get() not found "<<std::endl;
             _status_code = 404;
         }
     }
@@ -400,15 +401,11 @@ void Request::POST(){
         }
         else//not found
         {
-            if (_status_code == 403)
-            {
-                //403 forbidden
-            }
-            else
-            {
-                //404 not found
-                _status_code = 404;
-            }
+			if (_status_code != 403)
+			{
+                 //404 not found
+            _status_code = 404;
+			}
         }
     }
 }
@@ -470,13 +467,9 @@ void Request::DELETE(){
     }
     else //not found
     {
-        if (_status_code == 403)
+        if (_status_code != 403)
         {
-            //403 forbidden
-        }
-        else
-        {
-            //404 not found
+                 //404 not found
             _status_code = 404;
         }
     }
@@ -536,6 +529,8 @@ bool Request::get_requested_resource(){
     {
         _resource_type = "directory";
         _requested_resource = rsc;
+		_filename_extension = "not a file";
+		//   _filename_extension= _requested_resource.substr(_requested_resource.find_last_of('.')+1);
         return true;
     }
     _resource_type = "";
@@ -598,11 +593,15 @@ std::string Request::get_auto_index(){
     return _sf->getServers()[_server_index]->getLocations()[_location_index]->getAutoIndex();
 }
 bool Request::if_location_has_cgi(){
-    if (_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath().empty()
-    || (_sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath().find(_filename_extension) == _sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath().end()))
-        return false;
-    return true;
+	std::map<std::string, std::string> map = _sf->getServers()[_server_index]->getLocations()[_location_index]->getCgiPath();
+	if(!map.empty() && (map.find(_filename_extension) != map.end())) {
+		_cgi_flag = true;
+		return true;
+	}
+	return false;
 }
+
+
 bool Request::if_location_support_upload(){
      if (_sf->getServers()[_server_index]->getLocations()[_location_index]->getUploadPath() == "" )
         return false;
@@ -870,8 +869,63 @@ void Request::set_cgi_env()
     }
 }
 
-void Request::clean_cgi_output(){
+void Request::clean_cgi_output(std::string tmp_file){
+
         //clean cgi output extract just the body and put back to cgi_out_file
+		//move cgi body to output file	
+			//debug
+			std::cerr<<"---------------start of clean_cgi_output------------"<<std::endl;
+			///end debug
+		_cgi_output_filename = "/goinfre/hbouhsis/webserver/" + random_filename()+".cgi"; 
+	
+		_cgi_output.open(_cgi_output_filename,std::ios::out|std::ios::app);
+
+			//debug
+			std::cerr<<"cgi_out file =["<<_cgi_output_filename<<"]"<<std::endl;
+			std::cerr<<"tmp_file =["<<tmp_file<<"]"<<std::endl;
+			//end debug
+		std::fstream tmp;
+		tmp.open(tmp_file,std::ios::in);
+		if (_cgi_output.is_open() && tmp.is_open() )
+		{
+
+	
+		std::string line;
+		std::string	buffer;
+		std::string heads;
+		while(getline(tmp,line))
+			buffer+=line.append("\r\n");
+		heads = buffer.substr(0,buffer.find("\r\n\r\n"));
+		if (buffer.find("\r\n\r\n")!=std::string::npos)
+			buffer = buffer.substr(buffer.find("\r\n\r\n")+4);
+		//set body
+		
+		_cgi_output<<buffer;
+		_cgi_output.close();
+		std::cerr<<"--------------cgi body----------"<<std::endl;
+		std::cerr<<"body = ["<<buffer<<"]"<<std::endl;
+		std::cerr<<"------------------------------------"<<std::endl;
+		//set headers in map
+		line.clear();
+			while(heads.length())
+			{
+				_cgi_headers.insert(std::make_pair(heads.substr(0,heads.find(":")),heads.substr(heads.find(":")+1)));
+				heads = heads.substr(heads.find("\r\n"));
+			}
+			tmp.close();
+			remove(tmp_file.c_str());
+		}
+		else 
+			std::cerr<<"clean cgi output: failed to open either cgi_output or tmp"<<std::endl;
+		//debug
+		std::cerr<<"--------------cgi headers----------"<<std::endl;
+		for (std::map<std::string, std::string>::iterator it = _cgi_headers.begin();it!=_cgi_headers.end();it++)
+		{
+			std::cerr<<"name = ["<<it->first<<"]"<<std::endl;
+			std::cerr<<"value = ["<<it->second<<"]"<<std::endl;
+		}
+		std::cerr<<"------------------------------------"<<std::endl;
+		//end debug
 }
 
 //
@@ -920,7 +974,7 @@ void Request::run_cgi(){
     std::cerr<<"------------------------------starting cgi-----------------------------"<<std::endl;
     //end debug
     ////after debugging remove cgi_file to tmp folder
-    _cgi_output_filename = "/Users/hassan/Desktop/request2.0/" + random_filename()+"._cgi_output_filename";
+    _cgi_output_filename = "/goinfre/hbouhsis/webserver/"+ random_filename()+"...cgi";
     //debug
     std::cerr<<"cgi_filename = ["<<_cgi_output_filename<<"]"<<std::endl;
     //end debug
@@ -989,10 +1043,14 @@ void Request::run_cgi(){
     {
         //wait for cgi to finish
         waitpid(child_pid,NULL,WNOHANG);
-        _status_code = 200;
+		close(0);
+		close(1);
         //debug
         std::cerr<<"debug_cgi : parent proccess after waitpid"<<std::endl;
         //end debug
+		_status_code=200;
+		//debug
+		//end debug
 
     }
     //AFTER CGI EXECUTION
@@ -1013,7 +1071,7 @@ void Request::run_cgi(){
     //end debug
 
     //remove cgi headers and everything else the response dont need
-    // clean_cgi_output();
+    // clean_cgi_output(tmp_file);
     std::cerr<<"------------------------------end of cgi-----------------------------"<<std::endl;
 
 }
