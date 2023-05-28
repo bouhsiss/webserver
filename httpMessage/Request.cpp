@@ -663,6 +663,10 @@ bool Request::delete_all_folder_content(){
 }
 
 bool Request::request_is_ready(){
+	/* 
+	if( cgi exists)
+		return 3 flags
+	*/
     return _b_complete && _upload_done;
 }
 
@@ -974,7 +978,7 @@ void Request::run_cgi(){
     std::cerr<<"------------------------------starting cgi-----------------------------"<<std::endl;
     //end debug
     ////after debugging remove cgi_file to tmp folder
-    _cgi_output_filename = "/goinfre/hbouhsis/webserver/"+ random_filename()+"...cgi";
+    _cgi_output_filename = "/goinfre/hbouhsis/webserver/tmp/"+ random_filename()+".html";
     //debug
     std::cerr<<"cgi_filename = ["<<_cgi_output_filename<<"]"<<std::endl;
     //end debug
@@ -997,13 +1001,13 @@ void Request::run_cgi(){
         debug_print_env(environ);
         //end debug
         if (_method=="POST"){
-            int in_fd = open(&_filename[0],O_RDONLY);
+            int in_fd = open(&_filename[0], O_RDWR);
             if (in_fd==-1)
                 std::cout<<"run_cgi: failed to open the request body file for reading"<<std::endl;
             dup2(in_fd,0);
             close(in_fd);
         }
-        int out_fd = open(&_cgi_output_filename[0], O_RDWR|O_CREAT|O_APPEND);
+        int out_fd = open(&_cgi_output_filename[0], O_RDWR|O_CREAT|O_APPEND, 0644);
         if (out_fd==-1)
             std::cout<<"run_cgi: failed to open the cgi out file for writing"<<std::endl;
         dup2(out_fd,1);
@@ -1042,9 +1046,9 @@ void Request::run_cgi(){
     else
     {
         //wait for cgi to finish
-        waitpid(child_pid,NULL,WNOHANG);
-		close(0);
-		close(1);
+        waitpid(child_pid,NULL,0);
+		// close(0);
+		// close(1);
         //debug
         std::cerr<<"debug_cgi : parent proccess after waitpid"<<std::endl;
         //end debug
@@ -1109,7 +1113,7 @@ void Request::print() {
 	std::cout << "req port : " << _req_port << std::endl;
 	std::cout << "resource type : " << _resource_type << std::endl;
 	std::cout << "requested resource : " << _requested_resource << std::endl;
-	std::cout << "====== for POST METHOD ======" << std::endl; 
-	std::cout << "upload filename : " << _upload_filename << std::endl;
-	std::cout << "filename extension : " << _filename_extension << RESET << std::endl;
+	std::cout << "====== for cgi ======" << std::endl; 
+	std::cout << "cgi  output filename : " << _cgi_output_filename << std::endl;
+	std::cout << "cgi _flag : " << _cgi_flag << RESET <<std::endl;
 }

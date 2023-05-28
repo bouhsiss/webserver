@@ -9,6 +9,7 @@ Response::Response(Request &request, int writeSock): _request(request), _writeSo
 	_headersAreSent = false;
 	_sendFailed = false;
 	_body = "";
+	FileIsOpen = false;
 }
 
 void Response::initResponse(){ 
@@ -29,7 +30,6 @@ bool Response::isResponseSent(){return(_isResponseSent);}
 void Response::rebuildResponseErr(int statusCode) {
 	_request.setStatusCode(statusCode);
 	_headersAreSent = false;
-
 	throw(std::exception());
 }
 
@@ -70,15 +70,19 @@ void Response::generateErrorPage() {
 
 void Response::sendResponseFile() {
 	size_t chunkSize = RESPONSE_BUFFER_SIZE;
-	if((_contentLength - _totalBytesSent) < chunkSize)
+	if((_contentLength - _totalBytesSent) < (long long)chunkSize)
 		chunkSize = _contentLength - _totalBytesSent;
 	std::vector<char> buffer(chunkSize);
-	if(!_file.is_open())
+	if(FileIsOpen == false){
+
 		_file.open(_filename, std::ios::in);
-	if(!_file)
+		FileIsOpen = true;
+	}
+	if(!_file.is_open())
 		rebuildResponseErr(403);
+	std::cout << "_filename : " << _filename << std::endl;
 	_file.read(buffer.data(), chunkSize);
-	size_t bytesSent = send(_writeSocket, buffer.data(), chunkSize, 0);
+	int bytesSent = send(_writeSocket, buffer.data(), chunkSize, 0);
 	if(bytesSent < 0) {
 		_sendFailed = true;
 		return;
@@ -118,10 +122,9 @@ std::string Response::setMIMEtype(std::string filename) {
 
 std::string Response::setFileContentLength(std::string filename) {
 	_filename = filename;
-	_file.open(_filename);
-
-	if(!_file)
-		rebuildResponseErr(404);
+	_file.open(_filename, std::ios::in);
+	if(!_file.is_open())
+		rebuildResponseErr(900);
 	_file.seekg(0, std::ios::end);
 	std::streampos fileSize = _file.tellg();
 	_file.seekg(0, std::ios::beg);
@@ -219,12 +222,12 @@ void Response::responseSuccess() {
 }
 
 void Response::sendResponseBody() {
-	size_t bytesSent = send(_writeSocket, _body.c_str(), _contentLength, 0);
+	int  bytesSent = send(_writeSocket, _body.c_str(), _contentLength, 0);
 	if(bytesSent < 0) {
 		_sendFailed = true;
 		return;
 	}
-	if(bytesSent == _contentLength)
+	if(bytesSent == (int)_contentLength)
 	{
 		_isResponseSent = true;
 	}

@@ -52,7 +52,7 @@ class Response : public HttpMessage {
 		std::map<std::string, std::string>	_headers;
 		std::map<int, std::string> 			_statusCodeMap;
 		std::string 						_headerLocationValue;
-		size_t 								_contentLength;
+		long long							_contentLength;
 		bool 								_headersAreSent;
 		int 								_statusCode;
 
@@ -60,10 +60,11 @@ class Response : public HttpMessage {
 		bool 								_sendFailed;
 		// the body related attributes
 		std::map<int, std::string> 			_errorPages;
-		std::ifstream 						_file;
+		std::fstream 						_file;
 		std::string 						_body;
 		std::string							_filename;
-		size_t 								_totalBytesSent;
+		long long 							_totalBytesSent;
+		bool 								FileIsOpen;
 };
 
 
