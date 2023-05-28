@@ -42,6 +42,9 @@ class Request : public HttpMessage {
 		std::string getUploadFilename()const;
 		std::string getUploadFile()const;
 		std::string getFilenameExtension()const;
+		std::string getCgiOutputFilename()const;
+		std::map<std::string, std::string> getCgiHeaders()const;
+		bool getCgiFlag()const;
 		void setStatusCode(int statusCode);
 		void print();
         bool is_location_has_redirection();
@@ -114,4 +117,6 @@ class Request : public HttpMessage {
 		//for cgi out file /check them for get/post
 		std::fstream	_cgi_output;
 		std::string		_cgi_output_filename;
+		std::map<std::string, std::string> _cgi_headers;
+		bool			_cgi_flag;
 };

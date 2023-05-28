@@ -1030,7 +1030,10 @@ std::string	Request::getRequestedresource()const{return _requested_resource;}
 std::string Request::getUploadFilename()const{return _upload_filename;}
 std::string Request::getUploadFile()const{return _upload_filename;}
 std::string Request::getFilenameExtension()const{return _filename_extension;}
-void		Request::setStatusCode(int statusCode ) {_status_code = statusCode;} 
+void		Request::setStatusCode(int statusCode ) {_status_code = statusCode;}
+std::string Request::getCgiOutputFilename()const{return(_cgi_output_filename);}
+std::map<std::string, std::string> Request::getCgiHeaders()const{return(_cgi_headers);}
+bool 		Request::getCgiFlag()const{return(_cgi_flag);}
 
 
 // print all request attributes

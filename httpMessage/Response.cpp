@@ -142,6 +142,10 @@ void Response::setHeaders(std::string contentLength) {
 	setStartLine();
 	_headers.insert(std::make_pair("Content-Type: ", setMIMEtype(_filename)));
 	_headers.insert(std::make_pair("Content-Length: ", contentLength));
+	/*
+		if(_cgi_flag == true)
+			insert cgi headers
+	*/
 	if(_statusCode == 301)
 	{
 		if(_request.getRequestURI()[_request.getRequestURI().size() -1] != '/')
@@ -181,7 +185,7 @@ void Response::responseSuccess() {
 			}
 			else
 				/*
-					if cgi output_filename not empty
+					if cgi_flag == true
 					send cgi response body
 				*/
 				sendResponseFile();
