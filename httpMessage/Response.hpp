@@ -4,6 +4,9 @@
 #include "Request.hpp"
 
 #define RESPONSE_BUFFER_SIZE 1024
+#define DIRECTORY_LISTING_FILENAME "/tmp/directory_listing.html"
+#define POST_201_BODY "created succefully !!!"
+#define DELETE_204_BODY "No content"
 
 class Request;
 
@@ -12,27 +15,55 @@ class Response : public HttpMessage {
 		Response(Request &Request, int clientSock);
 		Request& getRequest();
 		void sendResponse();
+		bool sendFailed();
+		bool isResponseSent();
 	private :
-		void responseClass200();
-		void responseClass300();
-		void responseClass400();
-		void responseClass500();
-		void setstartLine();
-		void setHeaders();
-		void initializeStatusCodeMap();
-		void sendResponseBody(std::string filename);
-		void generateDirectoryListing(std::string filename);
+		void 		initResponse();
+		void 		initializeStatusCodeMap();
+		void		rebuildResponseErr(int statusCode);
 
-		Request &_request;
-		int _writeSocket;
-		int _statusCode;
-		// std::map<int, std::string> _statusCodeMap;
-		// std::streampos _totalBytesSent;
-		// bool _isResponseSent;
-		// size_t _contentLength;
-		// std::ifstream _file;
-		// int bytesSent;
-		// int bodySize;
+		std::string	setMIMEtype(std::string filename);
+		std::string	setFileContentLength(std::string filename);
+		void 		setStartLine();
+		void 		setHeaders(std::string contentLength);
+		
+		void 		formatHeadersAndStartLine();
+		std::string formatAllowedMethodsVector();
+		
+		void		responseSuccess();
+		void 		responseError();
+		// send reponse body (file/string body)
+		void 		sendResponseFile();
+		void 		sendResponseBody();
+		void 		sendDefaultErrorPage();
+		// html files generators
+		void 		generateDirectoryListing(std::string dirPath);
+		void 		generateErrorPage();
+
+		
+		Request&							_request;
+		
+		bool 								_isResponseSent;
+		int 								_writeSocket;
+		
+		Server* 							_server;
+		
+		// values needed for the headers
+		std::map<std::string, std::string>	_headers;
+		std::map<int, std::string> 			_statusCodeMap;
+		std::string 						_headerLocationValue;
+		size_t 								_contentLength;
+		bool 								_headersAreSent;
+		int 								_statusCode;
+
+		// errors handling related attributes
+		bool 								_sendFailed;
+		// the body related attributes
+		std::map<int, std::string> 			_errorPages;
+		std::ifstream 						_file;
+		std::string 						_body;
+		std::string							_filename;
+		size_t 								_totalBytesSent;
 };
 
 
@@ -53,3 +84,6 @@ Response structure :
 		-- content-length : indicates the length the size of the entity-body
 		-- content type : indicates the media type of the entity-body sent to the recipient (in the case of a get method, i should check the file extension and then search in the mime types for the mim type of that extension)
 */
+
+
+// to be added in the request parsing : not only you check if the request has "/" which will implicate that it's directory. it should also be checked of it's a directory or a file 

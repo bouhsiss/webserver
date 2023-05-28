@@ -21,15 +21,15 @@ class Location {
 		Location();
 		~Location(){}
 
-		std::vector<std::string> getAllowedMethods();
-		std::map<std::string, std::string> getCgiPath() const;
-		std::string getPath() const;
-		std::string getRedirect() const;
-		std::string getRoot() const;
-		std::string getAutoIndex() const;
-		std::string getIndex();
-		std::string getUploadPath() const;
-		std::string getCgiExtension() const;
+		std::vector<std::string>			getAllowedMethods();
+		std::map<std::string, std::string>	getCgiPath() const;
+		std::string 						getPath() const;
+		std::string 						getRedirect() const;
+		std::string 						getRoot() const;
+		std::string 						getAutoIndex() const;
+		std::string 						getIndex();
+		std::string 						getUploadPath() const;
+		std::string 						getCgiExtension() const;
 
 		void setPath(std::vector<std::string> const &tokens);
 		void setAllowedMethods(std::vector<std::string> const &tokens);
@@ -38,20 +38,18 @@ class Location {
 		void setAutoIndex(std::vector<std::string> const &tokens);
 		void setIndex(std::vector<std::string> const &tokens);
 		void setUploadPath(std::vector<std::string> const &tokens);
-		void setCgiExtension(std::vector<std::string> const &tokens);
 		void setCgiPath(std::vector<std::string> const &tokens);
 
 		void isLocationComplete(Server &parentServer);
     private :
-        std::string _path;
-        std::vector<std::string> _allowed_methods;
-        std::string _redirect;
-        std::string _root;
-        std::string _autoindex;
-        std::string _index;
-        std::string _upload_path;
-        std::string _cgi_extension;
-		std::map<std::string, std::string> _cgi_path;
+		std::map<std::string, std::string>	_cgi_path;
+        std::vector<std::string>			_allowed_methods;
+        std::string 						_path;
+        std::string 						_redirect;
+        std::string 						_root;
+        std::string 						_autoindex;
+        std::string 						_index;
+        std::string 						_upload_path;
 
 		friend class Configuration;
 };

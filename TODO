@@ -1,24 +1,16 @@
---->dont forget to pass the tester given with the subject
---check rfc for mandatory headers(general/request/response)
 
 
 POST............................
 what part of multipart/form-data i will post(is it just the file)
------dont forget the file extension???????
-------
 
-...MIME-TYPE?????
 
 CGI...........
---environ??
---tmpfile
----run cgi if you find the cgi extension in request uri
 --cgi script has infinite loop??????????(catch signals from cgi proccess )
 ------add cgi script and debug  cgi and everything else
+------cgi status codes 
+-------check env
 
 
-DELETE.......
---dont delete project files(try changing permissions)
 
 <!-- https://github.com/f0lio/webserv -->
 
@@ -44,9 +36,4 @@ TESTING..................................
 ........where do you store the proccessing files ????????(tmp)
 
 
-SEPERATE THE PROCESSING FILES
-//////////////////////////////////////////////////////////
 
-DELETE................
-dont remove the files beyond the root scope (also same thing for get and post)
-fix mime types in POST method

@@ -34,7 +34,7 @@ class Server {
 		const std::string& getRoot() const;
 		const std::string& getIndex() const;
 		const std::string& getAutoIndex() const;
-		const std::vector<std::string>& getErrorPage();
+		const std::map<int, std::string>& getErrorPage();
 		const size_t& getClientBodySizeLimit() const;
 		const int& getListenSocket() const;
 		
@@ -62,7 +62,7 @@ class Server {
         std::string _server_name;
 		std::string _host;
 		std::string _port;
-        std::vector<std::string> _error_page;
+        std::map<int, std::string> _error_page;
         size_t _client_body_size_limit;
 		std::string _root;
 		std::string _index;

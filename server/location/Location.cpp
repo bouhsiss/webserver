@@ -17,8 +17,8 @@ Location::Location() {
 	_redirect = "";
 	_root = "";
 	_autoindex = "";
+	_index = "";
 	_upload_path = "";
-	_cgi_extension = "";
 }
 
 std::vector<std::string> Location::getAllowedMethods() {return(_allowed_methods);}
@@ -29,7 +29,6 @@ std::string Location::getRoot() const {return(_root);}
 std::string Location::getRedirect() const {return(_redirect);}
 std::string Location::getAutoIndex() const {return(_autoindex);}
 std::string Location::getUploadPath() const {return(_upload_path);}
-std::string Location::getCgiExtension() const {return(_cgi_extension);}
 
 void Location::setPath(std::vector<std::string> const &tokens) {
 	if(tokens.size() != 1)
@@ -80,13 +79,12 @@ void Location::setIndex(std::vector<std::string> const &tokens) {
 void Location::setUploadPath(std::vector<std::string> const &tokens) {
 	if(tokens.size() != 1 || !_upload_path.empty())
 		throw(Http::ConfigFileErrorException("Invalid Upload path directive"));
-	this->_upload_path = tokens[0];
+	std::string uplaod_path = tokens[0];
+	if(uplaod_path[uplaod_path.length()-1] != '/')
+		uplaod_path.append("/");
+	this->_upload_path = uplaod_path;
 }
-void Location::setCgiExtension(std::vector<std::string> const &tokens) {
-	if(tokens.size() != 1 || !_cgi_extension.empty())
-		throw(Http::ConfigFileErrorException("Invalid cgi extension directive"));
-	this->_cgi_extension = tokens[0];
-}
+
 
 void Location::setCgiPath(std::vector<std::string> const &tokens) {
 	if(tokens.size() != 2 || _cgi_path.find(tokens[0]) != _cgi_path.end())
@@ -118,7 +116,6 @@ std::ostream& operator<<(std::ostream &out, Location &c) {
 	out << "      - location redirect : " << c.getRedirect() << std::endl;
 	out << "      - location autoindex : " << c.getAutoIndex() << std::endl;
 	out << "      - location upload path : " << c.getUploadPath() << std::endl;
-	out << "      - location cgi extension : " << c.getCgiExtension() << std::endl;
 	out << "      - location cgi path : " << std::endl;
 	std::map<std::string, std::string>::iterator mapIt;
 	std::map<std::string, std::string> cgiPath = c.getCgiPath();
