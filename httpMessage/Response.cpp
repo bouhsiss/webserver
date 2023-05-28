@@ -62,7 +62,7 @@ void Response::generateDirectoryListing(std::string dirPath) {
 
 void Response::generateErrorPage() {
 	std::string errorPage = "<html><head><title>Error - "
-							 + std::to_string(_statusCode) + "</title></head><body><h1> Error - " + std::to_string(_statusCode) + "</h1><p>" + _statusCodeMap[_statusCode] + "</p></body></html>";
+							 + std::to_string(_statusCode) + "</title><link rel=\"stylesheet\" href=\"/assets/css/default_error_page.css\"></head><div id = \"main\"><div class=\"fof\"><h1> - " + std::to_string(_statusCode) + " - " + _statusCodeMap[_statusCode] + " </h1></div></div></html>";
 	_contentLength = errorPage.size();
 	_body = errorPage;
 }
@@ -285,4 +285,5 @@ void Response::initializeStatusCodeMap() {
 	_statusCodeMap.insert(std::make_pair(200,  "OK"));
 	_statusCodeMap.insert(std::make_pair(201,  "Created"));
 	_statusCodeMap.insert(std::make_pair(204,  "No Content"));
+	_statusCodeMap.insert(std::make_pair(505,  "HTTP Version not supported"));
 }

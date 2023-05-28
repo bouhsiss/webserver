@@ -15,10 +15,7 @@
 #include <limits.h>
 #include <stdlib.h>
 
-// #define MAX_URI_SIZE 2097152
-#define MAX_URI_SIZE 40
-
-// LoreipsudolosiametconsectetuadipiscinelitsedeiusmotempoincididunulaboredolormagnaliquaUeniaminiveniam
+#define MAX_URI_SIZE 2097152
 
 class ServerFarm;
 
@@ -51,7 +48,7 @@ class Request : public HttpMessage {
 
 	private :
 
-		bool check_for_forbidden_chars(std::string)const;
+		bool check_for_forbidden_chars(std::string);
 		void get_matched_location_for_request_uri();
         bool is_method_allowed_in_location();
         void check_which_requested_method();
@@ -76,6 +73,7 @@ class Request : public HttpMessage {
 		void handle_multipart_form_data();
 		bool check_forbidden_path();
 		bool indexFileExists(const char* dir_path, std::string &filename);
+		void normalizePath();
 
 		//function to run cgi
 		void run_cgi();

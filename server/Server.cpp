@@ -20,7 +20,7 @@ const std::string& Server::getRoot() const {return(_root);}
 const std::string& Server::getIndex() const {return(_index);}
 const std::string& Server::getAutoIndex() const {return(_autoIndex);}
 const std::map<int, std::string>& Server::getErrorPage() {return(_error_page);}
-const size_t& Server::getClientBodySizeLimit() const {return(_client_body_size_limit);}
+const long long& Server::getClientBodySizeLimit() const {return(_client_body_size_limit);}
 const int& Server::getListenSocket() const {return(_listenSocket);}
 
 void Server::setPort(std::vector<std::string> const &tokens) {
@@ -52,7 +52,7 @@ void Server::setErrorPage(std::vector<std::string> const &tokens) {
 }
 
 void Server::setClientBodySizeLimit(std::vector<std::string> const &tokens) {
-	if(tokens.size() != 1 || !Http::strIsNumber(tokens[0]) || std::stoi(tokens[0]) < 0 || this->_client_body_size_limit != (size_t)-1)
+	if(tokens.size() != 1 || !Http::strIsNumber(tokens[0]) || std::stoi(tokens[0]) < 0 || this->_client_body_size_limit != -1)
 		throw(Http::ConfigFileErrorException("Invalid client body size limit directive"));
 	this->_client_body_size_limit = std::stoi(tokens[0]);
 }
@@ -106,7 +106,7 @@ void Server::setServerDefaultValues() {
 		_host = "127.0.0.1";
 	if(_port.empty())
 		_port = 80;
-	if(_client_body_size_limit == (size_t)-1)
+	if(_client_body_size_limit == -1)
 		_client_body_size_limit = 1000000;
 	if(_Locations.empty() && !_root.empty())
 		setDefaultLocation();

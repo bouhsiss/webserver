@@ -33,7 +33,7 @@ class HttpMessage {
 		std::string 						_startLine;
 		std::map<std::string, std::string> 	_Headers;
 		std::fstream 						_Body;
-		size_t								_body_length;
+		long long							_body_length;
 		std::string							_filename;
 		std::string							_message;
 		bool								_sl_complete;

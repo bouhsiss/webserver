@@ -28,6 +28,45 @@ Request& Request::operator=(const Request& other) {
 Request::~Request() {}
 
 
+void Request::normalizePath() {
+	std::string normalizedPath = _RequestURI;
+	for(size_t i = _RequestURI.length() - 1; i > 0; --i) {
+		if(normalizedPath[i] == '/' && normalizedPath[i - 1] == '/')
+			normalizedPath.erase(i, 1);
+	}
+	std::stringstream decodedPath;
+    std::string queryString;
+    std::string::const_iterator it = normalizedPath.begin();
+
+    while (it != normalizedPath.end()) {
+        if (*it == '%') {
+            if (std::distance<std::string::const_iterator>(it, normalizedPath.end()) >= 3) {
+                std::string hex = normalizedPath.substr(std::distance<std::string::const_iterator>(normalizedPath.begin(), it) + 1, 2);
+
+                char decodedChar = static_cast<char>(std::stoi(hex, nullptr, 16));
+                decodedPath << decodedChar;
+                std::advance(it, 3);
+            } else {
+                break;
+            }
+        } else if (*it == '?') {
+            decodedPath << *it;
+            ++it;
+
+            while (it != normalizedPath.end()) {
+                queryString += *it;
+                ++it;
+            }
+            break;
+        } else {
+            decodedPath << *it;
+            ++it;
+        }
+    }
+
+	_RequestURI= decodedPath.str() + queryString;
+}
+
 void Request::proccess_Request(std::string req_data){
     _bytes_read = req_data.length();
     _message+=req_data;
@@ -160,13 +199,14 @@ void Request::proccess_Request(std::string req_data){
 std::string Request::getMethod()const{return _method;}
 std::string Request::getRequestURI()const{return _RequestURI;}
 
-bool Request::check_for_forbidden_chars(std::string uri)const{
+bool Request::check_for_forbidden_chars(std::string uri){
     std::string forbidden = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;=%";
     for(size_t i=0;i<uri.length();i++)
     {
         if (forbidden.find(uri[i])==std::string::npos)
             return 1;
     }
+	normalizePath(); 
     return 0;
 }
 
@@ -471,6 +511,7 @@ bool Request::get_requested_resource(){
             tmp.append("/");
         rsc = tmp+ new_rsc;
     }
+	//
     _requested_resource = rsc;
     //debug
     std::cerr<<"Request::get_requested_resource = ["<<_requested_resource<<"]"<<std::endl;

@@ -35,7 +35,7 @@ class Server {
 		const std::string& getIndex() const;
 		const std::string& getAutoIndex() const;
 		const std::map<int, std::string>& getErrorPage();
-		const size_t& getClientBodySizeLimit() const;
+		const long long& getClientBodySizeLimit() const;
 		const int& getListenSocket() const;
 		
 		void setPort(std::vector<std::string> const &tokens);
@@ -63,7 +63,7 @@ class Server {
 		std::string _host;
 		std::string _port;
         std::map<int, std::string> _error_page;
-        size_t _client_body_size_limit;
+        long long _client_body_size_limit;
 		std::string _root;
 		std::string _index;
 		std::string _autoIndex;
