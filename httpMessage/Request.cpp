@@ -28,6 +28,9 @@ Request& Request::operator=(const Request& other) {
 
 Request::~Request() {
     remove(_cgi_output_filename.c_str());
+	remove(_filename.c_str());
+	remove(_tmp_filename.c_str());
+	// remove(_);
 }
 
 
@@ -199,7 +202,11 @@ void Request::proccess_Request(std::string req_data){
 				}
 			}
         }
+		if (_method == "POST")
+		{
+		std::cerr<<"======================================================== upload_done=true"<<std::endl;
 		_upload_done=true;
+		}
     }
 }
 
@@ -665,11 +672,10 @@ bool Request::delete_all_folder_content(){
 }
 
 bool Request::request_is_ready(){
-	/* 
-	if( cgi exists)
-		return 3 flags
-	*/
-    return _b_complete && _upload_done;
+	if (_method == "POST")
+		return _b_complete && _upload_done;
+	else
+		return _b_complete;
 }
 
 void Request::upload_resource(){
@@ -692,7 +698,10 @@ void Request::upload_resource(){
             _Body.close();
             _upload_file.close();
         }
-		remove(_filename.c_str());
+		// remove(_filename.c_str());
+				//debug
+		std::cerr<<"---------upload done (normal body)"<<std::endl;
+		//end debug
     }
 
 }
@@ -700,13 +709,13 @@ void Request::upload_resource(){
 
 void Request::handle_multipart_form_data(){
     //create tmp fstream with tmp filename
-    std::string tmp_filename = TMP_PATH+random_filename()+".mulipart";
+    std::string _tmp_filename = TMP_PATH+random_filename()+".mulipart";
     std::fstream tmp;
     std::string buffer = _Headers["Content-Type"];
     //get boundary
     std::string boundary = buffer.substr(buffer.find("boundary=")+9);
     _Body.open(_filename,std::ios::in);
-    tmp.open(tmp_filename,std::ios::out| std::ios::app);
+    tmp.open(_tmp_filename,std::ios::out| std::ios::app);
     if (_Body.is_open() && tmp.is_open())
     {
         std::string line;
@@ -733,10 +742,10 @@ void Request::handle_multipart_form_data(){
         }
         _Body.close();
         tmp.close();
-		remove(_filename.c_str());
+		// remove(_filename.c_str());
     }
     //upload
-    tmp.open(tmp_filename,std::ios::in);
+    tmp.open(_tmp_filename,std::ios::in);
     _upload_file.open(_upload_filename,std::ios::out| std::ios::app);
     if (tmp.is_open() && _upload_file.is_open())
     {
@@ -744,8 +753,11 @@ void Request::handle_multipart_form_data(){
         while(getline(tmp,line))
             _upload_file<<line.append("\n");
         tmp.close();
-		remove(tmp_filename.c_str());
+		// remove(_tmp_filename.c_str());
         _upload_file.close();
+		//debug
+		// std::cerr<<"---------upload done (multipart)"<<std::endl;
+		//end debug
     }
 }
 
@@ -882,7 +894,7 @@ void Request::clean_cgi_output(std::string tmp_file){
 			//debug
 			std::cerr<<"---------------start of clean_cgi_output------------"<<std::endl;
 			///end debug
-		_cgi_output_filename = "/Users/hassan/Desktop/request2.0/" + random_filename()+"cgi_out"+".html"; 
+		_cgi_output_filename = TMP_PATH + random_filename()+"cgi_out"+".html"; 
 	
 		_cgi_output.open(_cgi_output_filename,std::ios::out|std::ios::app);
 
@@ -909,7 +921,7 @@ void Request::clean_cgi_output(std::string tmp_file){
                 if (line == "\r")
                     break;
                 if (line.find(":")!=std::string::npos)
-                        _cgi_headers.insert(std::make_pair(line.substr(0,line.find(":")),line.substr(line.find(":")+1)));
+                        _cgi_headers.insert(std::make_pair(line.substr(0,line.find(":") + 1),line.substr(line.find(":")+1)));
             }
              //debug
             std::cerr<<"second loooooooop"<<std::endl;
@@ -1009,13 +1021,15 @@ void Request::run_cgi(){
         debug_print_env(environ);
         //end debug
         if (_method=="POST"){
-            int in_fd = open(&_filename[0], O_RDWR);
+			
+            int in_fd = open(_filename.c_str(), O_RDWR);
             if (in_fd==-1)
-                std::cout<<"run_cgi: failed to open the request body file for reading"<<std::endl;
+                std::cout<<"run_cgi: failed to open the request body file for reading filname = ["<<&_filename[0]<<"]"<<std::endl;
+			perror("Error = ");
             dup2(in_fd,0);
             close(in_fd);
         }
-        int out_fd = open(&tmp_file[0], O_RDWR|O_CREAT|O_APPEND, 0644);
+        int out_fd = open(tmp_file.c_str(), O_RDWR|O_CREAT|O_APPEND, 0644);
         if (out_fd==-1)
             std::cout<<"run_cgi: failed to open the cgi out file for writing"<<std::endl;
         dup2(out_fd,1);

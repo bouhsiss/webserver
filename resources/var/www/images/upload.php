@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Move uploaded file to a permanent location
     $filename = $_FILES['upload']['name'];
     $tmpname = $_FILES['upload']['tmp_name'];
-    $destination = '/Users/hassan/Desktop/request2.0/resources/var/www/uploads/' . $filename;
+    $destination = '/goinfre/hbouhsis/webserver/resources/var/www/uploads/' . $filename;
     if (move_uploaded_file ($tmpname ,$destination )) {
       echo 'File uploaded successfully!';
     } else {

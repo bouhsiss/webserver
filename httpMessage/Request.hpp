@@ -101,6 +101,7 @@ class Request : public HttpMessage {
 		bool			_upload_done;
 		//for POST method
 		std::string		_upload_filename;
+		std::string 	_tmp_filename;
 		std::fstream	_upload_file;
 		std::string		_filename_extension;
 		//for cgi

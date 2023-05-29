@@ -207,10 +207,18 @@ void Response::responseSuccess() {
 	}
 	else if(_request.getMethod() == "POST") {
 		if(_headersAreSent == false) {
-			setHeaders(std::to_string(_body.size()));
-			formatHeadersAndStartLine();
-			_isResponseSent = true;
+			if(_request.getCgiFlag() == true){
+				setHeaders(setFileContentLength(_request.getCgiOutputFilename()));
+				formatHeadersAndStartLine();
+			}
+			else{
+				setHeaders(std::to_string(_body.size()));
+				formatHeadersAndStartLine();
+				_isResponseSent = true;
+			}
 		}
+		else
+			sendResponseFile();
 	}
 	else if(_request.getMethod() == "DELETE") {
 		if(_headersAreSent == false) {
