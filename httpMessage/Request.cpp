@@ -923,7 +923,9 @@ void Request::clean_cgi_output(){
             std::string	buffer;
             std::string heads;
             //set headers
-            //debug
+       
+			if (_filename_extension != "py")
+			{     //debug
             std::cerr<<"first loooooooop"<<std::endl;
             //end debug
             while(getline(tmp,line))
@@ -936,6 +938,7 @@ void Request::clean_cgi_output(){
                 if (line.find(":")!=std::string::npos)
                         _cgi_headers.insert(std::make_pair(line.substr(0,line.find(":") + 1),line.substr(line.find(":")+1)));
             }
+			}
              //debug
             std::cerr<<"second loooooooop"<<std::endl;
             //end debug
