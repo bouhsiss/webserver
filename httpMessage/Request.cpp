@@ -31,7 +31,6 @@ Request::~Request() {
 	remove(_filename.c_str());
 	remove(_tmp_filename.c_str());
 	remove(_cgi_tmpfilename.c_str());
-	// remove(_);
 }
 
 
@@ -83,15 +82,10 @@ void Request::proccess_Request(std::string req_data){
     //if its not a valid httpmessage stop here
     if (_b_complete==true)
     {
-
-        //debug
-        // std::cerr<<"request is ready for processing"<<std::endl;
-        //end debug
         //check if host header field
         if (_Headers.find("Host")==_Headers.end())//there is not a host header
         {
             //400 bad request
-			std::cerr<<"host not found----------"<<std::endl;
             _status_code = 400;
         }
         else //choosing the right server to handle the request
@@ -126,12 +120,6 @@ void Request::proccess_Request(std::string req_data){
 			iss>>_method;
 			iss>>_RequestURI;
 			iss>>_http_v;
-			//debug
-			std::cerr<<"Request: _method = "<<_method<<" _uri = "<<_RequestURI<<" http = "<<_http_v<<std::endl;
-			std::cout << "_request URI : " << _RequestURI << std::endl;
-			std::cout << "_request URI length : " << _RequestURI.length() << std::endl;
-			std::cout << " MAX URI SIZE : " << MAX_URI_SIZE << std::endl;
-			//end debug
 			if (_method != "GET" && _method != "DELETE" && _method != "POST")
 			{
 				//RETURN 501 (Not Implemented)
@@ -196,18 +184,12 @@ void Request::proccess_Request(std::string req_data){
 				else//if no location match the request uri
 				{
 					//404 Not found
-					//debug
-					std::cerr<<"location not found"<<std::endl;
-					//end debug
 					_status_code = 404;
 				}
 			}
         }
 		if (_method == "POST")
-		{
-		std::cerr<<"======================================================== upload_done=true"<<std::endl;
-		_upload_done=true;
-		}
+			_upload_done=true;
     }
 }
 
@@ -517,9 +499,6 @@ bool Request::get_requested_resource(){
     }
 	//
     _requested_resource = rsc;
-    //debug
-    std::cerr<<"Request::get_requested_resource = ["<<_requested_resource<<"]"<<std::endl;
-    //end debug
     if (check_forbidden_path()== false)
         return false;
     //check if the requested resource is a file
@@ -699,10 +678,6 @@ void Request::upload_resource(){
             _Body.close();
             _upload_file.close();
         }
-		// remove(_filename.c_str());
-				//debug
-		std::cerr<<"---------upload done (normal body)"<<std::endl;
-		//end debug
     }
 
 }
@@ -743,7 +718,6 @@ void Request::handle_multipart_form_data(){
         }
         _Body.close();
         tmp.close();
-		// remove(_filename.c_str());
     }
     //upload
     tmp.open(_tmp_filename,std::ios::in);
@@ -754,11 +728,7 @@ void Request::handle_multipart_form_data(){
         while(getline(tmp,line))
             _upload_file<<line.append("\n");
         tmp.close();
-		// remove(_tmp_filename.c_str());
         _upload_file.close();
-		//debug
-		// std::cerr<<"---------upload done (multipart)"<<std::endl;
-		//end debug
     }
 }
 
@@ -1107,34 +1077,8 @@ void Request::run_cgi(){
 			}
 			else
 				_status_code=200;
-		
-		// close(0);
-		// close(1);
-        //debug
-        std::cerr<<"debug_cgi : parent proccess after waitpid"<<std::endl;
-        //end debug
-		
-		//debug
-		//end debug
-
     }
     //AFTER CGI EXECUTION
-
-    //print the cgi output and debugg
-    //debug
-    // _cgi_output.open(_cgi_output_filename,std::ios::in);
-    // if (_cgi_output.is_open())
-    // {
-    //     std::cout<<"---------------------------| this is cgi output |------------------------------------"<<std::endl;
-    //     std::string line;
-    //     while(getline(_cgi_output,line)){
-    //         std::cout<<line<<std::endl;
-    //     }
-    //     std::cout<<"---------------------------| end of cgi output |------------------------------------"<<std::endl;
-    //     _cgi_output.close();
-    // }
-    //end debug
-
     //remove cgi headers and everything else the response dont need
 	if (_status_code==200)
 		clean_cgi_output();
