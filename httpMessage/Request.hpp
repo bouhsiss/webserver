@@ -17,7 +17,7 @@
 #include <stdlib.h>
 
 #define MAX_URI_SIZE 2097152
-#define CGI_TIMEOUT 15
+#define CGI_TIMEOUT 30
 
 class ServerFarm;
 

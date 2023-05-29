@@ -1073,17 +1073,20 @@ void Request::run_cgi(){
     }
     else
     {
-        //wait for cgi to finish
-		if (waitpid(_cgi_pid,NULL,WNOHANG)==_cgi_pid)
 			_status_code=200;
-		else{
-				_cgi_start_time = time(NULL);
+			_cgi_start_time = time(NULL);
 			while(time(NULL) - _cgi_start_time < CGI_TIMEOUT)
 			{
 				//wait
-					
+				  //wait for cgi to finis
+				if (waitpid(_cgi_pid,NULL,WNOHANG)==_cgi_pid)
+				{
+					_status_code=-2;
+					break;
+				}
+							
 			}
-			if(waitpid(_cgi_pid,NULL,WNOHANG)!=_cgi_pid)
+			if(_status_code!=-2 && waitpid(_cgi_pid,NULL,WNOHANG)!=_cgi_pid)
 			{
 						//kill cgi process
 						kill(_cgi_pid,SIGKILL);
@@ -1094,7 +1097,6 @@ void Request::run_cgi(){
 			}
 			else
 				_status_code=200;
-		}
 		
 		// close(0);
 		// close(1);
@@ -1124,7 +1126,7 @@ void Request::run_cgi(){
     //end debug
 
     //remove cgi headers and everything else the response dont need
-    // clean_cgi_output();
+    clean_cgi_output();
     std::cerr<<"------------------------------end of cgi-----------------------------"<<std::endl;
 
 }

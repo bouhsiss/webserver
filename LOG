@@ -1,7 +1,7 @@
 Request: _method = GET _uri = /images/upload.php http = HTTP/1.1
 Request::get_requested_resource = [/goinfre/hbouhsis/webserver/resources/var/www/images/upload.php]
 ------------------------------starting cgi-----------------------------
-tmp_filename = [/tmp/HaMtIC.html]
+tmp_filename = [/tmp/yHzTIB.html]
 -------------------start of http headers---------------
 http result head = [HTTP_ACCEPT=text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8]
 http result head = [HTTP_ACCEPT_ENCODING=gzip, deflate, br]
@@ -105,26 +105,18 @@ file_name extension = [php]
 cgi_bin == [/goinfre/hbouhsis/webserver/cgi-bin/php-cgi]
 debug_cgi : arg[0] == [/goinfre/hbouhsis/webserver/cgi-bin/php-cgi]
 debug_cgi : arg[1] == [/goinfre/hbouhsis/webserver/resources/var/www/images/upload.php]
+**********cgi timeout********
 debug_cgi : parent proccess after waitpid
 ---------------start of clean_cgi_output------------
-cgi_out file =[/tmp/hc8dCJcgi_out.html]
-tmp_file =[/tmp/HaMtIC.html]
+cgi_out file =[/tmp/OJkDCIcgi_out.html]
+tmp_file =[/tmp/yHzTIB.html]
 Error ====== : Undefined error: 0
 first loooooooop
-line = [X-Powered-By: PHP/8.0.2]
-line = [Content-type: text/html; charset=UTF-8]
-line = []
 second loooooooop
-line = []
-line = [<!-- HTML form to upload files -->]
-line = [<form action="upload.php" method="post" enctype="multipart/form-data">]
-line = [  <input type="file" name="upload">]
-line = [  <input type="submit" value="Upload">]
-line = [</form>]
 --------------cgi headers----------
-name = [Content-type:]
-value = [ text/html; charset=UTF-8]
-name = [X-Powered-By:]
-value = [ PHP/8.0.2]
 ------------------------------------
 ------------------------------end of cgi-----------------------------
+Request: _method = GET _uri = /assets/css/default_error_page.css http = HTTP/1.1
+Request::get_requested_resource = [/goinfre/hbouhsis/webserver/resources/var/www/assets/css/default_error_page.css]
+Request: _method = GET _uri = /assets/css/default_error_page.css http = HTTP/1.1
+Request::get_requested_resource = [/goinfre/hbouhsis/webserver/resources/var/www/assets/css/default_error_page.css]
