@@ -50,7 +50,9 @@ void Response::generateDirectoryListing(std::string dirPath) {
 	while((entry = readdir(dir)) != NULL) {
 		std::string entryName = entry->d_name;
 		//exclude current and parent directories
-		if(entryName == "." || entryName == "..")
+		if((dirPath == _server->getLocations()[_request.getLocationIndex()]->getRoot() || dirPath == _server->getRoot()) && entryName == "..")	
+			continue;
+		if(entryName == ".")
 			continue ;
 		std::string entryPath  = dirPath + "/" + entryName;
 
