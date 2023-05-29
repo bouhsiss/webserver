@@ -224,7 +224,8 @@ void Request::get_matched_location_for_request_uri(){
     for (std::map<std::string,Location*>::iterator it = _sf->getServers()[_server_index]->getLocations().begin();it != _sf->getServers()[_server_index]->getLocations().end(); it++)
     {
         //if you found a match return add the location to the map
-        if (_RequestURI.find(it->first)==0)
+
+        if (_RequestURI.find(it->first)==0 && (_RequestURI == it->first || _RequestURI[it->first.length()] == '/' || it->first == "/"))
 		{
             tmp.insert(std::make_pair(it->first,it->second));
 		}
