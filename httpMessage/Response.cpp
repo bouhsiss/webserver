@@ -12,6 +12,10 @@ Response::Response(Request &request, int writeSock): _request(request), _writeSo
 	FileIsOpen = false;
 }
 
+Response::~Response() {
+	delete &_request;
+}
+
 void Response::initResponse(){ 
 	_statusCode = _request.getStatusCode();
 	if(_request.getServerIndex() !=  -1)
@@ -54,7 +58,6 @@ void Response::generateDirectoryListing(std::string dirPath) {
 			continue;
 		if(entryName == ".")
 			continue ;
-		std::string entryPath  = dirPath + "/" + entryName;
 
 		htmlFile << "<li><a href=\"" << _request.getRequestURI() << entryName << "\">" <<  entryName << "</a></li>";
 	}
@@ -209,10 +212,18 @@ void Response::responseSuccess() {
 	}
 	else if(_request.getMethod() == "POST") {
 		if(_headersAreSent == false) {
-			setHeaders(std::to_string(_body.size()));
-			formatHeadersAndStartLine();
-			_isResponseSent = true;
+			if(_request.getCgiFlag() == true){
+				setHeaders(setFileContentLength(_request.getCgiOutputFilename()));
+				formatHeadersAndStartLine();
+			}
+			else{
+				setHeaders(std::to_string(_body.size()));
+				formatHeadersAndStartLine();
+				_isResponseSent = true;
+			}
 		}
+		else
+			sendResponseFile();
 	}
 	else if(_request.getMethod() == "DELETE") {
 		if(_headersAreSent == false) {
@@ -297,4 +308,5 @@ void Response::initializeStatusCodeMap() {
 	_statusCodeMap.insert(std::make_pair(201,  "Created"));
 	_statusCodeMap.insert(std::make_pair(204,  "No Content"));
 	_statusCodeMap.insert(std::make_pair(505,  "HTTP Version not supported"));
+	_statusCodeMap.insert(std::make_pair(504,  "Gateway Timeout"));
 }

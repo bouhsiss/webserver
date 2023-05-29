@@ -12,6 +12,7 @@
 
 #include "Configuration.hpp"
 
+
 bool Configuration::_extractServerConfigLine(std::string line, Server& current_server) {
 	size_t EqualSignPos = line.find('=');
 	if(EqualSignPos == std::string::npos)

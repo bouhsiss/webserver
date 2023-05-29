@@ -8,7 +8,7 @@
             "type": "lldb",
             "request": "launch",
             "name": "Debug",
-            "program": "/Users/hassan/Desktop/request2.0/webserv",
+            "program": "/goinfre/hbouhsis/webserver/webserv",
             "args": [],
             "cwd": "${workspaceFolder}"
         }

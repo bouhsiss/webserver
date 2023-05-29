@@ -26,7 +26,12 @@ Request& Request::operator=(const Request& other) {
 	return(*this);
 }
 
-Request::~Request() {}
+Request::~Request() {
+    remove(_cgi_output_filename.c_str());
+	remove(_filename.c_str());
+	remove(_tmp_filename.c_str());
+	remove(_cgi_tmpfilename.c_str());
+}
 
 
 void Request::normalizePath() {
@@ -69,6 +74,7 @@ void Request::normalizePath() {
 }
 
 void Request::proccess_Request(std::string req_data){
+	
     _bytes_read = req_data.length();
     _message+=req_data;
     if (_b_complete==false)
@@ -77,15 +83,10 @@ void Request::proccess_Request(std::string req_data){
     //if its not a valid httpmessage stop here
     if (_b_complete==true)
     {
-
-        //debug
-        // std::cerr<<"request is ready for processing"<<std::endl;
-        //end debug
         //check if host header field
         if (_Headers.find("Host")==_Headers.end())//there is not a host header
         {
             //400 bad request
-			std::cerr<<"host not found----------"<<std::endl;
             _status_code = 400;
         }
         else //choosing the right server to handle the request
@@ -120,12 +121,6 @@ void Request::proccess_Request(std::string req_data){
 			iss>>_method;
 			iss>>_RequestURI;
 			iss>>_http_v;
-			//debug
-			std::cerr<<"Request: _method = "<<_method<<" _uri = "<<_RequestURI<<" http = "<<_http_v<<std::endl;
-			std::cout << "_request URI : " << _RequestURI << std::endl;
-			std::cout << "_request URI length : " << _RequestURI.length() << std::endl;
-			std::cout << " MAX URI SIZE : " << MAX_URI_SIZE << std::endl;
-			//end debug
 			if (_method != "GET" && _method != "DELETE" && _method != "POST")
 			{
 				//RETURN 501 (Not Implemented)
@@ -179,6 +174,7 @@ void Request::proccess_Request(std::string req_data){
 					{
 						if (Request::is_method_allowed_in_location()) {
 							check_which_requested_method();
+							
 						}
 						else
 						{
@@ -190,15 +186,17 @@ void Request::proccess_Request(std::string req_data){
 				else//if no location match the request uri
 				{
 					//404 Not found
-					//debug
-					std::cerr<<"location not found"<<std::endl;
-					//end debug
 					_status_code = 404;
 				}
 			}
         }
-		_upload_done=true;
+		if (_method == "POST")
+			_upload_done=true;
     }
+	//debug
+	std::cerr<<"finished proccess request"<<std::endl;
+	//end debug
+	// while(1);
 }
 
 std::string Request::getMethod()const{return _method;}
@@ -507,9 +505,6 @@ bool Request::get_requested_resource(){
     }
 	//
     _requested_resource = rsc;
-    //debug
-    std::cerr<<"Request::get_requested_resource = ["<<_requested_resource<<"]"<<std::endl;
-    //end debug
     if (check_forbidden_path()== false)
         return false;
     //check if the requested resource is a file
@@ -570,6 +565,7 @@ bool Request::indexFileExists(const char *dir_path, std::string &filename) {
 				return(true);
 			}
 		}
+		closedir(directory);
 	}
 	return(false);
 }
@@ -663,11 +659,10 @@ bool Request::delete_all_folder_content(){
 }
 
 bool Request::request_is_ready(){
-	/* 
-	if( cgi exists)
-		return 3 flags
-	*/
-    return _b_complete && _upload_done;
+	if (_method == "POST")
+		return _b_complete && _upload_done;
+	else
+		return _b_complete;
 }
 
 void Request::upload_resource(){
@@ -690,7 +685,6 @@ void Request::upload_resource(){
             _Body.close();
             _upload_file.close();
         }
-		remove(_filename.c_str());
     }
 
 }
@@ -698,13 +692,13 @@ void Request::upload_resource(){
 
 void Request::handle_multipart_form_data(){
     //create tmp fstream with tmp filename
-    std::string tmp_filename = TMP_PATH+random_filename()+".mulipart";
+    std::string _tmp_filename = TMP_PATH+random_filename()+".mulipart";
     std::fstream tmp;
     std::string buffer = _Headers["Content-Type"];
     //get boundary
     std::string boundary = buffer.substr(buffer.find("boundary=")+9);
     _Body.open(_filename,std::ios::in);
-    tmp.open(tmp_filename,std::ios::out| std::ios::app);
+    tmp.open(_tmp_filename,std::ios::out| std::ios::app);
     if (_Body.is_open() && tmp.is_open())
     {
         std::string line;
@@ -731,10 +725,9 @@ void Request::handle_multipart_form_data(){
         }
         _Body.close();
         tmp.close();
-		remove(_filename.c_str());
     }
     //upload
-    tmp.open(tmp_filename,std::ios::in);
+    tmp.open(_tmp_filename,std::ios::in);
     _upload_file.open(_upload_filename,std::ios::out| std::ios::app);
     if (tmp.is_open() && _upload_file.is_open())
     {
@@ -742,7 +735,6 @@ void Request::handle_multipart_form_data(){
         while(getline(tmp,line))
             _upload_file<<line.append("\n");
         tmp.close();
-		remove(tmp_filename.c_str());
         _upload_file.close();
     }
 }
@@ -803,7 +795,10 @@ void Request::set_cgi_env()
     head = "DOCUMENT_URI="+ _RequestURI;
     putenv(strdup(head.c_str()));
     head.clear();  
-
+	//DOCUMENT_ROOT
+	 head = "DOCUMENT_ROOT="+_sf->getServers()[_server_index]->getRoot();
+    putenv(strdup(head.c_str()));
+    head.clear();  
     //PATH
     head = "PATH="+ std::string(std::getenv("PATH"));  
     putenv(strdup(head.c_str()));
@@ -815,7 +810,11 @@ void Request::set_cgi_env()
         _query_string = "";
     head = "QUERY_STRING="+_query_string;
     putenv(strdup(head.c_str()));
-    head.clear();    
+    head.clear();
+	//REQUEST_URI
+	head = "REQUEST_URI="+_RequestURI;
+    putenv(strdup(head.c_str()));
+    head.clear();  
     //REMOTE_ADDR
     head = "REMOTE_ADDR="+_req_host;
     putenv(strdup(head.c_str()));
@@ -873,57 +872,64 @@ void Request::set_cgi_env()
     }
 }
 
-void Request::clean_cgi_output(std::string tmp_file){
+void Request::clean_cgi_output(){
 
         //clean cgi output extract just the body and put back to cgi_out_file
 		//move cgi body to output file	
 			//debug
 			std::cerr<<"---------------start of clean_cgi_output------------"<<std::endl;
 			///end debug
-		_cgi_output_filename = "/goinfre/hbouhsis/webserver/" + random_filename()+".html"; 
+		_cgi_output_filename = TMP_PATH + random_filename()+"cgi_out"+".html"; 
 	
 		_cgi_output.open(_cgi_output_filename,std::ios::out|std::ios::app);
+		if (!_cgi_output.is_open())
+			std::cerr<<"failed to open cgi_outfileeeeeeee"<<std::endl;
 
 			//debug
 			std::cerr<<"cgi_out file =["<<_cgi_output_filename<<"]"<<std::endl;
-			std::cerr<<"tmp_file =["<<tmp_file<<"]"<<std::endl;
+			std::cerr<<"tmp_file =["<<_cgi_tmpfilename<<"]"<<std::endl;
 			//end debug
 		std::fstream tmp;
-		tmp.open(tmp_file,std::ios::in);
-		if (_cgi_output.is_open() && tmp.is_open() )
+		tmp.open(_cgi_tmpfilename,std::ios::in);
+		if (!tmp.is_open())
+			std::cerr<<"failed to open tmpppppppppppp"<<std::endl;
+		perror("Error ====== ");
+		if (_cgi_output.is_open() && tmp.is_open())
 		{
-		std::string line;
-		std::string	buffer;
-		std::string heads;
-		while(getline(tmp,line))
-		{
-			//debug
-			std::cerr<<"line = ["<<line<<"]"<<std::endl;
-			//end debug
-			buffer+=line.append("\r\n");
-		}
-		heads = buffer.substr(0,buffer.find("\r\n\r\n"));
-		if (buffer.find("\r\n\r\n")!=std::string::npos)
-			buffer = buffer.substr(buffer.find("\r\n\r\n")+4);
-		//set body
-		
-		_cgi_output<<buffer;
-		_cgi_output.close();
-		std::cerr<<"--------------cgi body----------"<<std::endl;
-		std::cerr<<"body = ["<<buffer<<"]"<<std::endl;
-		std::cerr<<"------------------------------------"<<std::endl;
-		//set headers in map
-		line.clear();
-			while(heads.length())
-			{
-				line  = heads.substr(0,heads.find("\r\n"));
-				if (line.find(":")!=std::string::npos)
-					_cgi_headers.insert(std::make_pair(line.substr(0,line.find(":")),line.substr(line.find(":")+1)));
-
-				heads = heads.substr(heads.find("\r\n"));
+            std::string line;
+            std::string	buffer;
+            std::string heads;
+            //set headers
+       
+			if (_filename_extension != "py")
+			{     //debug
+            std::cerr<<"first loooooooop"<<std::endl;
+            //end debug
+            while(getline(tmp,line))
+            {
+                //debug
+                std::cerr<<"line = ["<<line<<"]"<<std::endl;
+                //end debug
+                if (line == "\r")
+                    break;
+                if (line.find(":")!=std::string::npos)
+                        _cgi_headers.insert(std::make_pair(line.substr(0,line.find(":") + 1),line.substr(line.find(":")+1)));
+            }
 			}
-			tmp.close();
-			remove(tmp_file.c_str());
+             //debug
+            std::cerr<<"second loooooooop"<<std::endl;
+            //end debug
+            while (getline(tmp,line))
+            {
+                //debug
+                std::cerr<<"line = ["<<line<<"]"<<std::endl;
+                //end debug
+                _cgi_output<<line.append("\n");
+            }
+            _cgi_output.close();
+            tmp.close();
+            // remove(tmp_file.c_str());
+        
 		}
 		else 
 			std::cerr<<"clean cgi output: failed to open either cgi_output or tmp"<<std::endl;
@@ -985,9 +991,9 @@ void Request::run_cgi(){
     //end debug
     ////after debugging remove cgi_file to tmp folder
 	std::fstream tmp;
-    std::string tmp_file = TMP_PATH+ random_filename();
+    _cgi_tmpfilename = TMP_PATH+ random_filename()+".html";
     //debug
-    std::cerr<<"tmp_filename = ["<<tmp_file<<"]"<<std::endl;
+    std::cerr<<"tmp_filename = ["<<_cgi_tmpfilename<<"]"<<std::endl;
     //end debug
     set_cgi_env();
     //debug
@@ -995,26 +1001,28 @@ void Request::run_cgi(){
 
     //end debug
     //fork
-    pid_t child_pid = fork();
-    if (child_pid == -1)
+    _cgi_pid = fork();
+    if (_cgi_pid == -1)
         std::cout<<"run_cgi: fork function failed"<<std::endl;
     //debug
     std::cerr<<"debug_cgi : fork"<<std::endl;
     //end debug
 
-    if (child_pid ==0)
+    if (_cgi_pid ==0)
     {
         //debug
         debug_print_env(environ);
         //end debug
         if (_method=="POST"){
-            int in_fd = open(&_filename[0], O_RDWR);
+			
+            int in_fd = open(_filename.c_str(), O_RDWR);
             if (in_fd==-1)
-                std::cout<<"run_cgi: failed to open the request body file for reading"<<std::endl;
+                std::cout<<"run_cgi: failed to open the request body file for reading filname = ["<<&_filename[0]<<"]"<<std::endl;
+			perror("Error = ");
             dup2(in_fd,0);
             close(in_fd);
         }
-        int out_fd = open(&tmp_file[0], O_RDWR|O_CREAT|O_APPEND, 0644);
+        int out_fd = open(_cgi_tmpfilename.c_str(), O_RDWR|O_CREAT|O_APPEND, 0644);
         if (out_fd==-1)
             std::cout<<"run_cgi: failed to open the cgi out file for writing"<<std::endl;
         dup2(out_fd,1);
@@ -1052,37 +1060,35 @@ void Request::run_cgi(){
     }
     else
     {
-        //wait for cgi to finish
-        waitpid(child_pid,NULL,0);
-		// close(0);
-		// close(1);
-        //debug
-        std::cerr<<"debug_cgi : parent proccess after waitpid"<<std::endl;
-        //end debug
-		_status_code=200;
-		//debug
-		//end debug
-
+			_status_code=200;
+			_cgi_start_time = time(NULL);
+			while(time(NULL) - _cgi_start_time < CGI_TIMEOUT)
+			{
+				//wait
+				  //wait for cgi to finis
+				if (waitpid(_cgi_pid,NULL,WNOHANG)==_cgi_pid)
+				{
+					_status_code=-2;
+					break;
+				}
+							
+			}
+			if(_status_code!=-2 && waitpid(_cgi_pid,NULL,WNOHANG)!=_cgi_pid)
+			{
+						//kill cgi process
+						kill(_cgi_pid,SIGKILL);
+						//debug
+						std::cerr<<"**********cgi timeout********"<<std::endl;
+				// 		//end debug
+						_status_code = 504;//gateway time out;
+			}
+			else
+				_status_code=200;
     }
     //AFTER CGI EXECUTION
-
-    //print the cgi output and debugg
-    //debug
-    // _cgi_output.open(_cgi_output_filename,std::ios::in);
-    // if (_cgi_output.is_open())
-    // {
-    //     std::cout<<"---------------------------| this is cgi output |------------------------------------"<<std::endl;
-    //     std::string line;
-    //     while(getline(_cgi_output,line)){
-    //         std::cout<<line<<std::endl;
-    //     }
-    //     std::cout<<"---------------------------| end of cgi output |------------------------------------"<<std::endl;
-    //     _cgi_output.close();
-    // }
-    //end debug
-
     //remove cgi headers and everything else the response dont need
-    clean_cgi_output(tmp_file);
+	if (_status_code==200)
+		clean_cgi_output();
     std::cerr<<"------------------------------end of cgi-----------------------------"<<std::endl;
 
 }
