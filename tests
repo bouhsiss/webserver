@@ -8,3 +8,5 @@
 	* delete the tmp files // still not deleted
 	* not terminate the server when recv()/read() fail 
 	* root/../../../..//. forbidden for all methods // still not working on post method
+	* make the autoindex look better
+	* include parent directory for autoindex

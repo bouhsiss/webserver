@@ -818,7 +818,10 @@ void Request::set_cgi_env()
     head = "DOCUMENT_URI="+ _RequestURI;
     putenv(strdup(head.c_str()));
     head.clear();  
-
+	//DOCUMENT_ROOT
+	 head = "DOCUMENT_ROOT="+_sf->getServers()[_server_index]->getRoot();
+    putenv(strdup(head.c_str()));
+    head.clear();  
     //PATH
     head = "PATH="+ std::string(std::getenv("PATH"));  
     putenv(strdup(head.c_str()));
@@ -830,7 +833,11 @@ void Request::set_cgi_env()
         _query_string = "";
     head = "QUERY_STRING="+_query_string;
     putenv(strdup(head.c_str()));
-    head.clear();    
+    head.clear();
+	//REQUEST_URI
+	head = "REQUEST_URI="+_RequestURI;
+    putenv(strdup(head.c_str()));
+    head.clear();  
     //REMOTE_ADDR
     head = "REMOTE_ADDR="+_req_host;
     putenv(strdup(head.c_str()));
