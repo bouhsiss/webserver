@@ -49,12 +49,12 @@ void Response::generateDirectoryListing(std::string dirPath) {
 		rebuildResponseErr(500);
 
 	//html Header
-	htmlFile << "<html><head><title>directory listing</title></head><body><ul>";
+	htmlFile << "<html><head><title>directory listing</title><link rel=\"stylesheet\" href=\"/assets/css/directory_listing.css\"></head><body><ul>";
 	//read directory entries
 	while((entry = readdir(dir)) != NULL) {
 		std::string entryName = entry->d_name;
 		//exclude current and parent directories
-		if((dirPath == _server->getLocations()[_request.getLocationIndex()]->getRoot() || dirPath == _server->getRoot()) && entryName == "..")	
+		if(_request.getRequestURI() == "/" && entryName == "..")	
 			continue;
 		if(entryName == ".")
 			continue ;
