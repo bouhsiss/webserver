@@ -85,7 +85,6 @@ void Response::sendResponseFile() {
 	}
 	if(!_file.is_open())
 		rebuildResponseErr(403);
-	std::cout << "_filename : " << _filename << std::endl;
 	_file.read(buffer.data(), chunkSize);
 	int bytesSent = send(_writeSocket, buffer.data(), chunkSize, 0);
 	if(bytesSent < 0) {
@@ -93,9 +92,6 @@ void Response::sendResponseFile() {
 		return;
 	}
 	_totalBytesSent += bytesSent;
-	std::cout << YELLOW << "bytes Sent " << bytesSent << std::endl;
-	std::cout << "totalBytesSent " << _totalBytesSent << std::endl;
-	std::cout << " content length " << _contentLength << RESET <<  std::endl;
 	if(_totalBytesSent  == _contentLength)
 	{
 		_file.close();
@@ -133,7 +129,6 @@ std::string Response::setFileContentLength(std::string filename) {
 	_file.seekg(0, std::ios::end);
 	std::streampos fileSize = _file.tellg();
 	_file.seekg(0, std::ios::beg);
-	// should add something when the file fails to open due to permissions... (403 forbidden)
 	_contentLength = fileSize;
 	_file.close();
 	return (std::to_string(fileSize));
@@ -182,7 +177,6 @@ void Response::formatHeadersAndStartLine() {
 	if(bytesSent < 0) {
 		_sendFailed = true;
 	}
-	std::cout << RED << initialResponse << RESET << std::endl;
 	_headersAreSent = true;
 }
 

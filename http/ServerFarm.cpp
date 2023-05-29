@@ -113,7 +113,6 @@ void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
 	for(It = _writeSockets.begin(); It != _writeSockets.end(); ++It) {
 		int writeSock = It->first;
 		if(It->second->getRequest().request_is_ready() == true) {
-			It->second->getRequest().print();
 			if(FD_ISSET(writeSock, tmpWriteFds)) {
 				try {
 					It->second->sendResponse();
@@ -126,11 +125,7 @@ void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
 					keysToErase.push_back(writeSock);
 					FD_CLR(writeSock, &_writeFds);
 					close(writeSock);
-					delete It->second;
 					std::cout << RED << "send() failed" << RESET << std::endl;
-					// _writeSockets.erase(writeSock);
-					// _clientSockets.erase(writeSock);
-					// throw(Http::NetworkingErrorException("send failed"));
 				}
 				if(It->second->isResponseSent() == true) {
 					keysToErase.push_back(writeSock);
@@ -162,7 +157,6 @@ void ServerFarm::handleNewClient(fd_set *tmpReadFds, int *fdmax) {
 			_clientSockets.insert(std::make_pair(clientSocket, It->second));
 			if(clientSocket > *fdmax)
 				*fdmax = clientSocket;
-			std::cout << CYAN << "new connection from server : " << It->second->getHost() << ":" << It->second->getPort() << " on socket " << clientSocket << RESET << std::endl;
 		}
 	}
 }
@@ -190,11 +184,7 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 			}
 			else {
 				std::string reqData(read, bytesReceived);
-				std::cout << "==================== REQUEST ========================= " << std::endl << std::endl;
-				std::cout << MAGENTA << reqData << RESET << std::endl;
-				std::cout << "=======================================================" << std::endl;
 				if(_writeSockets.find(clientSock) != _writeSockets.end()) {
-					std::cout << "no am here" << std::endl;
 					_writeSockets[clientSock]->getRequest().proccess_Request(reqData);
 					if(_writeSockets[clientSock]->getRequest().request_is_ready()) {
 						FD_CLR(clientSock, &_readFds);
@@ -204,7 +194,6 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 				else {
 					Request *request = new  Request(It->second->getHost(), It->second->getPort());
 					request->proccess_Request(reqData);
-					request->print();
 					Response *response = new Response(*request, clientSock);
 					if(request->request_is_ready())
 					{
