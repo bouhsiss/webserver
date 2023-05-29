@@ -12,6 +12,10 @@ Response::Response(Request &request, int writeSock): _request(request), _writeSo
 	FileIsOpen = false;
 }
 
+Response::~Response() {
+	delete &_request;
+}
+
 void Response::initResponse(){ 
 	_statusCode = _request.getStatusCode();
 	if(_request.getServerIndex() !=  -1)
@@ -52,7 +56,6 @@ void Response::generateDirectoryListing(std::string dirPath) {
 		//exclude current and parent directories
 		if(entryName == "." || entryName == "..")
 			continue ;
-		std::string entryPath  = dirPath + "/" + entryName;
 
 		htmlFile << "<li><a href=\"" << _request.getRequestURI() << entryName << "\">" <<  entryName << "</a></li>";
 	}

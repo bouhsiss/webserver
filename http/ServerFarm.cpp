@@ -67,6 +67,7 @@ ServerFarm::~ServerFarm() {
 		std::cout << "deleted" << std::endl;
 		delete _servers[i];
 	}
+	delete instancePtr;
 }
 
 void ServerFarm::configure(std::string configFilepath) {
@@ -125,6 +126,7 @@ void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
 					keysToErase.push_back(writeSock);
 					FD_CLR(writeSock, &_writeFds);
 					close(writeSock);
+					delete It->second;
 					std::cout << RED << "send() failed" << RESET << std::endl;
 					// _writeSockets.erase(writeSock);
 					// _clientSockets.erase(writeSock);
@@ -192,6 +194,7 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 				std::cout << MAGENTA << reqData << RESET << std::endl;
 				std::cout << "=======================================================" << std::endl;
 				if(_writeSockets.find(clientSock) != _writeSockets.end()) {
+					std::cout << "no am here" << std::endl;
 					_writeSockets[clientSock]->getRequest().proccess_Request(reqData);
 					if(_writeSockets[clientSock]->getRequest().request_is_ready()) {
 						FD_CLR(clientSock, &_readFds);

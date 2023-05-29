@@ -13,6 +13,7 @@ class Request;
 class Response : public HttpMessage {
 	public :
 		Response(Request &Request, int clientSock);
+		~Response();
 		Request& getRequest();
 		void sendResponse();
 		bool sendFailed();

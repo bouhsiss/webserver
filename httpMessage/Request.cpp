@@ -74,6 +74,7 @@ void Request::normalizePath() {
 }
 
 void Request::proccess_Request(std::string req_data){
+	
     _bytes_read = req_data.length();
     _message+=req_data;
     if (_b_complete==false)
@@ -173,6 +174,7 @@ void Request::proccess_Request(std::string req_data){
 					{
 						if (Request::is_method_allowed_in_location()) {
 							check_which_requested_method();
+							
 						}
 						else
 						{
@@ -191,6 +193,10 @@ void Request::proccess_Request(std::string req_data){
 		if (_method == "POST")
 			_upload_done=true;
     }
+	//debug
+	std::cerr<<"finished proccess request"<<std::endl;
+	//end debug
+	// while(1);
 }
 
 std::string Request::getMethod()const{return _method;}
@@ -559,6 +565,7 @@ bool Request::indexFileExists(const char *dir_path, std::string &filename) {
 				return(true);
 			}
 		}
+		closedir(directory);
 	}
 	return(false);
 }
