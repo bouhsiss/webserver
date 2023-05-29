@@ -303,4 +303,5 @@ void Response::initializeStatusCodeMap() {
 	_statusCodeMap.insert(std::make_pair(201,  "Created"));
 	_statusCodeMap.insert(std::make_pair(204,  "No Content"));
 	_statusCodeMap.insert(std::make_pair(505,  "HTTP Version not supported"));
+	_statusCodeMap.insert(std::make_pair(504,  "Gateway Timeout"));
 }

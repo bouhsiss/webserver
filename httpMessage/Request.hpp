@@ -17,6 +17,7 @@
 #include <stdlib.h>
 
 #define MAX_URI_SIZE 2097152
+#define CGI_TIMEOUT 15
 
 class ServerFarm;
 
@@ -82,7 +83,7 @@ class Request : public HttpMessage {
 		//function to run cgi
 		void run_cgi();
 		void set_cgi_env();
-    	void clean_cgi_output(std::string tmp_file);
+    	void clean_cgi_output();
 		void debug_cgi();
 
 
@@ -118,6 +119,9 @@ class Request : public HttpMessage {
 		//for cgi out file /check them for get/post
 		std::fstream	_cgi_output;
 		std::string		_cgi_output_filename;
+		std::string		_cgi_tmpfilename;
 		std::map<std::string, std::string> _cgi_headers;
 		bool			_cgi_flag;
+		std::time_t				_cgi_start_time;
+		pid_t					_cgi_pid;
 };

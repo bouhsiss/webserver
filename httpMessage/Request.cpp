@@ -30,6 +30,7 @@ Request::~Request() {
     remove(_cgi_output_filename.c_str());
 	remove(_filename.c_str());
 	remove(_tmp_filename.c_str());
+	remove(_cgi_tmpfilename.c_str());
 	// remove(_);
 }
 
@@ -887,7 +888,7 @@ void Request::set_cgi_env()
     }
 }
 
-void Request::clean_cgi_output(std::string tmp_file){
+void Request::clean_cgi_output(){
 
         //clean cgi output extract just the body and put back to cgi_out_file
 		//move cgi body to output file	
@@ -897,13 +898,18 @@ void Request::clean_cgi_output(std::string tmp_file){
 		_cgi_output_filename = TMP_PATH + random_filename()+"cgi_out"+".html"; 
 	
 		_cgi_output.open(_cgi_output_filename,std::ios::out|std::ios::app);
+		if (!_cgi_output.is_open())
+			std::cerr<<"failed to open cgi_outfileeeeeeee"<<std::endl;
 
 			//debug
 			std::cerr<<"cgi_out file =["<<_cgi_output_filename<<"]"<<std::endl;
-			std::cerr<<"tmp_file =["<<tmp_file<<"]"<<std::endl;
+			std::cerr<<"tmp_file =["<<_cgi_tmpfilename<<"]"<<std::endl;
 			//end debug
 		std::fstream tmp;
-		tmp.open(tmp_file,std::ios::in);
+		tmp.open(_cgi_tmpfilename,std::ios::in);
+		if (!tmp.is_open())
+			std::cerr<<"failed to open tmpppppppppppp"<<std::endl;
+		perror("Error ====== ");
 		if (_cgi_output.is_open() && tmp.is_open())
 		{
             std::string line;
@@ -935,7 +941,7 @@ void Request::clean_cgi_output(std::string tmp_file){
             }
             _cgi_output.close();
             tmp.close();
-            remove(tmp_file.c_str());
+            // remove(tmp_file.c_str());
         
 		}
 		else 
@@ -998,9 +1004,9 @@ void Request::run_cgi(){
     //end debug
     ////after debugging remove cgi_file to tmp folder
 	std::fstream tmp;
-    std::string tmp_file = TMP_PATH+ random_filename()+".html";
+    _cgi_tmpfilename = TMP_PATH+ random_filename()+".html";
     //debug
-    std::cerr<<"tmp_filename = ["<<tmp_file<<"]"<<std::endl;
+    std::cerr<<"tmp_filename = ["<<_cgi_tmpfilename<<"]"<<std::endl;
     //end debug
     set_cgi_env();
     //debug
@@ -1008,14 +1014,14 @@ void Request::run_cgi(){
 
     //end debug
     //fork
-    pid_t child_pid = fork();
-    if (child_pid == -1)
+    _cgi_pid = fork();
+    if (_cgi_pid == -1)
         std::cout<<"run_cgi: fork function failed"<<std::endl;
     //debug
     std::cerr<<"debug_cgi : fork"<<std::endl;
     //end debug
 
-    if (child_pid ==0)
+    if (_cgi_pid ==0)
     {
         //debug
         debug_print_env(environ);
@@ -1029,7 +1035,7 @@ void Request::run_cgi(){
             dup2(in_fd,0);
             close(in_fd);
         }
-        int out_fd = open(tmp_file.c_str(), O_RDWR|O_CREAT|O_APPEND, 0644);
+        int out_fd = open(_cgi_tmpfilename.c_str(), O_RDWR|O_CREAT|O_APPEND, 0644);
         if (out_fd==-1)
             std::cout<<"run_cgi: failed to open the cgi out file for writing"<<std::endl;
         dup2(out_fd,1);
@@ -1068,13 +1074,34 @@ void Request::run_cgi(){
     else
     {
         //wait for cgi to finish
-        waitpid(child_pid,NULL,0);
+		if (waitpid(_cgi_pid,NULL,WNOHANG)==_cgi_pid)
+			_status_code=200;
+		else{
+				_cgi_start_time = time(NULL);
+			while(time(NULL) - _cgi_start_time < CGI_TIMEOUT)
+			{
+				//wait
+					
+			}
+			if(waitpid(_cgi_pid,NULL,WNOHANG)!=_cgi_pid)
+			{
+						//kill cgi process
+						kill(_cgi_pid,SIGKILL);
+						//debug
+						std::cerr<<"**********cgi timeout********"<<std::endl;
+				// 		//end debug
+						_status_code = 504;//gateway time out;
+			}
+			else
+				_status_code=200;
+		}
+		
 		// close(0);
 		// close(1);
         //debug
         std::cerr<<"debug_cgi : parent proccess after waitpid"<<std::endl;
         //end debug
-		_status_code=200;
+		
 		//debug
 		//end debug
 
@@ -1097,7 +1124,7 @@ void Request::run_cgi(){
     //end debug
 
     //remove cgi headers and everything else the response dont need
-    clean_cgi_output(tmp_file);
+    clean_cgi_output();
     std::cerr<<"------------------------------end of cgi-----------------------------"<<std::endl;
 
 }
