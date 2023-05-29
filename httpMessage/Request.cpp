@@ -864,7 +864,7 @@ void Request::set_cgi_env()
         }
         head = "HTTP_" + head_name + "=" + head_value;
         //debug
-        std::cerr<<"http result head = ["<<strdup(head.c_str())<<"]"<<std::endl;
+        std::cerr<<"http result head = ["<<head.c_str()<<"]"<<std::endl;
         //end debug
         //add env var
         putenv(strdup(head.c_str()));
@@ -995,9 +995,9 @@ void Request::run_cgi(){
     //debug
     std::cerr<<"tmp_filename = ["<<_cgi_tmpfilename<<"]"<<std::endl;
     //end debug
-    set_cgi_env();
+   
     //debug
-    debug_cgi();
+   
 
     //end debug
     //fork
@@ -1010,6 +1010,8 @@ void Request::run_cgi(){
 
     if (_cgi_pid ==0)
     {
+		 set_cgi_env();
+		  debug_cgi();
         //debug
         debug_print_env(environ);
         //end debug
