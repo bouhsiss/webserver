@@ -1124,7 +1124,7 @@ void Request::run_cgi(){
     //end debug
 
     //remove cgi headers and everything else the response dont need
-    clean_cgi_output();
+    // clean_cgi_output();
     std::cerr<<"------------------------------end of cgi-----------------------------"<<std::endl;
 
 }
