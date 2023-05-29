@@ -129,7 +129,7 @@ std::string Response::setFileContentLength(std::string filename) {
 	_filename = filename;
 	_file.open(_filename, std::ios::in);
 	if(!_file.is_open())
-		rebuildResponseErr(900);
+		rebuildResponseErr(403);
 	_file.seekg(0, std::ios::end);
 	std::streampos fileSize = _file.tellg();
 	_file.seekg(0, std::ios::beg);

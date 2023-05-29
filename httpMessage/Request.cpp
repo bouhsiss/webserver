@@ -121,6 +121,11 @@ void Request::proccess_Request(std::string req_data){
 			iss>>_method;
 			iss>>_RequestURI;
 			iss>>_http_v;
+			if (_RequestURI.find("?"))
+			{
+				_query_string = _RequestURI.substr(_RequestURI.find("?")+1);
+				_RequestURI = _RequestURI.substr(0,_RequestURI.find("?"));
+			}
 			if (_method != "GET" && _method != "DELETE" && _method != "POST")
 			{
 				//RETURN 501 (Not Implemented)
@@ -804,10 +809,6 @@ void Request::set_cgi_env()
     putenv(strdup(head.c_str()));
     head.clear(); 
     //QUERY_STRING
-    if (_RequestURI.find("?")!=std::string::npos)
-        _query_string = _RequestURI.substr(_RequestURI.find("?")+1);
-    else 
-        _query_string = "";
     head = "QUERY_STRING="+_query_string;
     putenv(strdup(head.c_str()));
     head.clear();

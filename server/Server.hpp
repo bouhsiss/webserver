@@ -23,6 +23,8 @@
 //select()
 #include <sys/select.h>
 
+#define DEFAULT_CLIENT_BODY_SIZE_LIMIT 7000000000000000
+
 class Location;
 
 class Server {
