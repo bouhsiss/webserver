@@ -6,7 +6,7 @@
 /*   By: hassan <hassan@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/10 09:42:35 by hbouhsis          #+#    #+#             */
-/*   Updated: 2023/05/26 21:53:31 by hassan           ###   ########.fr       */
+/*   Updated: 2023/05/28 23:38:51 by hassan           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@
 #include "Http.hpp"
 #include "Response.hpp"
 
-#define MIME_TYPES_FILE_PATH "/goinfre/hbouhsis/webserver/conf.d/mime.types"
+#define MIME_TYPES_FILE_PATH "/Users/hassan/Desktop/request2.0/conf.d/mime.types"
 
 class Request;
 class Response;

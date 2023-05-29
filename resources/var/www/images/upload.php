@@ -1,5 +1,5 @@
 <?php
-while(1);
+// while(1);
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   // Check if file was uploaded
   if (isset($_FILES['upload'])) {
@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Move uploaded file to a permanent location
     $filename = $_FILES['upload']['name'];
     $tmpname = $_FILES['upload']['tmp_name'];
-    $destination = '/Users/mmoutawa/Desktop/one/Data/uploads' . $filename;
+    $destination = '/Users/hassan/Desktop/request2.0/resources/var/www/uploads/' . $filename;
     if (move_uploaded_file ($tmpname ,$destination )) {
       echo 'File uploaded successfully!';
     } else {

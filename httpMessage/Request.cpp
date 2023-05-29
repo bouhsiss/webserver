@@ -26,7 +26,9 @@ Request& Request::operator=(const Request& other) {
 	return(*this);
 }
 
-Request::~Request() {}
+Request::~Request() {
+    remove(_cgi_output_filename.c_str());
+}
 
 
 void Request::normalizePath() {
@@ -880,7 +882,7 @@ void Request::clean_cgi_output(std::string tmp_file){
 			//debug
 			std::cerr<<"---------------start of clean_cgi_output------------"<<std::endl;
 			///end debug
-		_cgi_output_filename = "/goinfre/hbouhsis/webserver/" + random_filename()+".html"; 
+		_cgi_output_filename = "/Users/hassan/Desktop/request2.0/" + random_filename()+"cgi_out"+".html"; 
 	
 		_cgi_output.open(_cgi_output_filename,std::ios::out|std::ios::app);
 
@@ -890,40 +892,39 @@ void Request::clean_cgi_output(std::string tmp_file){
 			//end debug
 		std::fstream tmp;
 		tmp.open(tmp_file,std::ios::in);
-		if (_cgi_output.is_open() && tmp.is_open() )
+		if (_cgi_output.is_open() && tmp.is_open())
 		{
-		std::string line;
-		std::string	buffer;
-		std::string heads;
-		while(getline(tmp,line))
-		{
-			//debug
-			std::cerr<<"line = ["<<line<<"]"<<std::endl;
-			//end debug
-			buffer+=line.append("\r\n");
-		}
-		heads = buffer.substr(0,buffer.find("\r\n\r\n"));
-		if (buffer.find("\r\n\r\n")!=std::string::npos)
-			buffer = buffer.substr(buffer.find("\r\n\r\n")+4);
-		//set body
-		
-		_cgi_output<<buffer;
-		_cgi_output.close();
-		std::cerr<<"--------------cgi body----------"<<std::endl;
-		std::cerr<<"body = ["<<buffer<<"]"<<std::endl;
-		std::cerr<<"------------------------------------"<<std::endl;
-		//set headers in map
-		line.clear();
-			while(heads.length())
-			{
-				line  = heads.substr(0,heads.find("\r\n"));
-				if (line.find(":")!=std::string::npos)
-					_cgi_headers.insert(std::make_pair(line.substr(0,line.find(":")),line.substr(line.find(":")+1)));
-
-				heads = heads.substr(heads.find("\r\n"));
-			}
-			tmp.close();
-			remove(tmp_file.c_str());
+            std::string line;
+            std::string	buffer;
+            std::string heads;
+            //set headers
+            //debug
+            std::cerr<<"first loooooooop"<<std::endl;
+            //end debug
+            while(getline(tmp,line))
+            {
+                //debug
+                std::cerr<<"line = ["<<line<<"]"<<std::endl;
+                //end debug
+                if (line == "\r")
+                    break;
+                if (line.find(":")!=std::string::npos)
+                        _cgi_headers.insert(std::make_pair(line.substr(0,line.find(":")),line.substr(line.find(":")+1)));
+            }
+             //debug
+            std::cerr<<"second loooooooop"<<std::endl;
+            //end debug
+            while (getline(tmp,line))
+            {
+                //debug
+                std::cerr<<"line = ["<<line<<"]"<<std::endl;
+                //end debug
+                _cgi_output<<line.append("\n");
+            }
+            _cgi_output.close();
+            tmp.close();
+            remove(tmp_file.c_str());
+        
 		}
 		else 
 			std::cerr<<"clean cgi output: failed to open either cgi_output or tmp"<<std::endl;
@@ -985,7 +986,7 @@ void Request::run_cgi(){
     //end debug
     ////after debugging remove cgi_file to tmp folder
 	std::fstream tmp;
-    std::string tmp_file = TMP_PATH+ random_filename();
+    std::string tmp_file = TMP_PATH+ random_filename()+".html";
     //debug
     std::cerr<<"tmp_filename = ["<<tmp_file<<"]"<<std::endl;
     //end debug
