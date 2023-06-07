@@ -110,6 +110,8 @@ void Server::setServerDefaultValues() {
 		_client_body_size_limit = DEFAULT_CLIENT_BODY_SIZE_LIMIT;
 	if(_Locations.empty() && !_root.empty())
 		setDefaultLocation();
+	else if(_Locations.empty() && _root.empty())
+		throw(Http::ConfigFileErrorException("the server should at least have a root directive to function."));
 	std::map<std::string, Location *>::iterator It;
 	for(It = _Locations.begin(); It != _Locations.end(); It++)
 		It->second->isLocationComplete(*this);

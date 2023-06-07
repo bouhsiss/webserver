@@ -12,8 +12,6 @@
 #define TMP_PATH "/tmp/"
 
 
-// #include "Server.hpp"
-
 class HttpMessage {
 	public :
 		HttpMessage();

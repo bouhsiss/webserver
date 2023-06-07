@@ -87,7 +87,6 @@ class Request : public HttpMessage {
 		void debug_cgi();
 
 
-
 		std::string 	_method;
 		std::string 	_RequestURI;
 		std::string 	_http_v;

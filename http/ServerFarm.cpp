@@ -20,6 +20,12 @@ std::map<std::string, std::string>&	ServerFarm::getReverseMIMEtypes(){return _Re
 
 ServerFarm* ServerFarm::instancePtr = NULL;
 
+
+/*
+	a function to read the mime types file and store them in two maps :
+		- _Mimetype <std::string, std::string> ==> key - extension , value - MIME type
+		- _ReverseMIMEtypes <std::string, std::string> ==> key - MIME type, value - extension
+*/
 void ServerFarm::readMIMEtypes() {
 	std::ifstream MIME_file(MIME_TYPES_FILE_PATH);
 	if(!MIME_file)
@@ -50,7 +56,9 @@ ServerFarm::ServerFarm() {
 	readMIMEtypes();
 }
 
-
+/*
+	creates one instance of the class if it doesn't exist, and return it . else it return the created instance
+*/
 ServerFarm *ServerFarm::getInstance() {
 	if (instancePtr == NULL) {
 		instancePtr = new ServerFarm();
@@ -70,11 +78,17 @@ ServerFarm::~ServerFarm() {
 	delete instancePtr;
 }
 
+/*
+	parse the configuration file and store  the configuration in a vector of Server class instances
+*/
 void ServerFarm::configure(std::string configFilepath) {
 	this->_servers = _config.parse(configFilepath);
 	areServersDuplicated();
 }
 
+/*
+	initialize all servers by creating a socket, binding and listening 
+*/
 void ServerFarm::initServers() {
 	for(size_t i = 0; i < _servers.size(); i++)
 	{
@@ -95,6 +109,10 @@ bool ServerFarm::isServerActive(Server &server) {
 	return(false);
 }
 
+
+/*
+	check fo server duplicates (same host, port and server_name)
+*/
 void ServerFarm::areServersDuplicated() {
 	for(size_t i = 0; i < _servers.size(); i++) {
 		for(size_t j = i + 1 ; j < _servers.size(); j++) {
@@ -105,7 +123,6 @@ void ServerFarm::areServersDuplicated() {
 		}
 	}
 }
-
 
 void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
 	std::map<int, Response *>::iterator It;
@@ -118,22 +135,25 @@ void ServerFarm::handleResponse(fd_set *tmpWriteFds) {
 					It->second->sendResponse();
 				}
 				catch(const std::exception& e) {
+					// exception are thrown mainly when a file/directory fails to open
 					Response* response = new Response(It->second->getRequest(), writeSock);
 					_writeSockets[writeSock] = response;
 				}
 				if(It->second->sendFailed()) {
+					// when send fails the client is dropped and the connection is closed
 					keysToErase.push_back(writeSock);
 					FD_CLR(writeSock, &_writeFds);
 					close(writeSock);
 					std::cout << RED << "send() failed" << RESET << std::endl;
 				}
 				if(It->second->isResponseSent() == true) {
+					// once the response is sent the socket fd is untrackable and removed from the write fd_set and the connection is closed
+					std::cout << GREEN << "response sent to socket : " << writeSock << RESET << std::endl;
 					keysToErase.push_back(writeSock);
 					FD_CLR(writeSock, &_writeFds);
 					close(writeSock);
 				}
 			}
-			std::cout << GREEN << "response sent to socket : " << writeSock << RESET << std::endl;
 		}
 	}
 	for(size_t i = 0; i < keysToErase.size(); i++)
@@ -161,6 +181,7 @@ void ServerFarm::handleNewClient(fd_set *tmpReadFds, int *fdmax) {
 	}
 }
 
+
 void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 	std::map<int, Server*>::iterator It;
 	std::vector<int> keysToErase;
@@ -171,12 +192,14 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 			int bytesReceived = recv(clientSock, read, 1024, 0);
 			if(bytesReceived < 0)
 			{
+				// when recv fails the client is dropped and the connection is closed
 				keysToErase.push_back(clientSock);
 				FD_CLR(clientSock, &_readFds);
 				std::cout << RED << "recv() failed" << RESET << std::endl;
 				close(clientSock);
 			}
 			else if(!bytesReceived) {
+				// when the client closes the connection. the client is dropped and the connection is closed
 				keysToErase.push_back(clientSock);
 				FD_CLR(clientSock, &_readFds);
 				std::cout << RED << "client closed connection" << RESET << std::endl;
@@ -184,6 +207,10 @@ void ServerFarm::handleRequest(fd_set *tmpReadFds) {
 			}
 			else {
 				std::string reqData(read, bytesReceived);
+				/*
+					if the request is a new request a new intance is created and a call to process request is made , else the function proceed directly to the request processing . 
+					once a request is ready the socket is cleared from the read fd_set and inserted into the write fd_set and
+				*/
 				if(_writeSockets.find(clientSock) != _writeSockets.end()) {
 					_writeSockets[clientSock]->getRequest().proccess_Request(reqData);
 					if(_writeSockets[clientSock]->getRequest().request_is_ready()) {
@@ -225,23 +252,22 @@ void ServerFarm::runEventLoop() {
 	while(true) {
 		tmpReadFds = _readFds;
 		tmpWriteFds = _writeFds;
-		// for (size_t i = 0; i < FD_SETSIZE; i++)
-		// {
-		// 	if (FD_ISSET(i, &_readFds))
-		// 		std::cout << i << std::endl;
-		// }
 		
 		if(select(fdmax + 1, &tmpReadFds, &tmpWriteFds, NULL, NULL) == -1)
 		{
 			std::cout << "select failed" << std::endl;
 			throw(Http::NetworkingErrorException(strerror(errno)));
 		}
-		// priority to this loop, since the writeFds from previous iteration won't  notify until the next one
+		
+		// once the request is ready the function proceed to forge a response and send it to the client
 		handleResponse(&tmpWriteFds);
+		// setup and accept the new client connection
 		handleNewClient(&tmpReadFds, &fdmax);
+		// receive the data and process the request
 		handleRequest(&tmpReadFds);
 	}
 }
+
 
 std::ostream& operator<<(std::ostream &out, ServerFarm& c) {
 	std::vector<Server*>::iterator It;
@@ -256,16 +282,3 @@ std::ostream& operator<<(std::ostream &out, ServerFarm& c) {
 	out << "===============================================================" << std::endl;
 	return(out);
 }
-
-
-/* persistent connections implementation cons : the connection will remain open until the client (in this case, siege) closes the connection, this means that the port will remain in use by the open connection, which reduces the number of available ports and can lead to the error : "[error] socket: 154005504 address is unavailable.: Can't assign requested address siege"  which leaves two choices : 
-	- either change the implementation to closing the connection once a response is sent . 
-	- or enable the keep-alive connections in siege configuration 
-*/
-
-
-/*
-keep-alive siege directive :
-	at a low level the directive tells siege to use persistent connections when communicating with the target server. specifically, it adds the "connection : keep-alive" header to each request sent by siege
-
-*/

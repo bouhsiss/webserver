@@ -10,6 +10,7 @@ Response::Response(Request &request, int writeSock): _request(request), _writeSo
 	_sendFailed = false;
 	_body = "";
 	FileIsOpen = false;
+	_LocationHasRedirection = false;
 }
 
 Response::~Response() {
@@ -36,6 +37,9 @@ void Response::rebuildResponseErr(int statusCode) {
 	_headersAreSent = false;
 	throw(std::exception());
 }
+
+// ------------ functions to generate default webpages ------------
+
 
 void Response::generateDirectoryListing(std::string dirPath) {
 	DIR* dir;
@@ -68,10 +72,13 @@ void Response::generateDirectoryListing(std::string dirPath) {
 
 void Response::generateErrorPage() {
 	std::string errorPage = "<html><head><title>Error - "
-							 + std::to_string(_statusCode) + "</title><link rel=\"stylesheet\" href=\"/assets/css/default_error_page.css\"></head><div id = \"main\"><div class=\"fof\"><h1> - " + std::to_string(_statusCode) + " - " + _statusCodeMap[_statusCode] + " </h1></div></div></html>";
+							 + std::to_string(_statusCode) + "</title><link rel=\"stylesheet\" href=" + PATH_TO_ERROR_PAGE_STYLESHEET +"></head><div id = \"main\"><div class=\"fof\"><h1> - " + std::to_string(_statusCode) + " - " + _statusCodeMap[_statusCode] + " </h1></div></div></html>";
 	_contentLength = errorPage.size();
 	_body = errorPage;
 }
+
+
+// ------------ functions to send the response body, it's either stored in a file or a buffer ------------
 
 void Response::sendResponseFile() {
 	size_t chunkSize = RESPONSE_BUFFER_SIZE;
@@ -102,6 +109,24 @@ void Response::sendResponseFile() {
 	}
 }
 
+
+void Response::sendResponseBody() {
+	int  bytesSent = send(_writeSocket, _body.c_str(), _contentLength, 0);
+	if(bytesSent < 0) {
+		_sendFailed = true;
+		return;
+	}
+	if(bytesSent == (int)_contentLength)
+	{
+		_isResponseSent = true;
+	}
+	else
+	{
+		_sendFailed = true;
+	}
+}
+
+// ------------ helper function to set sent values in headers ------------
 
 void Response::setStartLine() {
 	_startLine = "HTTP/1.1 " + std::to_string(_statusCode) + " " + _statusCodeMap[_statusCode] + "\r\n";
@@ -152,7 +177,7 @@ void Response::setHeaders(std::string contentLength) {
 		for(It = _cgiHeaders.begin(); It != _cgiHeaders.end(); It++)
 			_headers.insert(std::make_pair(It->first, It->second));
 	}
-	if(_statusCode == 301)
+	if(_statusCode == 301 && _LocationHasRedirection == false)
 	{
 		if(_request.getRequestURI()[_request.getRequestURI().size() -1] != '/')
 			_headerLocationValue = _request.getRequestURI() + "/";
@@ -166,6 +191,7 @@ void Response::setHeaders(std::string contentLength) {
 	_headers.insert(std::make_pair("Location: ", _headerLocationValue));
 }
 
+// ------------ convert the startline and the headers map into one valid strig header to be sent as the response header ------------
 
 void Response::formatHeadersAndStartLine() {
 	std::string initialResponse = _startLine;
@@ -179,6 +205,8 @@ void Response::formatHeadersAndStartLine() {
 	}
 	_headersAreSent = true;
 }
+
+// functions to handle response in case of success/error./
 
 void Response::responseSuccess() {
 	if(_request.getMethod() == "GET") {
@@ -228,22 +256,6 @@ void Response::responseSuccess() {
 	}
 }
 
-void Response::sendResponseBody() {
-	int  bytesSent = send(_writeSocket, _body.c_str(), _contentLength, 0);
-	if(bytesSent < 0) {
-		_sendFailed = true;
-		return;
-	}
-	if(bytesSent == (int)_contentLength)
-	{
-		_isResponseSent = true;
-	}
-	else
-	{
-		_sendFailed = true;
-	}
-}
-
 void Response::sendDefaultErrorPage() {
 	if(_headersAreSent == false) {
 		generateErrorPage();
@@ -272,7 +284,9 @@ void Response::responseError(){
 void Response::sendResponse() {
 	initResponse();
 	if(_request.getServerIndex() != -1 && _request.getLocationIndex() != "" && _request.is_location_has_redirection() == true) {
+		// if the location has redirection, no additional checks should be performed and the proper redirection response should be sent
 		_headerLocationValue = _server->getLocations()[_request.getLocationIndex()]->getRedirect();
+		_LocationHasRedirection = true;
 		setHeaders("0");
 		formatHeadersAndStartLine();
 		_isResponseSent = true;

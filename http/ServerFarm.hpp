@@ -22,6 +22,10 @@
 class Request;
 class Response;
 
+/*
+	the serverFarm class is a singletone, only one instance of the class gets created through this function since the  	constructor is private 
+*/
+
 class ServerFarm {
 	public :
 		const std::map<int, Server *>&				getActiveServers() const;

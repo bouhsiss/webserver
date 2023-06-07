@@ -5,8 +5,7 @@
 
 #define RESPONSE_BUFFER_SIZE 1024
 #define DIRECTORY_LISTING_FILENAME "/tmp/directory_listing.html"
-#define POST_201_BODY "created succefully !!!"
-#define DELETE_204_BODY "No content"
+#define PATH_TO_ERROR_PAGE_STYLESHEET "\"/assets/css/default_error_page.css\""
 
 class Request;
 
@@ -41,6 +40,7 @@ class Response : public HttpMessage {
 		void 		generateDirectoryListing(std::string dirPath);
 		void 		generateErrorPage();
 
+		bool								_LocationHasRedirection;
 		
 		Request&							_request;
 		
