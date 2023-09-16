@@ -1,0 +1,2 @@
+# HTTP Web Server in C++
+This is a lightweight HTTP web server implemented from scratch in C++. This web server is designed to handle HTTP requests, parse configuration files, and serve static content. It supports various HTTP methods, including GET, POST, and DELETE. The server also incorporates concurrent connection handling using the select system call, allowing for efficient multiplexing of multiple client requests.
