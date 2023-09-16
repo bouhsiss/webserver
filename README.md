@@ -33,7 +33,7 @@ This is a lightweight HTTP web server implemented from scratch in C++. This web 
 
   Access the server by opening a web browser and navigating to `http://localhost:80` (by default).
 
-  # # Configuration
+  ## Configuration
   The server can be configured by specifying a custom configuration file by providing the config file p when starting the server, or by editing the default configuration file located at conf.d/default.conf. The configuration file allows you to specify various settings for the server. Here are some key configuration options:
 
  * Choose the port and host of each server.
