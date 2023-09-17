@@ -1,5 +1,5 @@
 # HTTP Web Server in C++
-This is a lightweight HTTP web server implemented from scratch in C++. This web server is designed to handle HTTP requests, parse configuration files, and serve static content. It supports various HTTP methods, including GET, POST, and DELETE. The server also incorporates concurrent connection handling using the select system call, allowing for efficient multiplexing of multiple client requests.
+This is a lightweight HTTP web server that fully complies with HTTP/1.1 RFC specifications implemented from scratch in C++. This web server is designed to handle HTTP requests, parse configuration files, and serve static content. It supports various HTTP methods, including GET, POST, and DELETE. The server also incorporates concurrent connection handling using the select system call, allowing for efficient multiplexing of multiple client requests.
 
 ## Features
  * Parse configuration files to customize server settings.
