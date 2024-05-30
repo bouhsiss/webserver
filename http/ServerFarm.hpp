@@ -17,7 +17,7 @@
 #include "Http.hpp"
 #include "Response.hpp"
 
-#define MIME_TYPES_FILE_PATH "/goinfre/hbouhsis/webserver/conf.d/mime.types"
+#define MIME_TYPES_FILE_PATH "/nfs/homes/hbouhsis/webserver/conf.d/mime.types"
 
 class Request;
 class Response;

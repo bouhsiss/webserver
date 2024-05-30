@@ -27,7 +27,7 @@ std::string HttpMessage::random_filename() {
     static const char charset[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     const int charset_size = sizeof(charset) - 1;
     std::string result(length, '\0');
-    std::srand(std::time(nullptr));
+    std::srand(time(nullptr));
     for (int i = 0; i < length; ++i) {
         result[i] = charset[std::rand() % charset_size];
     }

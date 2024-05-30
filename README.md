@@ -15,8 +15,8 @@ This is a lightweight HTTP web server that fully complies with HTTP/1.1 RFC spec
   Clone the repository:
 
   ```
-    git clone https://github.com/yourusername/your-http-server.git
-    cd your-http-server
+    git clone https://github.com/bouhsiss/webserver.git
+    cd webserver
   ```
 
   Build the server:

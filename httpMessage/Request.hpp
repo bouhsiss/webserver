@@ -15,6 +15,7 @@
 #include "ServerFarm.hpp"
 #include <limits.h>
 #include <stdlib.h>
+#include <sys/wait.h>
 
 #define MAX_URI_SIZE 2097152
 #define CGI_TIMEOUT 15
@@ -121,6 +122,6 @@ class Request : public HttpMessage {
 		std::string		_cgi_tmpfilename;
 		std::map<std::string, std::string> _cgi_headers;
 		bool			_cgi_flag;
-		std::time_t				_cgi_start_time;
+		time_t				_cgi_start_time;
 		pid_t					_cgi_pid;
 };

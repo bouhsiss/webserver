@@ -21,8 +21,8 @@ int main(int ac, char **av) {
 		signal(SIGPIPE, SIG_IGN);
 		signal(SIGINT, signalHandler);
 		const char *configFilePath = (ac == 2) ? av[1] : DEFAULT_CONFIG_FILE;
-		ServerFarm *webserv = ServerFarm::getInstance();
 		try {
+		    ServerFarm *webserv = ServerFarm::getInstance();
 			webserv->configure(configFilePath);
 			webserv->initServers();
 			webserv->runEventLoop();
